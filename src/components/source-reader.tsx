@@ -52,6 +52,14 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
     mutationFn: () => summarizeFn({ data: { id: sourceId!, lang } }),
   });
 
+  const read = useReadAloud();
+
+  // Stop audio when switching sources or closing.
+  useEffect(() => {
+    return () => read.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceId]);
+
   useEffect(() => {
     try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
   }, [fontStep]);
