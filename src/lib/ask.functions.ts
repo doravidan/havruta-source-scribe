@@ -109,10 +109,13 @@ export const askHavruta = createServerFn({ method: "POST" })
         source_id: r.id,
         chunk_index: 0,
         text: sliceAroundQuery(r.text ?? "", searchTerms),
-        similarity: 0.25,
+        // Keyword-fallback hits aren't vector-scored; mark them as a confident
+        // match so the UI doesn't flag every OpenRouter-only answer as "weak".
+        similarity: 0.6,
         title: r.title ?? "",
         tree: r.tree ?? "",
       }));
+
     }
 
     // 4. De-dup by source_id, keep best 5 sources, 8 chunks max
