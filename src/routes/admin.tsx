@@ -591,3 +591,13 @@ function AdminPage() {
     </div>
   );
 }
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok" | "err" }) {
+  const color = tone === "ok" ? "text-emerald-500" : tone === "err" ? "text-destructive" : "text-foreground";
+  return (
+    <div className="rounded-md border border-border bg-background/40 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-sm font-semibold tabular-nums ${color}`}>{value}</div>
+    </div>
+  );
+}
