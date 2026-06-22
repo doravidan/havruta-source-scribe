@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chabad_crawl_queue: {
+        Row: {
+          attempts: number
+          chabad_id: string
+          enqueued_at: string
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          root_id: string
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          chabad_id: string
+          enqueued_at?: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          root_id: string
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          chabad_id?: string
+          enqueued_at?: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          root_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -315,6 +348,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_chabad_crawl_batch: {
+        Args: { batch_size: number }
+        Returns: {
+          attempts: number
+          chabad_id: string
+          enqueued_at: string
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          root_id: string
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "chabad_crawl_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
