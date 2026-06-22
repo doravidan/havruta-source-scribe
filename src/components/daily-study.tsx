@@ -86,10 +86,10 @@ export function DailyStudyPanel() {
     <section className="scholar-card p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="eyebrow mb-1 flex items-center gap-2">
+          <h2 className="eyebrow mb-1 flex items-center gap-2">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)] animate-glow-pulse" />
             {lang === "he" ? "לימוד יומי" : "Daily Study"}
-          </h3>
+          </h2>
           <p className="serif text-xl sm:text-2xl text-[var(--indigo-deep)]">
             {lang === "he" ? 'חת"ת ורמב"ם' : "Chitas & Rambam"}
           </p>
