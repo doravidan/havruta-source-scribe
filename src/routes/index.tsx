@@ -5,6 +5,7 @@ import { AskPanel } from "@/components/ask-panel";
 import { SearchPanel } from "@/components/search-panel";
 import { YiddishHelper } from "@/components/helpers";
 import { StudySidebar } from "@/components/study-sidebar";
+import { DailyStudyPanel } from "@/components/daily-study";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
 
@@ -49,6 +50,10 @@ function Index() {
               </motion.div>
 
               <motion.div custom={2} initial="hidden" animate="show" variants={tile} className="md:col-span-3">
+                <DailyStudyPanel />
+              </motion.div>
+
+              <motion.div custom={3} initial="hidden" animate="show" variants={tile} className="md:col-span-3">
                 <SearchPanel />
               </motion.div>
             </div>
