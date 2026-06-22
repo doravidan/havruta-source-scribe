@@ -97,14 +97,14 @@ export function AskPanel() {
                     key={s.id}
                     className="text-start rounded-lg border border-border/70 bg-card/40 hover:bg-card hover:border-primary/40 p-4 transition-colors flex flex-col"
                   >
-                    <button onClick={() => setOpenSourceId(s.id)} className="text-start flex-1">
+                    <button onClick={() => { setOpenSummarize(false); setOpenSourceId(s.id); }} className="text-start flex-1">
                       {s.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{s.tree}</div>}
                       <div className="font-medium mb-2">{s.title}</div>
                       <div className="text-sm text-muted-foreground line-clamp-3">{s.excerpt}</div>
                     </button>
                     <div className="mt-3 flex items-center gap-2 text-xs">
                       <button
-                        onClick={() => setOpenSourceId(s.id)}
+                        onClick={() => { setOpenSummarize(true); setOpenSourceId(s.id); }}
                         className="px-2 py-1 rounded border border-[var(--saffron)]/50 text-[var(--indigo-deep)] bg-[color:var(--saffron-soft,transparent)] hover:bg-[var(--saffron)] hover:text-white transition-colors"
                       >
                         ✦ {t.cardSummary}
