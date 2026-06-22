@@ -79,10 +79,11 @@ export const dict = {
     weakAnswer: "המקורות שנמצאו דלים — התשובה זהירה בהתאם.",
   },
   en: {
-    brand: "Havruta Chabad",
-    tagline: "Chassidus with sources, not answers in the air.",
+    brand: "Chassiduta",
+    brandTagline: "A chavruta for Chassidus, anytime, anywhere",
+    tagline: "A chavruta for Chassidus, anytime, anywhere.",
     heroSubtext:
-      "Search, open, and learn full Chassidus sources. Ask in Hebrew or English and get answers grounded only in the saved corpus.",
+      "Chassiduta — Chassidus with a chavruta. Search, open and learn full Chassidus sources. Ask in Hebrew or English and get answers grounded only in the saved corpus.",
     langToggle: "עברית",
     statusSources: "sources",
     statusChunks: "chunks",
