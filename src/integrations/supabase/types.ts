@@ -382,6 +382,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      library_browse: { Args: { _path: string[] }; Returns: Json }
       match_chunks: {
         Args: {
           match_count?: number

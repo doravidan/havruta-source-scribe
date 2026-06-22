@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, Sparkles, ShieldCheck, LogOut, BookOpen } from "lucide-react";
+import { Languages, Sparkles, ShieldCheck, LogOut, BookOpen, Library } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function TopBar() {
@@ -44,6 +44,13 @@ export function TopBar() {
         </div>
 
         <div className="ms-auto flex items-center gap-2">
+          <Link
+            to="/library"
+            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
+          >
+            <Library className="h-4 w-4" />
+            <span className="hidden sm:inline">{lang === "he" ? "ספרייה" : "Library"}</span>
+          </Link>
           <button
             onClick={toggle}
             className="inline-flex items-center gap-1.5 px-3 h-10 min-w-11 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
