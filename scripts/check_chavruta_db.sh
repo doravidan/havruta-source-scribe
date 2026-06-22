@@ -99,9 +99,10 @@ done
 
 hdr "7. RPC EXECUTE granted to authenticated"
 for fn in "${RPCS[@]}"; do
-  n=$(q "select count(*) from information_schema.role_routine_grants where grantee='authenticated' and routine_schema='public' and routine_name='$fn' and privilege_type='EXECUTE';")
+  n=$(q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='$fn' and has_function_privilege('authenticated', p.oid, 'EXECUTE');")
   [[ "$n" -ge 1 ]] && ok "authenticated can EXECUTE $fn" || bad "authenticated CANNOT EXECUTE $fn"
 done
+
 
 hdr "8. FK chavruta_messages.match_id → chavruta_matches.id"
 fk=$(q "select count(*) from information_schema.table_constraints tc join information_schema.key_column_usage k using (constraint_schema,constraint_name) where tc.table_schema='public' and tc.table_name='chavruta_messages' and tc.constraint_type='FOREIGN KEY' and k.column_name='match_id';")
