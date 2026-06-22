@@ -62,12 +62,16 @@ function hebrewToday(lang: "he" | "en") {
 
 export function DailyStudyPanel() {
   const { lang } = useLang();
-  const hebDate = hebrewToday(lang);
+  const [hebDate, setHebDate] = useState<string>("");
+  useEffect(() => {
+    setHebDate(hebrewToday(lang));
+  }, [lang]);
 
   const fetchFn = useServerFn(getDailyStudySource);
   const [activeKey, setActiveKey] = useState<FeatureKey | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [errKey, setErrKey] = useState<FeatureKey | null>(null);
+
 
   const open = useMutation({
     mutationFn: (feature: FeatureKey) => fetchFn({ data: { feature, lang } }),
