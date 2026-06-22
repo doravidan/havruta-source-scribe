@@ -17,6 +17,7 @@ export function SourceReader({ sourceId, onClose }: Props) {
   const fn = useServerFn(getSource);
   const studiedFn = useServerFn(isSourceStudied);
   const toggleFn = useServerFn(toggleSourceStudied);
+  const summarizeFn = useServerFn(summarizeSource);
   const open = !!sourceId;
   const { data, isLoading } = useQuery({
     queryKey: ["source", sourceId],
