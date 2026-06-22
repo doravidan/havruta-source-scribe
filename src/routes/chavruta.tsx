@@ -477,7 +477,10 @@ function ChavrutaPage() {
                     <span>
                       {days[s.day_of_week]} · {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
                     </span>
-                    <button onClick={() => removeSlot.mutate(s.id)}>
+                    <button
+                      onClick={() => removeSlot.mutate(s.id)}
+                      aria-label={lang === "he" ? "הסר זמן" : "Remove time slot"}
+                    >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
