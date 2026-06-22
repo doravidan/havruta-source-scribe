@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +22,11 @@ import { Route as ApiPublicHooksChabadCrawlTickRouteImport } from './routes/api/
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChavrutaRoute = ChavrutaRouteImport.update({
+  id: '/chavruta',
+  path: '/chavruta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/chavruta'
     | '/library'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/chavruta'
     | '/library'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/chavruta'
     | '/library'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  ChavrutaRoute: typeof ChavrutaRoute
   LibraryRoute: typeof LibraryRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -143,6 +156,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chavruta': {
+      id: '/chavruta'
+      path: '/chavruta'
+      fullPath: '/chavruta'
+      preLoaderRoute: typeof ChavrutaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  ChavrutaRoute: ChavrutaRoute,
   LibraryRoute: LibraryRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
@@ -210,3 +231,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
