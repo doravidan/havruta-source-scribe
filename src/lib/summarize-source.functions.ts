@@ -6,6 +6,8 @@ const Input = z.object({
   lang: z.enum(["he", "en"]).default("he"),
 });
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 const SYS_HE = `אתה מסכם מקורות חסידות חב"ד.
 - ענה אך ורק בעברית.
 - סכם את המקור שניתן לך ב-4 עד 7 שורות תמציתיות.
@@ -19,6 +21,7 @@ const SYS_EN = `You summarize Chabad Chassidus sources.
 - Structure: one-line topic, the main idea as short points, and a concluding line.`;
 
 export const summarizeSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const t0 = Date.now();
