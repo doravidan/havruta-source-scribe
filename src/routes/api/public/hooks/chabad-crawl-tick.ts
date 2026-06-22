@@ -12,10 +12,30 @@ const CHABAD_URL = "https://chabadlibrary.org/books/";
  *   - if the node has text, ingests + embeds it
  * Called by pg_cron once per minute until queue empties.
  */
+function timingSafeEq(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 export const Route = createFileRoute("/api/public/hooks/chabad-crawl-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Auth: require shared-secret bearer (set as CRAWL_TICK_SECRET; called by pg_cron).
+        const expected = process.env.CRAWL_TICK_SECRET;
+        if (!expected) {
+          return new Response("Server misconfigured", { status: 503 });
+        }
+        const authz = request.headers.get("authorization") ?? "";
+        const provided = authz.toLowerCase().startsWith("bearer ")
+          ? authz.slice(7).trim()
+          : "";
+        if (!provided || !timingSafeEq(provided, expected)) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { cleanChabadText, extractChabadNode } = await import("@/lib/chabad-clean");
         const { chunkText, makeExcerpt, sha256 } = await import("@/lib/chunking");
