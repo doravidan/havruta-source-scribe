@@ -18,10 +18,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Nunito Sans", system-ui, sans-serif;
-  --font-serif: "Lora", "Georgia", serif;
+  --font-sans: "Work Sans", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", "Georgia", serif;
   --font-serif-he: "Frank Ruhl Libre", "Noto Serif Hebrew Variable", "Times New Roman", serif;
-  --font-display: "Lora", "Georgia", serif;
+  --font-display: "Instrument Serif", "Georgia", serif;
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
