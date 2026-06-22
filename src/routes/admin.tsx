@@ -5,9 +5,11 @@ import { useLang } from "@/lib/lang-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ingestSources, seedCorpus } from "@/lib/ingest.functions";
+import { crawlChabadLibrary } from "@/lib/chabad-ingest.functions";
+import { CHABAD_ROOT_IDS } from "@/lib/chabad-clean";
 import { corpusStats } from "@/lib/corpus.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload } from "lucide-react";
+import { Loader2, Sprout, Upload, Library } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
