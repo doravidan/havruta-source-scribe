@@ -15,6 +15,7 @@ import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuidesJewishMysticismIntroRouteImport } from './routes/guides.jewish-mysticism-intro'
 import { Route as GuidesHowToLearnChassidusRouteImport } from './routes/guides.how-to-learn-chassidus'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -51,6 +52,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesJewishMysticismIntroRoute =
+  GuidesJewishMysticismIntroRouteImport.update({
+    id: '/guides/jewish-mysticism-intro',
+    path: '/guides/jewish-mysticism-intro',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuidesHowToLearnChassidusRoute =
   GuidesHowToLearnChassidusRouteImport.update({
     id: '/guides/how-to-learn-chassidus',
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
+  '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
+  '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
+  '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/sitemap.xml'
     | '/guides/how-to-learn-chassidus'
+    | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/sitemap.xml'
     | '/guides/how-to-learn-chassidus'
+    | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/sitemap.xml'
     | '/guides/how-to-learn-chassidus'
+    | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -170,6 +183,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   GuidesHowToLearnChassidusRoute: typeof GuidesHowToLearnChassidusRoute
+  GuidesJewishMysticismIntroRoute: typeof GuidesJewishMysticismIntroRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -220,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/jewish-mysticism-intro': {
+      id: '/guides/jewish-mysticism-intro'
+      path: '/guides/jewish-mysticism-intro'
+      fullPath: '/guides/jewish-mysticism-intro'
+      preLoaderRoute: typeof GuidesJewishMysticismIntroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guides/how-to-learn-chassidus': {
       id: '/guides/how-to-learn-chassidus'
       path: '/guides/how-to-learn-chassidus'
@@ -266,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   GuidesHowToLearnChassidusRoute: GuidesHowToLearnChassidusRoute,
+  GuidesJewishMysticismIntroRoute: GuidesJewishMysticismIntroRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
