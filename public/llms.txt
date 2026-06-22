@@ -14,6 +14,7 @@ The site is in Hebrew (with English UI), focused on classical Chabad Chassidic l
 ## Guides
 
 - [How to Learn Chassidus](/guides/how-to-learn-chassidus): A practical step-by-step guide for learning Chabad Chassidus.
+- [Jewish Mysticism Intro](/guides/jewish-mysticism-intro): A beginner's introduction to Jewish mysticism and Kabbalah through Chabad Chassidus.
 
 ## Optional
 
