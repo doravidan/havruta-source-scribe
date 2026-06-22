@@ -27,27 +27,8 @@ const YIDDISH: Record<string, { he: string; en: string }> = {
   "טאַקע": { he: "אכן / באמת", en: "indeed" },
 };
 
-const RASHI: Array<[string, string]> = [
-  ["א", "ﬡ"], ["ב", "ﬢ"], ["ג", "ﬣ"], ["ד", "ﬤ"], ["ה", "ﬥ"],
-  ["ו", "ﬦ"], ["ז", "ﬧ"], ["ח", "ﬨ"], ["ט", "ם"], ["י", "מ"],
-  ["כ", "ן"], ["ל", "ל"], ["מ", "מ"], ["נ", "נ"], ["ס", "ס"],
-  ["ע", "ע"], ["פ", "פ"], ["צ", "צ"], ["ק", "ק"], ["ר", "ר"],
-  ["ש", "ש"], ["ת", "ת"],
-];
-
-const RASHI_NAMES: Record<string, { he: string; en: string }> = {
-  "א": { he: "אלף", en: "alef" }, "ב": { he: "בית", en: "bet" }, "ג": { he: "גימל", en: "gimel" },
-  "ד": { he: "דלת", en: "dalet" }, "ה": { he: "הא", en: "he" }, "ו": { he: "וו", en: "vav" },
-  "ז": { he: "זין", en: "zayin" }, "ח": { he: "חית", en: "chet" }, "ט": { he: "טית", en: "tet" },
-  "י": { he: "יוד", en: "yod" }, "כ": { he: "כף", en: "kaf" }, "ל": { he: "למד", en: "lamed" },
-  "מ": { he: "מם", en: "mem" }, "נ": { he: "נון", en: "nun" }, "ס": { he: "סמך", en: "samech" },
-  "ע": { he: "עין", en: "ayin" }, "פ": { he: "פא", en: "pe" }, "צ": { he: "צדי", en: "tsadi" },
-  "ק": { he: "קוף", en: "qof" }, "ר": { he: "ריש", en: "resh" }, "ש": { he: "שין", en: "shin" },
-  "ת": { he: "תו", en: "tav" },
-};
-
 export function YiddishHelper() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [w, setW] = useState("");
   const hit = YIDDISH[w.trim()];
   return (
@@ -77,27 +58,3 @@ export function YiddishHelper() {
   );
 }
 
-export function RashiHelper() {
-  const { t, lang } = useLang();
-  return (
-    <div className="scholar-card scholar-card-hover p-5 sm:p-6 relative overflow-hidden h-full">
-      <div aria-hidden className="absolute -top-10 -left-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(192,57,43,0.18), transparent 70%)" }} />
-      <h3 className="eyebrow mb-1 flex items-center gap-2">
-        <span className="inline-block h-2 w-2 rounded-full bg-[var(--indigo-deep)]" />
-        {t.rashiHelper}
-      </h3>
-      <p className="text-xs text-muted-foreground mb-4">{t.rashiSubtitle}</p>
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-        {RASHI.map(([std, rashi]) => (
-          <div key={std} className="flex flex-col items-center gap-1 p-2 rounded-md border border-border/60">
-            <div className="text-2xl" style={{ fontFamily: "var(--font-serif-he)" }}>{std}</div>
-            <div className="text-xl text-primary/90" style={{ fontFamily: "serif" }}>{rashi}</div>
-            <div className="text-[10px] text-muted-foreground">
-              {RASHI_NAMES[std]?.[lang]}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
