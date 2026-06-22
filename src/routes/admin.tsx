@@ -32,6 +32,7 @@ function AdminPage() {
 
   const ingestFn = useServerFn(ingestSources);
   const seedFn = useServerFn(seedCorpus);
+  const crawlFn = useServerFn(crawlChabadLibrary);
   const statsFn = useServerFn(corpusStats);
   const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn() });
 
