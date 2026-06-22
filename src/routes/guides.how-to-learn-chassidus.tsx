@@ -111,19 +111,17 @@ function HowToLearnChassidusPage() {
                       <Icon className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Step {step.number}</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{isHe ? `שלב ${step.number}` : `Step ${step.number}`}</p>
                       <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
                         {isHe ? step.heTitle : step.title}
                       </h2>
                     </div>
                   </div>
-                  <p className="leading-7 text-muted-foreground mb-4">{isHe ? "" : step.body}</p>
-                  {!isHe && (
-                    <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-                      <span className="font-medium text-primary">Tip:</span>{" "}
-                      <span className="text-muted-foreground">{step.tip}</span>
-                    </div>
-                  )}
+                  <p className="leading-7 text-muted-foreground mb-4">{isHe ? step.heBody : step.body}</p>
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+                    <span className="font-medium text-primary">{isHe ? "טיפ:" : "Tip:"}</span>{" "}
+                    <span className="text-muted-foreground">{isHe ? step.heTip : step.tip}</span>
+                  </div>
                 </div>
               </article>
             );
