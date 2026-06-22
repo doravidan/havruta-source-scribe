@@ -159,22 +159,36 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
       return { id: existing.id as string, cached: true };
     }
 
-    let html = "";
-    try {
-      const res = await fetch(meta.url, {
-        headers: {
-          "user-agent":
-            "Mozilla/5.0 (compatible; ScholarBot/1.0; +https://lovable.dev)",
-          accept: "text/html,application/xhtml+xml",
-          "accept-language": data.lang === "he" ? "he,en;q=0.8" : "en,he;q=0.8",
-        },
-      });
+    const browserHeaders = {
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "accept-language": data.lang === "he" ? "he-IL,he;q=0.9,en;q=0.8" : "en-US,en;q=0.9,he;q=0.8",
+      "cache-control": "no-cache",
+    } as const;
+
+    async function tryFetch(url: string): Promise<string> {
+      const res = await fetch(url, { headers: browserHeaders, redirect: "follow" });
       if (!res.ok) throw new Error(`fetch ${res.status}`);
-      html = await res.text();
+      return res.text();
+    }
+
+    let html = "";
+    const attempts: string[] = [];
+    try {
+      html = await tryFetch(meta.url);
     } catch (e) {
-      throw new Error(
-        `Failed to fetch daily study (${data.feature}): ${(e as Error).message}`,
-      );
+      attempts.push(`direct: ${(e as Error).message}`);
+      // Fallback to Jina reader proxy, which returns readable text/HTML.
+      try {
+        html = await tryFetch(`https://r.jina.ai/${meta.url}`);
+      } catch (e2) {
+        attempts.push(`r.jina.ai: ${(e2 as Error).message}`);
+        throw new Error(
+          `Failed to fetch daily study (${data.feature}) — ${attempts.join("; ")}`,
+        );
+      }
     }
 
     const { title: rawTitle, text } = htmlToText(html);
