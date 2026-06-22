@@ -120,7 +120,54 @@ function AdminPage() {
           </button>
         </div>
 
-        <div className="scholar-card p-5">
+        <div className="scholar-card p-5 mb-6">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <Library className="h-4 w-4 text-primary" />
+            {lang === "he" ? "סריקת ChabadLibrary" : "Crawl ChabadLibrary"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "סריקת BFS מהשורשים שנבחרו דרך ה-API הציבורי. הרץ שוב כדי להמשיך — דפים שכבר קיימים יידלגו."
+              : "Breadth-first crawl from selected roots via the public API. Re-run to continue — already-ingested pages are skipped."}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+            {CHABAD_ROOT_IDS.map((r) => (
+              <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRoots.includes(r.id)}
+                  onChange={() => toggleRoot(r.id)}
+                  className="accent-primary"
+                />
+                <span>
+                  {lang === "he" ? r.label_he : r.label_en}
+                  <span className="text-xs text-muted-foreground ml-1">({r.id})</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 mb-3 text-sm">
+            <label className="flex items-center gap-2">
+              {lang === "he" ? "מקס׳ דפים לקריאה:" : "Max pages per run:"}
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={maxPages}
+                onChange={(e) => setMaxPages(Math.max(1, Math.min(120, Number(e.target.value) || 40)))}
+                className="w-20 bg-background/40 border border-border rounded-md px-2 h-9"
+              />
+            </label>
+          </div>
+          <button
+            onClick={() => crawlM.mutate()}
+            disabled={crawlM.isPending || selectedRoots.length === 0}
+            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+          >
+            {crawlM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {lang === "he" ? "התחל סריקה" : "Start crawl"}
+          </button>
+        </div>
           <h2 className="font-medium mb-3 flex items-center gap-2"><Upload className="h-4 w-4 text-primary" />{t.adminIngest}</h2>
           <textarea
             value={json}
