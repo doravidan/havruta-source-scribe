@@ -1,20 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLang } from "@/lib/lang-context";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSource } from "@/lib/get-source.functions";
-import { X, Copy, Check, Minus, Plus, Search } from "lucide-react";
+import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2 } from "lucide-react";
 
 type Props = { sourceId: string | null; onClose: () => void };
 
 export function SourceReader({ sourceId, onClose }: Props) {
   const { lang, t, dir } = useLang();
+  const { session } = useAuth();
+  const qc = useQueryClient();
   const fn = useServerFn(getSource);
+  const studiedFn = useServerFn(isSourceStudied);
+  const toggleFn = useServerFn(toggleSourceStudied);
   const open = !!sourceId;
   const { data, isLoading } = useQuery({
     queryKey: ["source", sourceId],
     queryFn: () => fn({ data: { id: sourceId! } }),
     enabled: open,
+  });
+
+  const studiedQuery = useQuery({
+    queryKey: ["studied", sourceId, session?.user?.id],
+    queryFn: () => studiedFn({ data: { sourceId: sourceId! } }),
+    enabled: open && !!session && !!sourceId,
+  });
+
+  const toggleStudied = useMutation({
+    mutationFn: () => toggleFn({ data: { sourceId: sourceId! } }),
+    onSuccess: (res) => {
+      qc.setQueryData(["studied", sourceId, session?.user?.id], res);
+      qc.invalidateQueries({ queryKey: ["study-summary"] });
+    },
   });
 
   const [fontStep, setFontStep] = useState<number>(() => {
@@ -147,6 +167,29 @@ export function SourceReader({ sourceId, onClose }: Props) {
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? t.readerCopied : t.readerCopy}
           </button>
+          {session && (
+            <button
+              onClick={() => toggleStudied.mutate()}
+              disabled={toggleStudied.isPending || studiedQuery.isLoading}
+              className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                studiedQuery.data?.studied
+                  ? "bg-[var(--sage)] text-white border border-[var(--sage)] hover:opacity-95"
+                  : "border border-[var(--saffron)] text-[var(--indigo-deep)] bg-[color:var(--saffron-soft)] hover:bg-[color:var(--saffron)] hover:text-white"
+              } disabled:opacity-60`}
+              aria-pressed={!!studiedQuery.data?.studied}
+            >
+              {toggleStudied.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : studiedQuery.data?.studied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <BookCheck className="h-4 w-4" />
+              )}
+              {studiedQuery.data?.studied
+                ? lang === "he" ? "נלמד" : "Studied"
+                : lang === "he" ? "סמן כנלמד" : "Mark studied"}
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-8">
