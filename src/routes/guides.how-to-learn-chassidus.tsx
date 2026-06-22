@@ -6,14 +6,33 @@ import { BookOpen, GraduationCap, Library, Search, Users } from "lucide-react";
 export const Route = createFileRoute("/guides/how-to-learn-chassidus")({
   head: () => ({
     meta: [
-      { title: "How to Learn Chassidus: A Step-by-Step Guide — Havruta Chabad" },
-      { name: "description", content: "A practical, step-by-step guide on how to learn Chassidus. Start with Tanya, progress to Maamarim and Sichos, use the Yiddish helper and source library, and build a sustainable Chassidus learning path." },
-      { property: "og:title", content: "How to Learn Chassidus: A Step-by-Step Guide — Havruta Chabad" },
-      { property: "og:description", content: "A practical, step-by-step guide on how to learn Chassidus. Start with Tanya, progress to Maamarim and Sichos, use the Yiddish helper and source library, and build a sustainable Chassidus learning path." },
+      { title: "How to Learn Chassidus — Step-by-Step Guide" },
+      { name: "description", content: "A practical, step-by-step guide to learning Chassidus: start with Tanya, progress to Maamarim and Sichos, and build a steady chavruta practice." },
+      { property: "og:title", content: "How to Learn Chassidus — Step-by-Step Guide" },
+      { property: "og:description", content: "A practical, step-by-step guide to learning Chassidus: start with Tanya, progress to Maamarim and Sichos, and build a steady chavruta practice." },
       { property: "og:url", content: "https://havruta-source-scribe.lovable.app/guides/how-to-learn-chassidus" },
       { property: "og:type", content: "article" },
     ],
     links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/guides/how-to-learn-chassidus" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "HowTo",
+          name: "How to Learn Chassidus",
+          description: "A step-by-step guide to learning Chassidus, starting with Tanya and progressing through Maamarim, Sichos, and chavruta-based study.",
+          totalTime: "P6M",
+          step: [
+            { "@type": "HowToStep", position: 1, name: "Begin with Tanya", text: "Read one chapter of Tanya a day to learn the core vocabulary and framework of Chassidus." },
+            { "@type": "HowToStep", position: 2, name: "Add Likkutei Amarim and Igeret HaTeshuvah", text: "Continue through Likkutei Amarim and Igeret HaTeshuvah to learn the practical transformation of character." },
+            { "@type": "HowToStep", position: 3, name: "Progress to Maamarim", text: "Study foundational Maamarim such as V'atah Tetzaveh and Basi Legani slowly and repeatedly." },
+            { "@type": "HowToStep", position: 4, name: "Layer in Sichos and Igrot Kodesh", text: "Apply Chassidus to daily life through Sichos and the Rebbe's letters." },
+            { "@type": "HowToStep", position: 5, name: "Find a chavruta and set a schedule", text: "Use a chavruta partner and a fixed daily time to make learning sustainable." },
+          ],
+        }),
+      },
+    ],
   }),
   component: HowToLearnChassidusPage,
 });
