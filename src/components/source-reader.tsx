@@ -4,8 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
+import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2 } from "lucide-react";
+import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles } from "lucide-react";
 
 type Props = { sourceId: string | null; onClose: () => void };
 
