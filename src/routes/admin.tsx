@@ -137,6 +137,54 @@ function AdminPage() {
           </p>
         )}
 
+        <div className="scholar-card p-5 mb-6 border-primary/40">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-primary" />
+            {lang === "he" ? "סריקה מלאה (רקע)" : "Full background crawl"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "מוסיף את כל 8 הכרכים לתור עיבוד ברקע. עבודה אוטומטית כל דקה עד שהתור ריק — הליך זה יכול לקחת שעות/ימים."
+              : "Queues all 8 root volumes for background processing. A cron job ticks every minute until the queue is empty — this may take hours or days."}
+          </p>
+          {queueStats && (
+            <div className="flex flex-wrap gap-3 mb-3 text-sm">
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "ממתינים" : "Pending"}: <b className="tabular-nums">{queueStats.counts.pending ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "בעיבוד" : "Processing"}: <b className="tabular-nums">{queueStats.counts.processing ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "הושלמו" : "Done"}: <b className="tabular-nums">{queueStats.counts.done ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "נכשלו" : "Failed"}: <b className="tabular-nums">{queueStats.counts.failed ?? 0}</b>
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => startFullM.mutate()}
+              disabled={startFullM.isPending}
+              className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {startFullM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "התחל סריקה מלאה" : "Start full crawl"}
+            </button>
+            <button
+              onClick={() => retryFailedM.mutate()}
+              disabled={retryFailedM.isPending || (queueStats?.counts.failed ?? 0) === 0}
+              className="px-4 h-11 rounded-md border border-border font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {retryFailedM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "נסה כשלים שוב" : "Retry failed"}
+            </button>
+          </div>
+        </div>
+
+
+
         <div className="scholar-card p-5 mb-6">
           <h2 className="font-medium mb-2 flex items-center gap-2"><Sprout className="h-4 w-4 text-primary" />{t.adminSeed}</h2>
           <p className="text-sm text-muted-foreground mb-3">
