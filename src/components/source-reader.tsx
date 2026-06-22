@@ -8,6 +8,7 @@ import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles, Play, Pause, Square } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
+import { parseSefariaText } from "@/lib/sefaria-text";
 
 type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
@@ -87,56 +88,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
 
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    const text = decodeEntities(data.text ?? "");
-    const needleTrim = needle.trim();
-    const re = needleTrim ? new RegExp(escapeReg(needleTrim), "gi") : null;
-    let count = 0;
-
-    const highlight = (s: string) => {
-      const esc = escapeHtml(s);
-      if (!re) return esc;
-      return esc.replace(re, (m) => {
-        count++;
-        return `<mark class="rounded px-0.5" style="background:oklch(0.80 0.13 80 / 0.35);color:inherit">${m}</mark>`;
-      });
-    };
-
-    // Lightweight, safe markdown-ish rendering for headers and rules:
-    //   "# X"   → big section header
-    //   "## X"  → chapter header
-    //   "### X" → subheader
-    //   "---"   → horizontal rule
-    const lines = text.split("\n");
-    const parts: string[] = [];
-    for (const raw of lines) {
-      const line = raw;
-      if (/^---+\s*$/.test(line)) {
-        parts.push('<hr class="my-4 border-[var(--saffron)]/30" />');
-        continue;
-      }
-      let m: RegExpMatchArray | null;
-      if ((m = line.match(/^#\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-5 mb-2 text-[1.25em] font-bold text-[var(--indigo-deep)]">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      if ((m = line.match(/^##\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-4 mb-2 text-[1.1em] font-semibold text-[var(--indigo-deep)] border-b border-[var(--saffron)]/40 pb-1">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      if ((m = line.match(/^###\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-3 mb-1 text-[0.95em] font-semibold text-[var(--saffron)] uppercase tracking-wide">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      parts.push(highlight(line));
-    }
-    return { html: parts.join("\n"), matchCount: count };
+    return parseSefariaText(data.text ?? "", { highlight: needle });
   }, [data, needle]);
+
 
   if (!open) return null;
 
@@ -382,32 +336,4 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
       </div>
     </div>
   );
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
-}
-function escapeReg(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-const NAMED_ENTITIES: Record<string, string> = {
-  nbsp: "\u00A0", thinsp: "\u2009", ensp: "\u2002", emsp: "\u2003",
-  hairsp: "\u200A", zwj: "\u200D", zwnj: "\u200C", lrm: "\u200E", rlm: "\u200F",
-  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
-  ldquo: "\u201C", rdquo: "\u201D", lsquo: "\u2018", rsquo: "\u2019",
-  hellip: "\u2026", ndash: "\u2013", mdash: "\u2014", middot: "\u00B7",
-};
-
-function decodeEntities(s: string): string {
-  return s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, body) => {
-    if (body[0] === "#") {
-      const code = body[1] === "x" || body[1] === "X"
-        ? parseInt(body.slice(2), 16)
-        : parseInt(body.slice(1), 10);
-      if (Number.isFinite(code)) {
-        try { return String.fromCodePoint(code); } catch { return m; }
-      }
-      return m;
-    }
-    return NAMED_ENTITIES[body] ?? m;
-  });
 }
