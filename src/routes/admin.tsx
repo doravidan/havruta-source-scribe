@@ -452,7 +452,7 @@ function AdminPage() {
           </button>
         </div>
 
-
+        <div className="scholar-card p-5">
           <h2 className="font-medium mb-3 flex items-center gap-2"><Upload className="h-4 w-4 text-primary" />{t.adminIngest}</h2>
           <textarea
             value={json}
