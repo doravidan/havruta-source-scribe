@@ -12,6 +12,7 @@ export function SearchPanel() {
   const { lang, t } = useLang();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openSummarize, setOpenSummarize] = useState(false);
   const fn = useServerFn(searchSources);
   const m = useMutation({
     mutationFn: (query: string) => fn({ data: { query, lang, limit: 12 } }) as Promise<SearchResult>,
