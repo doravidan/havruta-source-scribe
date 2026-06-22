@@ -28,7 +28,7 @@ const YIDDISH: Record<string, { he: string; en: string }> = {
 };
 
 export function YiddishHelper() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [w, setW] = useState("");
   const hit = YIDDISH[w.trim()];
   return (
@@ -58,27 +58,3 @@ export function YiddishHelper() {
   );
 }
 
-export function RashiHelper() {
-  const { t, lang } = useLang();
-  return (
-    <div className="scholar-card scholar-card-hover p-5 sm:p-6 relative overflow-hidden h-full">
-      <div aria-hidden className="absolute -top-10 -left-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(192,57,43,0.18), transparent 70%)" }} />
-      <h3 className="eyebrow mb-1 flex items-center gap-2">
-        <span className="inline-block h-2 w-2 rounded-full bg-[var(--indigo-deep)]" />
-        {t.rashiHelper}
-      </h3>
-      <p className="text-xs text-muted-foreground mb-4">{t.rashiSubtitle}</p>
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-        {RASHI.map(([std, rashi]) => (
-          <div key={std} className="flex flex-col items-center gap-1 p-2 rounded-md border border-border/60">
-            <div className="text-2xl" style={{ fontFamily: "var(--font-serif-he)" }}>{std}</div>
-            <div className="text-xl text-primary/90" style={{ fontFamily: "serif" }}>{rashi}</div>
-            <div className="text-[10px] text-muted-foreground">
-              {RASHI_NAMES[std]?.[lang]}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
