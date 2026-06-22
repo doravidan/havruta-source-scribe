@@ -83,6 +83,173 @@ export type Database = {
         }
         Relationships: []
       }
+      chavruta_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_havruta_available: boolean
+          note: string | null
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_havruta_available?: boolean
+          note?: string | null
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_havruta_available?: boolean
+          note?: string | null
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chavruta_contact_info: {
+        Row: {
+          created_at: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          phone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chavruta_matches: {
+        Row: {
+          created_at: string
+          id: string
+          overlap_day: number | null
+          overlap_end: string | null
+          overlap_start: string | null
+          requester_accepted: boolean
+          requester_id: string
+          status: string
+          suggested_accepted: boolean
+          suggested_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          overlap_day?: number | null
+          overlap_end?: string | null
+          overlap_start?: string | null
+          requester_accepted?: boolean
+          requester_id: string
+          status?: string
+          suggested_accepted?: boolean
+          suggested_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          overlap_day?: number | null
+          overlap_end?: string | null
+          overlap_start?: string | null
+          requester_accepted?: boolean
+          requester_id?: string
+          status?: string
+          suggested_accepted?: boolean
+          suggested_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chavruta_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          match_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          match_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chavruta_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chavruta_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_name: string
+          is_active: boolean
+          learning_level: string
+          preferred_lang: string
+          topics: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          is_active?: boolean
+          learning_level?: string
+          preferred_lang?: string
+          topics?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          is_active?: boolean
+          learning_level?: string
+          preferred_lang?: string
+          topics?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -377,6 +544,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_chavruta_match: {
+        Args: { _match_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          overlap_day: number | null
+          overlap_end: string | null
+          overlap_start: string | null
+          requester_accepted: boolean
+          requester_id: string
+          status: string
+          suggested_accepted: boolean
+          suggested_user_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chavruta_matches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       claim_chabad_crawl_batch: {
         Args: { batch_size: number }
         Returns: {
@@ -403,6 +592,14 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_chavruta_match_contact: {
+        Args: { _match_id: string }
+        Returns: {
+          display_name: string
+          phone: string
+          user_id: string
+        }[]
       }
       has_role: {
         Args: {
@@ -438,6 +635,15 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      propose_chavruta_match: {
+        Args: {
+          _day: number
+          _end: string
+          _start: string
+          _target_user_id: string
+        }
+        Returns: string
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
