@@ -129,6 +129,86 @@ function AdminPage() {
 
         <div className="scholar-card p-5 mb-6">
           <h2 className="font-medium mb-2 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            {lang === "he" ? "כיסוי מאגר הידע" : "Knowledge base coverage"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "אומדן דפים לעומת מה שנקלט והוטמע, לכל שורש. אומדן הדפים מבוסס על סריקת BFS רדודה ב-API."
+              : "Estimated pages vs ingested vs embedded, per root. The page estimate uses a shallow BFS of the public API."}
+          </p>
+          <div className="flex items-center gap-3 mb-3 text-sm">
+            <label className="flex items-center gap-2">
+              {lang === "he" ? "עומק אומדן:" : "Estimate depth:"}
+              <select
+                value={coverageDepth}
+                onChange={(e) => setCoverageDepth(Number(e.target.value))}
+                className="bg-background/40 border border-border rounded-md px-2 h-9"
+              >
+                <option value={1}>1 ({lang === "he" ? "מקטעים עליונים" : "top sections"})</option>
+                <option value={2}>2 ({lang === "he" ? "אומדן עמוק יותר" : "deeper estimate"})</option>
+                <option value={3}>3 ({lang === "he" ? "איטי" : "slow"})</option>
+              </select>
+            </label>
+            <button
+              onClick={() => coverageM.mutate(coverageDepth)}
+              disabled={coverageM.isPending}
+              className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {coverageM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "חשב כיסוי" : "Compute coverage"}
+            </button>
+          </div>
+          {coverageM.data && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="text-start py-2 pe-3">{lang === "he" ? "שורש" : "Root"}</th>
+                    <th className="text-end py-2 pe-3">{lang === "he" ? "אומדן" : "Est. pages"}</th>
+                    <th className="text-end py-2 pe-3">{lang === "he" ? "נקלטו" : "Ingested"}</th>
+                    <th className="text-end py-2 pe-3">{lang === "he" ? "כיסוי" : "Coverage"}</th>
+                    <th className="text-end py-2 pe-3">{lang === "he" ? "מקטעים" : "Chunks"}</th>
+                    <th className="text-end py-2 pe-3">{lang === "he" ? "הוטמעו" : "Embedded"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coverageM.data.rows.map((r: any) => (
+                    <tr key={r.id} className="border-b border-border/40">
+                      <td className="py-2 pe-3">
+                        {lang === "he" ? r.label_he : r.label_en}
+                      </td>
+                      <td className="text-end py-2 pe-3 tabular-nums">
+                        {r.estimatedPages.toLocaleString()}
+                        {r.estimateTruncated && <span className="text-muted-foreground">+</span>}
+                      </td>
+                      <td className="text-end py-2 pe-3 tabular-nums">{r.ingestedSources.toLocaleString()}</td>
+                      <td className="text-end py-2 pe-3 tabular-nums">
+                        {r.coveragePct != null ? `${r.coveragePct}%` : "—"}
+                      </td>
+                      <td className="text-end py-2 pe-3 tabular-nums">{r.totalChunks.toLocaleString()}</td>
+                      <td className="text-end py-2 pe-3 tabular-nums">
+                        {r.embeddedChunks.toLocaleString()}
+                        {r.embeddedPct != null && (
+                          <span className="text-muted-foreground"> ({r.embeddedPct}%)</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs text-muted-foreground mt-2">
+                {lang === "he"
+                  ? "אומדן מסומן ב-+ נקטע על-ידי מגבלת קריאות; הרץ שוב עם עומק גבוה יותר לדיוק."
+                  : "Estimates marked with + were truncated by the fetch cap; re-run with a higher depth for accuracy."}
+              </p>
+            </div>
+          )}
+        </div>
+
+
+        <div className="scholar-card p-5 mb-6">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
             <Library className="h-4 w-4 text-primary" />
             {lang === "he" ? "סריקת ChabadLibrary" : "Crawl ChabadLibrary"}
           </h2>
