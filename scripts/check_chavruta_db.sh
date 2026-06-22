@@ -88,7 +88,7 @@ hdr "6. RPCs exist & are SECURITY DEFINER"
 for fn in "${RPCS[@]}"; do
   row=$(q "select count(*)||':'||coalesce(bool_or(prosecdef)::text,'f') from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='$fn';")
   cnt="${row%%:*}"; sd="${row##*:}"
-  if [[ "$cnt" -ge 1 && "$sd" == "t" ]]; then
+  if [[ "$cnt" -ge 1 && ( "$sd" == "t" || "$sd" == "true" ) ]]; then
     ok "$fn exists and is SECURITY DEFINER"
   elif [[ "$cnt" -ge 1 ]]; then
     bad "$fn exists but is NOT SECURITY DEFINER"
