@@ -13,7 +13,11 @@ export const Route = createFileRoute("/library")({
     meta: [
       { title: "Library — Havruta Chabad" },
       { name: "description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
+      { property: "og:title", content: "Library — Havruta Chabad" },
+      { property: "og:description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
+      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/library" },
     ],
+    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/library" }],
   }),
   component: LibraryPage,
 });
