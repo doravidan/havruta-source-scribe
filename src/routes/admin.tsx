@@ -12,7 +12,8 @@ import { chabadCoverage } from "@/lib/chabad-coverage.functions";
 import { startFullCrawl, retryFailedCrawl, crawlQueueStats } from "@/lib/chabad-crawl-queue.functions";
 import { ingestSefariaSlice, listSefariaSlices } from "@/lib/sefaria-ingest.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
