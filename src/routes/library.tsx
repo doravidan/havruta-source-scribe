@@ -18,6 +18,21 @@ export const Route = createFileRoute("/library")({
       { property: "og:url", content: "https://havruta-source-scribe.lovable.app/library" },
     ],
     links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/library" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Havruta Chabad Source Library",
+          description: "A browsable collection of the Chabad Chassidus corpus, organized by section: Tanya, Maamarim, Sichos, Igrot Kodesh, and more.",
+          url: "https://havruta-source-scribe.lovable.app/library",
+          inLanguage: ["he", "yi", "en"],
+          about: { "@type": "Thing", name: "Chabad Chassidus" },
+          isPartOf: { "@type": "WebSite", name: "Havruta Chabad", url: "https://havruta-source-scribe.lovable.app" },
+        }),
+      },
+    ],
   }),
   component: LibraryPage,
 });
