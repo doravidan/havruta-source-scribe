@@ -92,15 +92,35 @@ export function AskPanel() {
               </h3>
               <div className="grid sm:grid-cols-2 gap-3">
                 {m.data.sources.map((s) => (
-                  <button
+                  <div
                     key={s.id}
-                    onClick={() => setOpenSourceId(s.id)}
-                    className="text-start rounded-lg border border-border/70 bg-card/40 hover:bg-card hover:border-primary/40 p-4 transition-colors"
+                    className="text-start rounded-lg border border-border/70 bg-card/40 hover:bg-card hover:border-primary/40 p-4 transition-colors flex flex-col"
                   >
-                    {s.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{s.tree}</div>}
-                    <div className="font-medium mb-2">{s.title}</div>
-                    <div className="text-sm text-muted-foreground line-clamp-3">{s.excerpt}</div>
-                  </button>
+                    <button onClick={() => setOpenSourceId(s.id)} className="text-start flex-1">
+                      {s.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{s.tree}</div>}
+                      <div className="font-medium mb-2">{s.title}</div>
+                      <div className="text-sm text-muted-foreground line-clamp-3">{s.excerpt}</div>
+                    </button>
+                    <div className="mt-3 flex items-center gap-2 text-xs">
+                      <button
+                        onClick={() => setOpenSourceId(s.id)}
+                        className="px-2 py-1 rounded border border-[var(--saffron)]/50 text-[var(--indigo-deep)] bg-[color:var(--saffron-soft,transparent)] hover:bg-[var(--saffron)] hover:text-white transition-colors"
+                      >
+                        ✦ {t.cardSummary}
+                      </button>
+                      {(s as any).source_url && (
+                        <a
+                          href={(s as any).source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 rounded border border-border hover:bg-secondary inline-flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ↗ {t.cardOpenOriginal}
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
