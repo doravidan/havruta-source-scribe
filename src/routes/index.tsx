@@ -50,6 +50,10 @@ function Index() {
               </motion.div>
 
               <motion.div custom={2} initial="hidden" animate="show" variants={tile} className="md:col-span-3">
+                <DailyStudyPanel />
+              </motion.div>
+
+              <motion.div custom={3} initial="hidden" animate="show" variants={tile} className="md:col-span-3">
                 <SearchPanel />
               </motion.div>
             </div>
