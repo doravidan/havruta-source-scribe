@@ -87,7 +87,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
 
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    const text = data.text ?? "";
+    const text = decodeEntities(data.text ?? "");
     const needleTrim = needle.trim();
     const re = needleTrim ? new RegExp(escapeReg(needleTrim), "gi") : null;
     let count = 0;
