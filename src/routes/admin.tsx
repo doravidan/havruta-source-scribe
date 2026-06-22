@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,8 @@ import { chabadCoverage } from "@/lib/chabad-coverage.functions";
 import { startFullCrawl, retryFailedCrawl, crawlQueueStats } from "@/lib/chabad-crawl-queue.functions";
 import { ingestSefariaSlice, listSefariaSlices } from "@/lib/sefaria-ingest.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
@@ -76,28 +77,90 @@ function AdminPage() {
   const [sefariaSlice, setSefariaSlice] = useState<string>("tehillim");
   const [sefariaStart, setSefariaStart] = useState<number>(1);
   const [sefariaMax, setSefariaMax] = useState<number>(20);
-  const sefariaM = useMutation({
-    mutationFn: () =>
-      ingestSefariaFn({
-        data: {
-          sliceKey: sefariaSlice,
-          startChapter: sefariaStart,
-          maxChapters: sefariaMax,
-          language: "he",
-          embed: true,
-        },
-      }),
-    onSuccess: (r) => {
-      setResultMsg(
-        `Sefaria ${r.slice}: chapters ${r.processedRange[0]}–${r.processedRange[1]} of ${r.totalChapters} · new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, failures ${r.failures}.${
-          r.nextChapter ? ` Next: chapter ${r.nextChapter}.` : " ✓ slice complete."
-        }`,
-      );
-      if (r.nextChapter) setSefariaStart(r.nextChapter);
-      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
-    },
-    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
-  });
+  // Live progress state for the chapter-by-chapter run.
+  type SefProgress = {
+    running: boolean;
+    total: number;          // chapters planned this run
+    done: number;           // chapters attempted
+    currentChapter: number | null;
+    savedNew: number;
+    savedUpdated: number;
+    skippedUnchanged: number;
+    chunks: number;
+    embedded: number;
+    failures: number;
+    lastError?: string | null;
+    sliceTotal?: number;
+    nextChapter?: number | null;
+  };
+  const emptyProgress: SefProgress = {
+    running: false, total: 0, done: 0, currentChapter: null,
+    savedNew: 0, savedUpdated: 0, skippedUnchanged: 0,
+    chunks: 0, embedded: 0, failures: 0, lastError: null,
+  };
+  const [sefProgress, setSefProgress] = useState<SefProgress>(emptyProgress);
+  const cancelRef = useRef(false);
+
+  async function runSefariaIngest() {
+    cancelRef.current = false;
+    const slice = (slices ?? []).find((s) => s.key === sefariaSlice);
+    const sliceTotal = slice?.chapters ?? 0;
+    const start = sefariaStart;
+    const end = sliceTotal ? Math.min(sliceTotal, start + sefariaMax - 1) : start + sefariaMax - 1;
+    const total = Math.max(0, end - start + 1);
+
+    setSefProgress({ ...emptyProgress, running: true, total, currentChapter: start, sliceTotal });
+    setResultMsg(null);
+
+    let cursor = start;
+    let lastNext: number | null = null;
+    while (cursor <= end) {
+      if (cancelRef.current) break;
+      setSefProgress((p) => ({ ...p, currentChapter: cursor }));
+      try {
+        const r = await ingestSefariaFn({
+          data: {
+            sliceKey: sefariaSlice,
+            startChapter: cursor,
+            maxChapters: 1,
+            language: "he",
+            embed: true,
+          },
+        });
+        lastNext = r.nextChapter;
+        setSefProgress((p) => ({
+          ...p,
+          done: p.done + 1,
+          savedNew: p.savedNew + r.savedNew,
+          savedUpdated: p.savedUpdated + r.savedUpdated,
+          skippedUnchanged: p.skippedUnchanged + r.skippedUnchanged,
+          chunks: p.chunks + r.chunks,
+          embedded: p.embedded + r.embedded,
+          failures: p.failures + r.failures,
+          lastError: r.errors?.[0] ?? p.lastError ?? null,
+          nextChapter: r.nextChapter,
+        }));
+        if (r.nextChapter) setSefariaStart(r.nextChapter);
+      } catch (e: any) {
+        setSefProgress((p) => ({
+          ...p,
+          done: p.done + 1,
+          failures: p.failures + 1,
+          lastError: e?.message ?? String(e),
+        }));
+      }
+      cursor++;
+    }
+
+    setSefProgress((p) => ({ ...p, running: false, currentChapter: null }));
+    qc.invalidateQueries({ queryKey: ["corpus-stats"] });
+    setResultMsg(
+      cancelRef.current
+        ? `Sefaria ingest canceled. Next: chapter ${lastNext ?? cursor}.`
+        : `Sefaria ${sefariaSlice}: done. ${lastNext ? `Next: chapter ${lastNext}.` : "✓ slice complete."}`,
+    );
+  }
+
 
   const parsed = useMemo(() => {
     if (!json.trim()) return null;
@@ -442,14 +505,59 @@ function AdminPage() {
               />
             </label>
           </div>
-          <button
-            onClick={() => sefariaM.mutate()}
-            disabled={sefariaM.isPending}
-            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
-          >
-            {sefariaM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {lang === "he" ? "ייבא פלח" : "Ingest slice"}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => runSefariaIngest()}
+              disabled={sefProgress.running}
+              className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {sefProgress.running && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "ייבא פלח" : "Ingest slice"}
+            </button>
+            {sefProgress.running && (
+              <button
+                onClick={() => { cancelRef.current = true; }}
+                className="px-3 h-11 rounded-md border border-border text-sm inline-flex items-center gap-1 hover:bg-background/40"
+              >
+                <X className="h-4 w-4" />
+                {lang === "he" ? "בטל" : "Cancel"}
+              </button>
+            )}
+          </div>
+
+          {(sefProgress.running || sefProgress.done > 0) && (
+            <div className="mt-4 rounded-md border border-border bg-background/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {lang === "he" ? "התקדמות" : "Progress"}: {sefProgress.done}/{sefProgress.total}
+                  {sefProgress.currentChapter !== null && (
+                    <> · {lang === "he" ? "פרק" : "ch."} {sefProgress.currentChapter}</>
+                  )}
+                  {sefProgress.sliceTotal ? <> · {lang === "he" ? "סה״כ בפלח" : "slice total"} {sefProgress.sliceTotal}</> : null}
+                </span>
+                <span>{sefProgress.total > 0 ? Math.round((sefProgress.done / sefProgress.total) * 100) : 0}%</span>
+              </div>
+              <Progress value={sefProgress.total > 0 ? (sefProgress.done / sefProgress.total) * 100 : 0} />
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs pt-1">
+                <Stat label={lang === "he" ? "חדשים" : "New"} value={sefProgress.savedNew} tone="ok" />
+                <Stat label={lang === "he" ? "עודכנו" : "Updated"} value={sefProgress.savedUpdated} tone="ok" />
+                <Stat label={lang === "he" ? "ללא שינוי" : "Unchanged"} value={sefProgress.skippedUnchanged} />
+                <Stat label={lang === "he" ? "מקטעים" : "Chunks"} value={sefProgress.chunks} />
+                <Stat label={lang === "he" ? "וקטורים" : "Embedded"} value={sefProgress.embedded} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Stat label={lang === "he" ? "כשלים" : "Failures"} value={sefProgress.failures} tone={sefProgress.failures > 0 ? "err" : undefined} />
+                {sefProgress.nextChapter ? (
+                  <Stat label={lang === "he" ? "הבא" : "Next"} value={sefProgress.nextChapter} />
+                ) : null}
+              </div>
+              {sefProgress.lastError && (
+                <p className="text-xs text-destructive truncate" title={sefProgress.lastError}>
+                  {lang === "he" ? "שגיאה אחרונה" : "Last error"}: {sefProgress.lastError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="scholar-card p-5">
@@ -480,6 +588,16 @@ function AdminPage() {
           <div className="mt-5 p-4 rounded-md border border-primary/40 bg-primary/5 text-sm">{resultMsg}</div>
         )}
       </main>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok" | "err" }) {
+  const color = tone === "ok" ? "text-emerald-500" : tone === "err" ? "text-destructive" : "text-foreground";
+  return (
+    <div className="rounded-md border border-border bg-background/40 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-sm font-semibold tabular-nums ${color}`}>{value}</div>
     </div>
   );
 }
