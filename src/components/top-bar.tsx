@@ -44,6 +44,13 @@ export function TopBar() {
         </div>
 
         <div className="ms-auto flex items-center gap-2">
+          <Link
+            to="/library"
+            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
+          >
+            <Library className="h-4 w-4" />
+            <span className="hidden sm:inline">{t.langToggle === "EN" ? "ספרייה" : "Library"}</span>
+          </Link>
           <button
             onClick={toggle}
             className="inline-flex items-center gap-1.5 px-3 h-10 min-w-11 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
