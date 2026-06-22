@@ -9,8 +9,9 @@ import { crawlChabadLibrary } from "@/lib/chabad-ingest.functions";
 import { CHABAD_ROOT_IDS } from "@/lib/chabad-clean";
 import { corpusStats } from "@/lib/corpus.functions";
 import { chabadCoverage } from "@/lib/chabad-coverage.functions";
+import { startFullCrawl, retryFailedCrawl, crawlQueueStats } from "@/lib/chabad-crawl-queue.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload, Library, BarChart3 } from "lucide-react";
+import { Loader2, Sprout, Upload, Library, BarChart3, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
@@ -36,10 +37,34 @@ function AdminPage() {
   const crawlFn = useServerFn(crawlChabadLibrary);
   const statsFn = useServerFn(corpusStats);
   const coverageFn = useServerFn(chabadCoverage);
-  const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn() });
+  const startFullFn = useServerFn(startFullCrawl);
+  const retryFailedFn = useServerFn(retryFailedCrawl);
+  const queueStatsFn = useServerFn(crawlQueueStats);
+  const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn(), refetchInterval: 15000 });
+  const { data: queueStats } = useQuery({
+    queryKey: ["crawl-queue-stats"],
+    queryFn: () => queueStatsFn(),
+    refetchInterval: 10000,
+  });
   const [coverageDepth, setCoverageDepth] = useState(2);
   const coverageM = useMutation({
     mutationFn: (depth: number) => coverageFn({ data: { depth, maxFetchesPerRoot: 60 } }),
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+  const startFullM = useMutation({
+    mutationFn: () => startFullFn(),
+    onSuccess: (r) => {
+      setResultMsg(`Full crawl queued: ${r.enqueued} root volumes. Cron will process the queue automatically.`);
+      qc.invalidateQueries({ queryKey: ["crawl-queue-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+  const retryFailedM = useMutation({
+    mutationFn: () => retryFailedFn(),
+    onSuccess: (r) => {
+      setResultMsg(`Reset ${r.retried} failed items to pending.`);
+      qc.invalidateQueries({ queryKey: ["crawl-queue-stats"] });
+    },
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
 
@@ -111,6 +136,54 @@ function AdminPage() {
             {stats.sources} {t.statusSources} · {stats.chunks} {t.statusChunks} · {stats.chars.toLocaleString()} {t.statusChars}
           </p>
         )}
+
+        <div className="scholar-card p-5 mb-6 border-primary/40">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-primary" />
+            {lang === "he" ? "סריקה מלאה (רקע)" : "Full background crawl"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "מוסיף את כל 8 הכרכים לתור עיבוד ברקע. עבודה אוטומטית כל דקה עד שהתור ריק — הליך זה יכול לקחת שעות/ימים."
+              : "Queues all 8 root volumes for background processing. A cron job ticks every minute until the queue is empty — this may take hours or days."}
+          </p>
+          {queueStats && (
+            <div className="flex flex-wrap gap-3 mb-3 text-sm">
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "ממתינים" : "Pending"}: <b className="tabular-nums">{queueStats.counts.pending ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "בעיבוד" : "Processing"}: <b className="tabular-nums">{queueStats.counts.processing ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "הושלמו" : "Done"}: <b className="tabular-nums">{queueStats.counts.done ?? 0}</b>
+              </span>
+              <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "נכשלו" : "Failed"}: <b className="tabular-nums">{queueStats.counts.failed ?? 0}</b>
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => startFullM.mutate()}
+              disabled={startFullM.isPending}
+              className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {startFullM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "התחל סריקה מלאה" : "Start full crawl"}
+            </button>
+            <button
+              onClick={() => retryFailedM.mutate()}
+              disabled={retryFailedM.isPending || (queueStats?.counts.failed ?? 0) === 0}
+              className="px-4 h-11 rounded-md border border-border font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {retryFailedM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "נסה כשלים שוב" : "Retry failed"}
+            </button>
+          </div>
+        </div>
+
+
 
         <div className="scholar-card p-5 mb-6">
           <h2 className="font-medium mb-2 flex items-center gap-2"><Sprout className="h-4 w-4 text-primary" />{t.adminSeed}</h2>
