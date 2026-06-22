@@ -70,12 +70,41 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "חסידותא · Chassiduta — חברותא לחסידות" },
       { name: "description", content: "חסידותא — חברותא לחסידות, בכל זמן ובכל מקום. לימוד מקורות חסידות חב״ד, חיפוש, שאלות ותשובות מבוססות מקור." },
       { name: "theme-color", content: "#0a1426" },
-      { property: "og:title", content: "חסידותא · Chassiduta" },
-      { property: "og:description", content: "חברותא לחסידות, בכל זמן ובכל מקום." },
+      { property: "og:site_name", content: "חסידותא · Chassiduta" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "Havruta Chabad",
+              alternateName: "חסידותא · Chassiduta",
+              url: "https://havruta-source-scribe.lovable.app",
+            },
+            {
+              "@type": "WebSite",
+              name: "חסידותא · Chassiduta",
+              url: "https://havruta-source-scribe.lovable.app",
+              inLanguage: ["he", "en", "yi"],
+            },
+            {
+              "@type": "SoftwareApplication",
+              name: "Havruta Chabad",
+              applicationCategory: "EducationApplication",
+              operatingSystem: "Web",
+              url: "https://havruta-source-scribe.lovable.app",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -19,6 +20,11 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksChabadCrawlTickRouteImport } from './routes/api/public/hooks/chabad-crawl-tick'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chavruta'
     | '/library'
+    | '/sitemap.xml'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chavruta'
     | '/library'
+    | '/sitemap.xml'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chavruta'
     | '/library'
+    | '/sitemap.xml'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChavrutaRoute: typeof ChavrutaRoute
   LibraryRoute: typeof LibraryRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -151,6 +164,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/library': {
       id: '/library'
       path: '/library'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChavrutaRoute: ChavrutaRoute,
   LibraryRoute: LibraryRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
