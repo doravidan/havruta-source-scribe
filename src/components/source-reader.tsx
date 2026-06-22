@@ -45,10 +45,25 @@ export function SourceReader({ sourceId, onClose }: Props) {
   });
   const [needle, setNeedle] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const summary = useMutation({
+    mutationFn: () => summarizeFn({ data: { sourceId: sourceId!, lang } as any }).catch(async () => {
+      // fall back to correct payload shape if the above mismatches
+      return summarizeFn({ data: { id: sourceId!, lang } as any });
+    }),
+  });
 
   useEffect(() => {
     try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
   }, [fontStep]);
+
+  // Reset summary state when switching sources
+  useEffect(() => {
+    setShowSummary(false);
+    summary.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceId]);
 
   useEffect(() => {
     if (!open) return;
