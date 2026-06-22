@@ -24,8 +24,11 @@ export function SearchPanel() {
   };
 
   return (
-    <section className="mx-auto max-w-4xl px-4 sm:px-6 mt-12 sm:mt-16">
-      <h2 className="text-sm uppercase tracking-widest text-primary/80 mb-3">{t.searchTitle}</h2>
+    <section className="w-full">
+      <h2 className="eyebrow mb-3 flex items-center gap-2">
+        <span className="inline-block h-2 w-2 rounded-full bg-[var(--ruby)]" />
+        {t.searchTitle}
+      </h2>
       <div className="scholar-card p-3 flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground ms-2" />
         <input
