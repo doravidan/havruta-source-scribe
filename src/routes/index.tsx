@@ -12,10 +12,10 @@ import { motion } from "framer-motion";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Havruta Chabad — Chassidus with sources" },
-      { name: "description", content: "Search, read, and ask AI-grounded questions on Chabad Chassidus sources. Bilingual Hebrew and English." },
-      { property: "og:title", content: "Havruta Chabad — Chassidus with sources" },
-      { property: "og:description", content: "Bilingual chavruta grounded only in saved Chassidus sources." },
+      { title: "חסידותא · Chassiduta — חברותא לחסידות" },
+      { name: "description", content: "חסידותא — חברותא לחסידות, בכל זמן ובכל מקום. לימוד, חיפוש ושאלות מבוססות מקור על מקורות חסידות חב״ד." },
+      { property: "og:title", content: "חסידותא · Chassiduta" },
+      { property: "og:description", content: "חברותא לחסידות, בכל זמן ובכל מקום." },
     ],
   }),
   component: Index,

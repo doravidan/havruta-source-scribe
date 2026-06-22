@@ -4,8 +4,9 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, Sparkles, ShieldCheck, LogOut, BookOpen, Library } from "lucide-react";
+import { Languages, Sparkles, ShieldCheck, LogOut, Library } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/chassiduta-logo.png";
 
 export function TopBar() {
   const { lang, t, toggle } = useLang();
@@ -20,14 +21,25 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 bg-[color:var(--paper)]/85 backdrop-blur-md border-b border-[color:var(--rule)]">
       <div className="mx-auto max-w-6xl px-4 sm:px-8 h-16 flex items-center gap-3 sm:gap-6 flex-wrap">
-        <Link to="/" className="flex items-center gap-3 min-w-0">
-          <BookOpen className="h-4 w-4 text-[color:var(--ink-deep)]" />
-          <span
-            className="text-lg sm:text-xl truncate text-[color:var(--ink-deep)]"
-            style={{ fontFamily: "var(--font-display)", fontWeight: 500, letterSpacing: "-0.01em" }}
-          >
-            {t.brand}
-          </span>
+        <Link to="/" className="flex items-center gap-3 min-w-0 group">
+          <img
+            src={logo}
+            alt={t.brand}
+            width={40}
+            height={40}
+            className="h-9 w-9 rounded-full ring-1 ring-[color:var(--gold)]/40 shadow-[0_0_18px_-6px_rgba(201,168,76,0.6)] transition-transform group-hover:rotate-[6deg]"
+          />
+          <div className="flex flex-col leading-tight min-w-0">
+            <span
+              className="text-lg sm:text-xl truncate text-[color:var(--gold-soft)]"
+              style={{ fontFamily: "var(--font-serif-he), var(--font-display)", fontWeight: 500, letterSpacing: "-0.005em" }}
+            >
+              {t.brand}
+            </span>
+            <span className="hidden sm:block text-[10px] uppercase tracking-[0.2em] text-[color:var(--cream-dim)] truncate">
+              {t.brandTagline}
+            </span>
+          </div>
         </Link>
 
         <div className="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">

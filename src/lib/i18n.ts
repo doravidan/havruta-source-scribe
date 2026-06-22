@@ -2,10 +2,11 @@ export type Lang = "he" | "en";
 
 export const dict = {
   he: {
-    brand: "חברותא חב\u05F4ד",
-    tagline: "חסידות עם מקורות, לא תשובות באוויר.",
+    brand: "חסידותא",
+    brandTagline: "חברותא לחסידות, בכל זמן ובכל מקום",
+    tagline: "חברותא לחסידות, בכל זמן ובכל מקום.",
     heroSubtext:
-      "חפש, פתח ולמד מקורות חסידות מלאים. שאל שאלות בעברית או באנגלית וקבל תשובה שמבוססת רק על המקורות שנשמרו במאגר.",
+      "חסידותא — חסידות עם חברותא. חפש, פתח ולמד מקורות חסידות מלאים. שאל שאלות בעברית או באנגלית וקבל תשובה שמבוססת רק על המקורות שנשמרו במאגר.",
     langToggle: "English",
     // top bar status
     statusSources: "מקורות",
@@ -78,10 +79,11 @@ export const dict = {
     weakAnswer: "המקורות שנמצאו דלים — התשובה זהירה בהתאם.",
   },
   en: {
-    brand: "Havruta Chabad",
-    tagline: "Chassidus with sources, not answers in the air.",
+    brand: "Chassiduta",
+    brandTagline: "A chavruta for Chassidus, anytime, anywhere",
+    tagline: "A chavruta for Chassidus, anytime, anywhere.",
     heroSubtext:
-      "Search, open, and learn full Chassidus sources. Ask in Hebrew or English and get answers grounded only in the saved corpus.",
+      "Chassiduta — Chassidus with a chavruta. Search, open and learn full Chassidus sources. Ask in Hebrew or English and get answers grounded only in the saved corpus.",
     langToggle: "עברית",
     statusSources: "sources",
     statusChunks: "chunks",
