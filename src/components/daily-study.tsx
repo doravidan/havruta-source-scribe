@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, ScrollText, Sparkles, Crown, Scale, Loader2, ChevronRight } from "lucide-react";
+import { BookOpen, ScrollText, Sparkles, Crown, Loader2, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,8 +9,7 @@ import { SourceReader } from "@/components/source-reader";
 
 type FeatureKey =
   | "chumash" | "tehillim" | "tanya"
-  | "rambam3" | "rambam1" | "sm"
-  | "sh1" | "sh2";
+  | "rambam3" | "rambam1";
 
 type Item = {
   key: FeatureKey;
@@ -23,8 +22,8 @@ type Item = {
 };
 
 const CHITAS: Item[] = [
-  { key: "chumash", he: "חומש — שיעור יומי", en: "Chumash — daily Aliyah",
-    subHe: "פרשת השבוע לפי יום", subEn: "Today's aliyah of the weekly parsha",
+  { key: "chumash", he: "חומש — פרשת השבוע", en: "Chumash — Weekly Parsha",
+    subHe: "טקסט מלא בעברית", subEn: "Full Hebrew text",
     icon: <ScrollText className="h-4 w-4" />, accent: "saffron" },
   { key: "tehillim", he: "תהלים — לפי ימי החודש", en: "Tehillim — monthly cycle",
     subHe: "חלוקת המזמורים היומית", subEn: "Daily psalms portion",
@@ -41,18 +40,6 @@ const RAMBAM: Item[] = [
   { key: "rambam1", he: 'רמב"ם — פרק אחד ליום', en: "Rambam — 1 chapter/day",
     subHe: "לקצב לימוד מתון יותר", subEn: "A gentler pace",
     icon: <Crown className="h-4 w-4" />, accent: "indigo" },
-  { key: "sm", he: "ספר המצוות — שיעור יומי", en: "Sefer Hamitzvos — daily",
-    subHe: "למסיימים פרק אחד ליום", subEn: "Companion to the 1-chapter cycle",
-    icon: <ScrollText className="h-4 w-4" />, accent: "sage" },
-];
-
-const SHULCHAN_ARUCH_HARAV: Item[] = [
-  { key: "sh1", he: 'שו"ע הרב — סימן אחד ליום', en: "Shulchan Aruch HaRav — 1 siman/day",
-    subHe: "מחזור בן שנה", subEn: "One-year cycle",
-    icon: <Scale className="h-4 w-4" />, accent: "saffron" },
-  { key: "sh2", he: 'שו"ע הרב — שני סימנים ליום', en: "Shulchan Aruch HaRav — 2 simanim/day",
-    subHe: "מחזור בן שנתיים", subEn: "Two-year cycle",
-    icon: <Scale className="h-4 w-4" />, accent: "indigo" },
 ];
 
 const ACCENT: Record<Item["accent"], { bar: string; bg: string; border: string }> = {
@@ -109,7 +96,7 @@ export function DailyStudyPanel() {
             {lang === "he" ? "לימוד יומי" : "Daily Study"}
           </h3>
           <p className="serif text-xl sm:text-2xl text-[var(--indigo-deep)]">
-            {lang === "he" ? 'חת"ת, רמב"ם ושו"ע הרב' : "Chitas, Rambam & Shulchan Aruch HaRav"}
+            {lang === "he" ? 'חת"ת ורמב"ם' : "Chitas & Rambam"}
           </p>
         </div>
         {hebDate && (
@@ -127,7 +114,7 @@ export function DailyStudyPanel() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative">
         <Group
           title={lang === "he" ? 'חת"ת — חומש · תהלים · תניא' : "Chitas — Chumash · Tehillim · Tanya"}
           items={CHITAS}
@@ -139,14 +126,6 @@ export function DailyStudyPanel() {
         <Group
           title={lang === "he" ? 'רמב"ם יומי' : "Daily Rambam"}
           items={RAMBAM}
-          lang={lang}
-          onOpen={handleOpen}
-          loadingKey={open.isPending ? activeKey : null}
-          errorKey={errKey}
-        />
-        <Group
-          title={lang === "he" ? 'שו"ע הרב' : "Shulchan Aruch HaRav"}
-          items={SHULCHAN_ARUCH_HARAV}
           lang={lang}
           onOpen={handleOpen}
           loadingKey={open.isPending ? activeKey : null}

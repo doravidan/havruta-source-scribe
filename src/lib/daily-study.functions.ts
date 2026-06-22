@@ -1,215 +1,266 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const FEATURES = {
+/**
+ * Daily study fetcher backed by Sefaria's open APIs.
+ * Returns Hebrew text by default (English when lang === "en").
+ *
+ * Why Sefaria and not Chabad.org scraping:
+ *  - Chabad.org's WAF blocks server-side fetches (HTTP 403) and the
+ *    Hebrew variant is not consistently exposed at a stable URL, so
+ *    the previous implementation kept falling back to English HTML.
+ *  - Sefaria has a structured, free API with proper Hebrew versions.
+ */
+
+type FeatureKey =
+  | "chumash"
+  | "tehillim"
+  | "tanya"
+  | "rambam3"
+  | "rambam1";
+
+const SEFARIA_CAL: Record<
+  Exclude<FeatureKey, "tehillim">,
+  { calendarTitleEn: string; titleHe: string; titleEn: string; section: string }
+> = {
   chumash: {
-    url: "https://www.chabad.org/dailystudy/torahreading.asp",
-    titleHe: "חומש — שיעור יומי",
-    titleEn: "Chumash — daily Aliyah",
-    section: "חת״ת",
-  },
-  tehillim: {
-    url: "https://www.chabad.org/dailystudy/tehillim.asp",
-    titleHe: "תהלים — לפי ימי החודש",
-    titleEn: "Tehillim — monthly cycle",
+    calendarTitleEn: "Parashat Hashavua",
+    titleHe: "חומש — פרשת השבוע",
+    titleEn: "Chumash — Weekly Parsha",
     section: "חת״ת",
   },
   tanya: {
-    url: "https://www.chabad.org/dailystudy/tanya.asp",
+    calendarTitleEn: "Tanya Yomi",
     titleHe: "תניא — שיעור יומי",
     titleEn: "Tanya — daily lesson",
     section: "חת״ת",
   },
   rambam3: {
-    url: "https://www.chabad.org/dailystudy/rambam.asp",
+    calendarTitleEn: "Daily Rambam (3 Chapters)",
     titleHe: 'רמב"ם — ג׳ פרקים ליום',
     titleEn: "Rambam — 3 chapters/day",
     section: 'רמב"ם',
   },
   rambam1: {
-    url: "https://www.chabad.org/dailystudy/rambam.asp?rambamChapters=1",
+    calendarTitleEn: "Daily Rambam",
     titleHe: 'רמב"ם — פרק אחד ליום',
     titleEn: "Rambam — 1 chapter/day",
     section: 'רמב"ם',
   },
-  sm: {
-    url: "https://www.chabad.org/dailystudy/seferHamitzvos.asp",
-    titleHe: "ספר המצוות — שיעור יומי",
-    titleEn: "Sefer Hamitzvos — daily",
-    section: 'רמב"ם',
-  },
-  sh1: {
-    url: "https://www.chabad.org/dailystudy/shulchanAruchHarav.asp",
-    titleHe: 'שו"ע הרב — סימן אחד ליום',
-    titleEn: "Shulchan Aruch HaRav — 1 siman/day",
-    section: 'שו"ע הרב',
-  },
-  sh2: {
-    url: "https://www.chabad.org/dailystudy/shulchanAruchHarav.asp?shulchanAruchHarav=2",
-    titleHe: 'שו"ע הרב — שני סימנים ליום',
-    titleEn: "Shulchan Aruch HaRav — 2 simanim/day",
-    section: 'שו"ע הרב',
-  },
-} as const;
+};
 
-type FeatureKey = keyof typeof FEATURES;
+const TEHILLIM_META = {
+  titleHe: "תהלים — לפי ימי החודש",
+  titleEn: "Tehillim — monthly cycle",
+  section: "חת״ת",
+};
 
 const Input = z.object({
-  feature: z.enum(Object.keys(FEATURES) as [FeatureKey, ...FeatureKey[]]),
+  feature: z.enum(["chumash", "tehillim", "tanya", "rambam3", "rambam1"]),
   lang: z.enum(["he", "en"]).optional().default("he"),
 });
-
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&rsquo;/g, "’")
-    .replace(/&lsquo;/g, "‘")
-    .replace(/&rdquo;/g, "”")
-    .replace(/&ldquo;/g, "“")
-    .replace(/&hellip;/g, "…")
-    .replace(/&mdash;/g, "—")
-    .replace(/&ndash;/g, "–")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
-}
-
-function htmlToText(html: string): { title: string; text: string } {
-  const noScript = html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-    .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "");
-
-  const titleMatch = noScript.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-
-  // Try common Chabad.org content containers, then fallbacks.
-  const candidates: RegExp[] = [
-    /<div[^>]*id="Co_Content"[^>]*>([\s\S]*?)<\/div>\s*<!--\s*\/Co_Content\s*-->/i,
-    /<div[^>]*class="[^"]*\bco_content\b[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i,
-    /<article[^>]*>([\s\S]*?)<\/article>/i,
-    /<main[^>]*>([\s\S]*?)<\/main>/i,
-    /<body[^>]*>([\s\S]*?)<\/body>/i,
-  ];
-
-  let inner = noScript;
-  for (const re of candidates) {
-    const m = noScript.match(re);
-    if (m && m[1] && m[1].length > 200) {
-      inner = m[1];
-      break;
-    }
-  }
-
-  // Strip obviously non-content blocks by class hints.
-  inner = inner
-    .replace(/<(nav|header|footer|aside|form)\b[\s\S]*?<\/\1>/gi, "")
-    .replace(/<div[^>]*class="[^"]*(menu|nav|footer|share|social|comment|related|ad-|advert|sidebar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
-
-  const text = inner
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|h[1-6]|li|tr|section|article)>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .split("\n")
-    .map((l) => decodeEntities(l).replace(/[ \t\u00A0]+/g, " ").trim())
-    .filter(Boolean)
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  const title = decodeEntities((titleMatch?.[1] ?? "").trim())
-    .replace(/\s*-\s*Chabad\.org\s*$/i, "")
-    .trim();
-
-  return { title: title || "Daily Study", text };
-}
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * Fetch today's portion of a daily-study feature from chabad.org,
- * cache it as a row in `public.sources`, and return its id so the
- * existing SourceReader can preview it in-app.
- *
- * Idempotent per (feature, day): re-runs reuse the cached row.
- */
+function stripHtml(s: string): string {
+  return s
+    .replace(/<sup[^>]*>[\s\S]*?<\/sup>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&thinsp;/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+}
+
+/** Recursively flatten Sefaria's (possibly nested) text array into lines. */
+function flattenText(node: unknown, depth = 0): string {
+  if (node == null) return "";
+  if (typeof node === "string") return stripHtml(node).trim();
+  if (Array.isArray(node)) {
+    const joiner = depth === 0 ? "\n\n" : "\n";
+    return node
+      .map((n) => flattenText(n, depth + 1))
+      .filter(Boolean)
+      .join(joiner);
+  }
+  return "";
+}
+
+/** Hebrew day-of-month (1-30) for `now`, as a number. */
+function hebrewDayOfMonth(now: Date): number {
+  const s = new Intl.DateTimeFormat("en-u-ca-hebrew-nu-latn", {
+    day: "numeric",
+  }).format(now);
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : 1;
+}
+
+/** Standard Chabad/monthly Tehillim cycle: Hebrew day → Sefaria ref. */
+function tehillimRefForHebrewDay(day: number): string {
+  const table: Record<number, string> = {
+    1: "Psalms 1-9",
+    2: "Psalms 10-17",
+    3: "Psalms 18-22",
+    4: "Psalms 23-28",
+    5: "Psalms 29-34",
+    6: "Psalms 35-38",
+    7: "Psalms 39-43",
+    8: "Psalms 44-48",
+    9: "Psalms 49-54",
+    10: "Psalms 55-59",
+    11: "Psalms 60-65",
+    12: "Psalms 66-68",
+    13: "Psalms 69-71",
+    14: "Psalms 72-76",
+    15: "Psalms 77-78",
+    16: "Psalms 79-82",
+    17: "Psalms 83-87",
+    18: "Psalms 88-89",
+    19: "Psalms 90-96",
+    20: "Psalms 97-103",
+    21: "Psalms 104-105",
+    22: "Psalms 106-107",
+    23: "Psalms 108-112",
+    24: "Psalms 113-118",
+    25: "Psalms 119:1-96",
+    26: "Psalms 119:97-176",
+    27: "Psalms 120-134",
+    28: "Psalms 135-139",
+    29: "Psalms 140-144",
+    30: "Psalms 145-150",
+  };
+  return table[day] ?? table[1];
+}
+
+type CalendarItem = {
+  title: { en: string; he?: string };
+  ref?: string;
+  heRef?: string;
+  displayValue?: { en?: string; he?: string };
+};
+
+async function getCalendarRef(
+  calendarTitleEn: string,
+): Promise<{ ref: string; heRef: string; displayHe: string; displayEn: string }> {
+  const res = await fetch("https://www.sefaria.org/api/calendars", {
+    headers: { accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`calendars fetch ${res.status}`);
+  const json = (await res.json()) as { calendar_items: CalendarItem[] };
+  const item = json.calendar_items.find((c) => c.title?.en === calendarTitleEn);
+  if (!item?.ref) throw new Error(`Calendar item not found: ${calendarTitleEn}`);
+  return {
+    ref: item.ref,
+    heRef: item.heRef ?? item.ref,
+    displayHe: item.displayValue?.he ?? item.heRef ?? item.ref,
+    displayEn: item.displayValue?.en ?? item.title?.en ?? item.ref,
+  };
+}
+
+async function fetchSefariaText(
+  ref: string,
+  lang: "he" | "en",
+): Promise<string> {
+  const version = lang === "he" ? "hebrew" : "english";
+  const url = `https://www.sefaria.org/api/v3/texts/${encodeURIComponent(ref)}?version=${version}&return_format=text_only`;
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`text fetch ${res.status}`);
+  const json = (await res.json()) as {
+    versions?: Array<{ text: unknown; language?: string }>;
+  };
+  const versions = json.versions ?? [];
+  // Prefer the requested language; fall back to whatever is returned.
+  const preferred =
+    versions.find((v) => v.language === (lang === "he" ? "he" : "en")) ??
+    versions[0];
+  const text = flattenText(preferred?.text);
+  return text;
+}
+
 export const getDailyStudySource = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
-    const meta = FEATURES[data.feature];
     const day = todayIso();
-    const cacheKey = `${data.feature}:${day}`;
+    const cacheKey = `${data.feature}:${data.lang}:${day}`;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: existing } = await supabaseAdmin
       .from("sources")
       .select("id, char_count")
-      .eq("source_provider", "chabad-daily")
+      .eq("source_provider", "sefaria-daily")
       .eq("source_id", cacheKey)
       .maybeSingle();
 
-    if (existing?.id && (existing.char_count ?? 0) > 200) {
+    if (existing?.id && (existing.char_count ?? 0) > 50) {
       return { id: existing.id as string, cached: true };
     }
 
-    const browserHeaders = {
-      "user-agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "accept-language": data.lang === "he" ? "he-IL,he;q=0.9,en;q=0.8" : "en-US,en;q=0.9,he;q=0.8",
-      "cache-control": "no-cache",
-    } as const;
+    // Resolve ref + labels per feature.
+    let ref: string;
+    let displayHe: string;
+    let displayEn: string;
+    let section: string;
+    let baseTitleHe: string;
+    let baseTitleEn: string;
 
-    async function tryFetch(url: string): Promise<string> {
-      const res = await fetch(url, { headers: browserHeaders, redirect: "follow" });
-      if (!res.ok) throw new Error(`fetch ${res.status}`);
-      return res.text();
+    if (data.feature === "tehillim") {
+      const hDay = hebrewDayOfMonth(new Date());
+      ref = tehillimRefForHebrewDay(hDay);
+      displayHe = ref.replace(/^Psalms\s+/, "תהלים ");
+      displayEn = ref;
+      section = TEHILLIM_META.section;
+      baseTitleHe = TEHILLIM_META.titleHe;
+      baseTitleEn = TEHILLIM_META.titleEn;
+    } else {
+      const meta = SEFARIA_CAL[data.feature];
+      const cal = await getCalendarRef(meta.calendarTitleEn);
+      ref = cal.ref;
+      displayHe = cal.displayHe;
+      displayEn = cal.displayEn;
+      section = meta.section;
+      baseTitleHe = meta.titleHe;
+      baseTitleEn = meta.titleEn;
     }
 
-    let html = "";
-    const attempts: string[] = [];
-    try {
-      html = await tryFetch(meta.url);
-    } catch (e) {
-      attempts.push(`direct: ${(e as Error).message}`);
-      // Fallback to Jina reader proxy, which returns readable text/HTML.
-      try {
-        html = await tryFetch(`https://r.jina.ai/${meta.url}`);
-      } catch (e2) {
-        attempts.push(`r.jina.ai: ${(e2 as Error).message}`);
-        throw new Error(
-          `Failed to fetch daily study (${data.feature}) — ${attempts.join("; ")}`,
-        );
-      }
+    let text = await fetchSefariaText(ref, data.lang);
+
+    // If Hebrew version is empty for some reason, fall back to English.
+    if ((!text || text.length < 30) && data.lang === "he") {
+      text = await fetchSefariaText(ref, "en");
     }
 
-    const { title: rawTitle, text } = htmlToText(html);
-    if (!text || text.length < 50) {
-      throw new Error("Daily study page had no extractable text");
+    if (!text || text.length < 30) {
+      throw new Error(`No text returned from Sefaria for ${ref}`);
     }
 
-    const baseTitle = data.lang === "he" ? meta.titleHe : meta.titleEn;
     const dateLabel = new Intl.DateTimeFormat(
       data.lang === "he" ? "he-u-ca-hebrew" : "en-u-ca-hebrew",
       { day: "numeric", month: "long", year: "numeric" },
     ).format(new Date());
-    const title = `${baseTitle} · ${dateLabel}`;
+
+    const baseTitle = data.lang === "he" ? baseTitleHe : baseTitleEn;
+    const refLabel = data.lang === "he" ? displayHe : displayEn;
+    const title = `${baseTitle} · ${refLabel}`;
     const treeParts = [
       data.lang === "he" ? "לימוד יומי" : "Daily Study",
-      meta.section,
-      rawTitle || baseTitle,
+      section,
+      refLabel,
+      dateLabel,
     ];
 
+    const sourceUrl = `https://www.sefaria.org/${encodeURIComponent(
+      ref.replace(/\s+/g, "_"),
+    )}?lang=${data.lang === "he" ? "he" : "en"}`;
+
     const payload = {
-      source_provider: "chabad-daily",
+      source_provider: "sefaria-daily",
       source_id: cacheKey,
       title,
       tree: treeParts.join(" > "),
@@ -218,7 +269,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
       text,
       excerpt: text.slice(0, 280),
       char_count: text.length,
-      source_url: meta.url,
+      source_url: sourceUrl,
       raw_payload: null,
       sha256: null,
       fetched_at: new Date().toISOString(),
