@@ -69,6 +69,36 @@ function AdminPage() {
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
 
+  // ── Sefaria ingest ────────────────────────────────────────────
+  const listSlicesFn = useServerFn(listSefariaSlices);
+  const ingestSefariaFn = useServerFn(ingestSefariaSlice);
+  const { data: slices } = useQuery({ queryKey: ["sefaria-slices"], queryFn: () => listSlicesFn() });
+  const [sefariaSlice, setSefariaSlice] = useState<string>("tehillim");
+  const [sefariaStart, setSefariaStart] = useState<number>(1);
+  const [sefariaMax, setSefariaMax] = useState<number>(20);
+  const sefariaM = useMutation({
+    mutationFn: () =>
+      ingestSefariaFn({
+        data: {
+          sliceKey: sefariaSlice,
+          startChapter: sefariaStart,
+          maxChapters: sefariaMax,
+          language: "he",
+          embed: true,
+        },
+      }),
+    onSuccess: (r) => {
+      setResultMsg(
+        `Sefaria ${r.slice}: chapters ${r.processedRange[0]}–${r.processedRange[1]} of ${r.totalChapters} · new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, failures ${r.failures}.${
+          r.nextChapter ? ` Next: chapter ${r.nextChapter}.` : " ✓ slice complete."
+        }`,
+      );
+      if (r.nextChapter) setSefariaStart(r.nextChapter);
+      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+
   const parsed = useMemo(() => {
     if (!json.trim()) return null;
     try {
