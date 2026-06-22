@@ -505,14 +505,59 @@ function AdminPage() {
               />
             </label>
           </div>
-          <button
-            onClick={() => sefariaM.mutate()}
-            disabled={sefariaM.isPending}
-            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
-          >
-            {sefariaM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {lang === "he" ? "ייבא פלח" : "Ingest slice"}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => runSefariaIngest()}
+              disabled={sefProgress.running}
+              className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+            >
+              {sefProgress.running && <Loader2 className="h-4 w-4 animate-spin" />}
+              {lang === "he" ? "ייבא פלח" : "Ingest slice"}
+            </button>
+            {sefProgress.running && (
+              <button
+                onClick={() => { cancelRef.current = true; }}
+                className="px-3 h-11 rounded-md border border-border text-sm inline-flex items-center gap-1 hover:bg-background/40"
+              >
+                <X className="h-4 w-4" />
+                {lang === "he" ? "בטל" : "Cancel"}
+              </button>
+            )}
+          </div>
+
+          {(sefProgress.running || sefProgress.done > 0) && (
+            <div className="mt-4 rounded-md border border-border bg-background/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {lang === "he" ? "התקדמות" : "Progress"}: {sefProgress.done}/{sefProgress.total}
+                  {sefProgress.currentChapter !== null && (
+                    <> · {lang === "he" ? "פרק" : "ch."} {sefProgress.currentChapter}</>
+                  )}
+                  {sefProgress.sliceTotal ? <> · {lang === "he" ? "סה״כ בפלח" : "slice total"} {sefProgress.sliceTotal}</> : null}
+                </span>
+                <span>{sefProgress.total > 0 ? Math.round((sefProgress.done / sefProgress.total) * 100) : 0}%</span>
+              </div>
+              <Progress value={sefProgress.total > 0 ? (sefProgress.done / sefProgress.total) * 100 : 0} />
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs pt-1">
+                <Stat label={lang === "he" ? "חדשים" : "New"} value={sefProgress.savedNew} tone="ok" />
+                <Stat label={lang === "he" ? "עודכנו" : "Updated"} value={sefProgress.savedUpdated} tone="ok" />
+                <Stat label={lang === "he" ? "ללא שינוי" : "Unchanged"} value={sefProgress.skippedUnchanged} />
+                <Stat label={lang === "he" ? "מקטעים" : "Chunks"} value={sefProgress.chunks} />
+                <Stat label={lang === "he" ? "וקטורים" : "Embedded"} value={sefProgress.embedded} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Stat label={lang === "he" ? "כשלים" : "Failures"} value={sefProgress.failures} tone={sefProgress.failures > 0 ? "err" : undefined} />
+                {sefProgress.nextChapter ? (
+                  <Stat label={lang === "he" ? "הבא" : "Next"} value={sefProgress.nextChapter} />
+                ) : null}
+              </div>
+              {sefProgress.lastError && (
+                <p className="text-xs text-destructive truncate" title={sefProgress.lastError}>
+                  {lang === "he" ? "שגיאה אחרונה" : "Last error"}: {sefProgress.lastError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="scholar-card p-5">
