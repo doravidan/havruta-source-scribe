@@ -83,12 +83,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@type": "Organization",
               name: "Havruta Chabad",
               alternateName: "חסידותא · Chassiduta",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
             },
             {
               "@type": "WebSite",
               name: "חסידותא · Chassiduta",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
               inLanguage: ["he", "en", "yi"],
             },
             {
@@ -96,7 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "Havruta Chabad",
               applicationCategory: "EducationApplication",
               operatingSystem: "Web",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
               offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             },
           ],
