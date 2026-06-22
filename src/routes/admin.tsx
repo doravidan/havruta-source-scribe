@@ -5,9 +5,11 @@ import { useLang } from "@/lib/lang-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ingestSources, seedCorpus } from "@/lib/ingest.functions";
+import { crawlChabadLibrary } from "@/lib/chabad-ingest.functions";
+import { CHABAD_ROOT_IDS } from "@/lib/chabad-clean";
 import { corpusStats } from "@/lib/corpus.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload } from "lucide-react";
+import { Loader2, Sprout, Upload, Library } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
@@ -21,6 +23,8 @@ function AdminPage() {
   const qc = useQueryClient();
   const [json, setJson] = useState("");
   const [resultMsg, setResultMsg] = useState<string | null>(null);
+  const [selectedRoots, setSelectedRoots] = useState<string[]>([CHABAD_ROOT_IDS[0].id]);
+  const [maxPages, setMaxPages] = useState(40);
 
   useEffect(() => {
     if (!loading && !session) nav({ to: "/auth" });
@@ -28,6 +32,7 @@ function AdminPage() {
 
   const ingestFn = useServerFn(ingestSources);
   const seedFn = useServerFn(seedCorpus);
+  const crawlFn = useServerFn(crawlChabadLibrary);
   const statsFn = useServerFn(corpusStats);
   const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn() });
 
@@ -58,6 +63,21 @@ function AdminPage() {
     },
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
+
+  const crawlM = useMutation({
+    mutationFn: () =>
+      crawlFn({ data: { rootIds: selectedRoots, maxPages, embed: true, language: "he" } }),
+    onSuccess: (r) => {
+      setResultMsg(
+        `Crawl: visited ${r.visited}, text pages ${r.textPages}, new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, fetch failures ${r.fetchFailures}, queue remaining ${r.queueRemaining}.`,
+      );
+      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+
+  const toggleRoot = (id: string) =>
+    setSelectedRoots((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
   if (!session) return null;
@@ -97,6 +117,55 @@ function AdminPage() {
           >
             {seedM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {t.adminSeed}
+          </button>
+        </div>
+
+        <div className="scholar-card p-5 mb-6">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <Library className="h-4 w-4 text-primary" />
+            {lang === "he" ? "סריקת ChabadLibrary" : "Crawl ChabadLibrary"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "סריקת BFS מהשורשים שנבחרו דרך ה-API הציבורי. הרץ שוב כדי להמשיך — דפים שכבר קיימים יידלגו."
+              : "Breadth-first crawl from selected roots via the public API. Re-run to continue — already-ingested pages are skipped."}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+            {CHABAD_ROOT_IDS.map((r) => (
+              <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRoots.includes(r.id)}
+                  onChange={() => toggleRoot(r.id)}
+                  className="accent-primary"
+                />
+                <span>
+                  {lang === "he" ? r.label_he : r.label_en}
+                  <span className="text-xs text-muted-foreground ml-1">({r.id})</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 mb-3 text-sm">
+            <label className="flex items-center gap-2">
+              {lang === "he" ? "מקס׳ דפים לקריאה:" : "Max pages per run:"}
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={maxPages}
+                onChange={(e) => setMaxPages(Math.max(1, Math.min(120, Number(e.target.value) || 40)))}
+                className="w-20 bg-background/40 border border-border rounded-md px-2 h-9"
+              />
+            </label>
+          </div>
+          <button
+            onClick={() => crawlM.mutate()}
+            disabled={crawlM.isPending || selectedRoots.length === 0}
+            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+          >
+            {crawlM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {lang === "he" ? "התחל סריקה" : "Start crawl"}
           </button>
         </div>
 
