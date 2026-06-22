@@ -70,6 +70,7 @@ export function TopBar() {
         <div className="ms-0 sm:ms-auto flex items-center gap-2 max-w-full overflow-hidden">
           <Link
             to="/library"
+            aria-label={lang === "he" ? "ספרייה" : "Library"}
             className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
           >
             <Library className="h-4 w-4" />
@@ -77,6 +78,7 @@ export function TopBar() {
           </Link>
           <Link
             to="/guides/how-to-learn-chassidus"
+            aria-label={lang === "he" ? "מדריך" : "Guide"}
             className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
           >
             <BookOpen className="h-4 w-4" />
@@ -84,6 +86,7 @@ export function TopBar() {
           </Link>
           <Link
             to="/chavruta"
+            aria-label={lang === "he" ? "חברותות" : "Chavruta"}
             className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
           >
             <Users className="h-4 w-4" />
