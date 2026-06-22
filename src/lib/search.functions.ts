@@ -33,7 +33,7 @@ export const searchSources = createServerFn({ method: "POST" })
 
     let { data: rows, error } = await sb
       .from("sources")
-      .select("id, source_provider, source_id, title, tree, tree_parts, excerpt, char_count, language")
+      .select("id, source_provider, source_id, title, tree, tree_parts, excerpt, char_count, language, source_url")
       .or(orParts.join(","))
       .gte("char_count", 200)
       .limit(data.limit * 4);
@@ -44,7 +44,7 @@ export const searchSources = createServerFn({ method: "POST" })
     if (!rows || rows.length === 0) {
       const r2 = await sb
         .from("sources")
-        .select("id, source_provider, source_id, title, tree, tree_parts, excerpt, char_count, language")
+        .select("id, source_provider, source_id, title, tree, tree_parts, excerpt, char_count, language, source_url")
         .or(orParts.join(","))
         .limit(data.limit * 2);
       rows = r2.data ?? [];

@@ -12,6 +12,7 @@ export function SearchPanel() {
   const { lang, t } = useLang();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openSummarize, setOpenSummarize] = useState(false);
   const fn = useServerFn(searchSources);
   const m = useMutation({
     mutationFn: (query: string) => fn({ data: { query, lang, limit: 12 } }) as Promise<SearchResult>,
@@ -53,23 +54,42 @@ export function SearchPanel() {
             <p className="text-sm text-muted-foreground p-4">{t.searchEmpty}</p>
           )}
           {m.data.results.map((r: any) => (
-            <button
+            <div
               key={r.id}
-              onClick={() => setOpenId(r.id)}
               className="block w-full text-start scholar-card p-4 sm:p-5 hover:border-primary/40 transition-colors"
             >
-              {r.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{r.tree}</div>}
-              <div className="font-medium mb-1.5">{r.title}</div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{r.excerpt}</p>
-              <div className="mt-2 text-[11px] text-muted-foreground/80">
-                {r.char_count?.toLocaleString()} {t.charsLabel}
+              <button onClick={() => { setOpenSummarize(false); setOpenId(r.id); }} className="block w-full text-start">
+                {r.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{r.tree}</div>}
+                <div className="font-medium mb-1.5">{r.title}</div>
+                <p className="text-sm text-muted-foreground line-clamp-2">{r.excerpt}</p>
+                <div className="mt-2 text-[11px] text-muted-foreground/80">
+                  {r.char_count?.toLocaleString()} {t.charsLabel}
+                </div>
+              </button>
+              <div className="mt-3 flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => { setOpenSummarize(true); setOpenId(r.id); }}
+                  className="px-2 py-1 rounded border border-[var(--saffron)]/50 text-[var(--indigo-deep)] bg-[color:var(--saffron-soft,transparent)] hover:bg-[var(--saffron)] hover:text-white transition-colors"
+                >
+                  ✦ {t.cardSummary}
+                </button>
+                {r.source_url && (
+                  <a
+                    href={r.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded border border-border hover:bg-secondary inline-flex items-center gap-1"
+                  >
+                    ↗ {t.cardOpenOriginal}
+                  </a>
+                )}
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
 
-      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} />
+      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} autoSummarize={openSummarize} />
     </section>
   );
 }

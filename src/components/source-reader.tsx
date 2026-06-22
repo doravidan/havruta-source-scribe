@@ -4,18 +4,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
+import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2 } from "lucide-react";
+import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles } from "lucide-react";
 
-type Props = { sourceId: string | null; onClose: () => void };
+type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
-export function SourceReader({ sourceId, onClose }: Props) {
+export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
   const qc = useQueryClient();
   const fn = useServerFn(getSource);
   const studiedFn = useServerFn(isSourceStudied);
   const toggleFn = useServerFn(toggleSourceStudied);
+  const summarizeFn = useServerFn(summarizeSource);
   const open = !!sourceId;
   const { data, isLoading } = useQuery({
     queryKey: ["source", sourceId],
@@ -43,10 +45,23 @@ export function SourceReader({ sourceId, onClose }: Props) {
   });
   const [needle, setNeedle] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const summary = useMutation({
+    mutationFn: () => summarizeFn({ data: { id: sourceId!, lang } }),
+  });
 
   useEffect(() => {
     try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
   }, [fontStep]);
+
+  // Reset / auto-trigger summary when switching sources
+  useEffect(() => {
+    setShowSummary(!!autoSummarize);
+    summary.reset();
+    if (autoSummarize && sourceId) summary.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceId, autoSummarize]);
 
   useEffect(() => {
     if (!open) return;
@@ -161,6 +176,30 @@ export function SourceReader({ sourceId, onClose }: Props) {
             )}
           </div>
           <button
+            onClick={() => {
+              setShowSummary(true);
+              if (!summary.data && !summary.isPending) summary.mutate();
+            }}
+            disabled={summary.isPending || !data}
+            className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium border border-[var(--indigo-deep)]/40 text-[var(--indigo-deep)] bg-[color:var(--indigo-soft,transparent)] hover:bg-[var(--indigo-deep)] hover:text-white transition-colors disabled:opacity-60"
+            title={t.readerSummary}
+          >
+            {summary.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            <span className="hidden sm:inline">{summary.isPending ? t.readerSummarizing : t.readerSummary}</span>
+          </button>
+          {data?.source_url && (
+            <a
+              href={data.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
+              title={t.readerOpenOriginal}
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="hidden sm:inline">{t.readerOpenOriginal}</span>
+            </a>
+          )}
+          <button
             onClick={copyAll}
             className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
           >
@@ -193,6 +232,37 @@ export function SourceReader({ sourceId, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-8">
+          {showSummary && (
+            <div className="mx-auto max-w-[68ch] mb-6 rounded-xl border border-[var(--saffron)]/50 bg-[color:var(--saffron-soft,#fff7e0)] p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--indigo-deep)]">
+                  <Sparkles className="h-4 w-4" />
+                  {t.readerSummaryTitle}
+                </div>
+                <button
+                  onClick={() => setShowSummary(false)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {t.readerHideSummary}
+                </button>
+              </div>
+              {summary.isPending ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t.readerSummarizing}
+                </div>
+              ) : summary.isError ? (
+                <div className="text-sm text-destructive">{t.readerSummaryError}</div>
+              ) : summary.data ? (
+                <div
+                  className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
+                  style={{ fontFamily: data?.language === "he" ? "var(--font-serif-he)" : "var(--font-sans)" }}
+                >
+                  {summary.data.summary}
+                </div>
+              ) : null}
+            </div>
+          )}
           {isLoading || !data ? (
             <div className="space-y-3 animate-pulse">
               <div className="h-4 bg-secondary rounded w-3/4" />

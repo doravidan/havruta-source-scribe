@@ -91,7 +91,7 @@ export const askHavruta = createServerFn({ method: "POST" })
     // 4. De-dup by source_id, keep best 5 sources, 8 chunks max
     const seen = new Set<string>();
     const topChunks = matches.slice(0, 8);
-    const sourceList: Array<{ id: string; title: string; tree: string; excerpt: string }> = [];
+    const sourceList: Array<{ id: string; title: string; tree: string; excerpt: string; source_url: string | null }> = [];
     for (const m of matches) {
       if (seen.has(m.source_id)) continue;
       seen.add(m.source_id);
@@ -100,8 +100,20 @@ export const askHavruta = createServerFn({ method: "POST" })
         title: m.title,
         tree: m.tree,
         excerpt: m.text.slice(0, 220) + (m.text.length > 220 ? "…" : ""),
+        source_url: null,
       });
       if (sourceList.length >= 5) break;
+    }
+
+    // Enrich with source_url so the UI can link to the original.
+    if (sourceList.length > 0) {
+      const ids = sourceList.map((s) => s.id);
+      const { data: urlRows } = await sb
+        .from("sources")
+        .select("id, source_url")
+        .in("id", ids);
+      const urlMap = new Map((urlRows ?? []).map((r: any) => [r.id, r.source_url as string | null]));
+      for (const s of sourceList) s.source_url = urlMap.get(s.id) ?? null;
     }
 
     // 5. Build context
