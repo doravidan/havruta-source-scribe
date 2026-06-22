@@ -6,7 +6,8 @@ import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
 import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles, Play, Pause, Square } from "lucide-react";
+import { useReadAloud } from "@/hooks/use-read-aloud";
 
 type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
