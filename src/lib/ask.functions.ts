@@ -33,7 +33,20 @@ export const askHavruta = createServerFn({ method: "POST" })
     const t0 = Date.now();
     const { embed, chatCompletion } = await import("./ai-gateway.server");
     const { getPublicServerClient } = await import("./supabase-public.server");
+    const { deterministicHelper } = await import("./helpers-deterministic");
     const sb = getPublicServerClient();
+
+    // Deterministic shortcuts (Yiddish translate / Rashi script) — no AI needed.
+    const det = deterministicHelper(data.question, data.lang);
+    if (det) {
+      return {
+        answer: det,
+        sources: [],
+        mode: "deterministic" as const,
+        latency_ms: Date.now() - t0,
+        lang: data.lang,
+      };
+    }
 
     // 1. Embed the question
     let queryEmbedding: number[] = [];
