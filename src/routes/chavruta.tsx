@@ -108,18 +108,19 @@ function ChavrutaPage() {
     enabled: !!user,
     queryFn: async () => {
       const { data: profile } = await db
-        .from("chavruta_profiles")
+        .from<Profile>("chavruta_profiles")
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       const { data: contact } = await db
-        .from("chavruta_contact_info")
+        .from<{ phone: string }>("chavruta_contact_info")
         .select("phone")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (profile?.topics?.length) setTopicInput(profile.topics.join(", "));
       return { profile: profile as Profile | null, phone: contact?.phone ?? "" };
     },
+
   });
 
   const availabilityQ = useQuery({
@@ -289,8 +290,9 @@ function ChavrutaPage() {
     queryFn: async () => {
       const contacts: Record<string, { display_name: string; phone: string }> = {};
       for (const m of socialQ.data!.matches.filter((x) => x.status === "accepted")) {
-        const { data } = await db.rpc("get_chavruta_match_contact", { _match_id: m.id });
+        const { data } = await db.rpc<{ display_name: string; phone: string }[]>("get_chavruta_match_contact", { _match_id: m.id });
         if (data?.[0]) contacts[m.id] = data[0];
+
       }
       return contacts;
     },
