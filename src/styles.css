@@ -2,15 +2,13 @@
 @source "../src";
 @import "tw-animate-css";
 
-@import "@fontsource/lora/400.css";
-@import "@fontsource/lora/500.css";
-@import "@fontsource/lora/600.css";
-@import "@fontsource/lora/700.css";
-@import "@fontsource/lora/400-italic.css";
-@import "@fontsource/nunito-sans/300.css";
-@import "@fontsource/nunito-sans/400.css";
-@import "@fontsource/nunito-sans/600.css";
-@import "@fontsource/nunito-sans/700.css";
+@import "@fontsource/work-sans/300.css";
+@import "@fontsource/work-sans/400.css";
+@import "@fontsource/work-sans/500.css";
+@import "@fontsource/work-sans/600.css";
+@import "@fontsource/work-sans/700.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
 @import "@fontsource/frank-ruhl-libre/400.css";
 @import "@fontsource/frank-ruhl-libre/500.css";
 @import "@fontsource/frank-ruhl-libre/700.css";
