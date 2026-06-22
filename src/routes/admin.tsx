@@ -37,10 +37,34 @@ function AdminPage() {
   const crawlFn = useServerFn(crawlChabadLibrary);
   const statsFn = useServerFn(corpusStats);
   const coverageFn = useServerFn(chabadCoverage);
-  const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn() });
+  const startFullFn = useServerFn(startFullCrawl);
+  const retryFailedFn = useServerFn(retryFailedCrawl);
+  const queueStatsFn = useServerFn(crawlQueueStats);
+  const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn(), refetchInterval: 15000 });
+  const { data: queueStats } = useQuery({
+    queryKey: ["crawl-queue-stats"],
+    queryFn: () => queueStatsFn(),
+    refetchInterval: 10000,
+  });
   const [coverageDepth, setCoverageDepth] = useState(2);
   const coverageM = useMutation({
     mutationFn: (depth: number) => coverageFn({ data: { depth, maxFetchesPerRoot: 60 } }),
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+  const startFullM = useMutation({
+    mutationFn: () => startFullFn(),
+    onSuccess: (r) => {
+      setResultMsg(`Full crawl queued: ${r.enqueued} root volumes. Cron will process the queue automatically.`);
+      qc.invalidateQueries({ queryKey: ["crawl-queue-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+  const retryFailedM = useMutation({
+    mutationFn: () => retryFailedFn(),
+    onSuccess: (r) => {
+      setResultMsg(`Reset ${r.retried} failed items to pending.`);
+      qc.invalidateQueries({ queryKey: ["crawl-queue-stats"] });
+    },
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
 
