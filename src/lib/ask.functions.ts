@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 
 const Input = z.object({
   question: z.string().min(2).max(1000),
@@ -42,8 +44,9 @@ function sliceAroundQuery(text: string, terms: string[], max = 1800) {
 }
 
 export const askHavruta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const t0 = Date.now();
     const { embed, chatCompletion } = await import("./ai-gateway.server");
     const { getPublicServerClient } = await import("./supabase-public.server");
@@ -191,6 +194,7 @@ export const askHavruta = createServerFn({ method: "POST" })
         source_ids: sourceList.map((s) => s.id),
         mode: weak ? "weak" : "ok",
         latency_ms: Date.now() - t0,
+        user_id: context.userId,
       });
     } catch {}
 
