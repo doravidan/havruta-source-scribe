@@ -27,25 +27,6 @@ const YIDDISH: Record<string, { he: string; en: string }> = {
   "טאַקע": { he: "אכן / באמת", en: "indeed" },
 };
 
-const RASHI: Array<[string, string]> = [
-  ["א", "ﬡ"], ["ב", "ﬢ"], ["ג", "ﬣ"], ["ד", "ﬤ"], ["ה", "ﬥ"],
-  ["ו", "ﬦ"], ["ז", "ﬧ"], ["ח", "ﬨ"], ["ט", "ם"], ["י", "מ"],
-  ["כ", "ן"], ["ל", "ל"], ["מ", "מ"], ["נ", "נ"], ["ס", "ס"],
-  ["ע", "ע"], ["פ", "פ"], ["צ", "צ"], ["ק", "ק"], ["ר", "ר"],
-  ["ש", "ש"], ["ת", "ת"],
-];
-
-const RASHI_NAMES: Record<string, { he: string; en: string }> = {
-  "א": { he: "אלף", en: "alef" }, "ב": { he: "בית", en: "bet" }, "ג": { he: "גימל", en: "gimel" },
-  "ד": { he: "דלת", en: "dalet" }, "ה": { he: "הא", en: "he" }, "ו": { he: "וו", en: "vav" },
-  "ז": { he: "זין", en: "zayin" }, "ח": { he: "חית", en: "chet" }, "ט": { he: "טית", en: "tet" },
-  "י": { he: "יוד", en: "yod" }, "כ": { he: "כף", en: "kaf" }, "ל": { he: "למד", en: "lamed" },
-  "מ": { he: "מם", en: "mem" }, "נ": { he: "נון", en: "nun" }, "ס": { he: "סמך", en: "samech" },
-  "ע": { he: "עין", en: "ayin" }, "פ": { he: "פא", en: "pe" }, "צ": { he: "צדי", en: "tsadi" },
-  "ק": { he: "קוף", en: "qof" }, "ר": { he: "ריש", en: "resh" }, "ש": { he: "שין", en: "shin" },
-  "ת": { he: "תו", en: "tav" },
-};
-
 export function YiddishHelper() {
   const { t, lang } = useLang();
   const [w, setW] = useState("");

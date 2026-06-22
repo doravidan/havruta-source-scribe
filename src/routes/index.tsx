@@ -3,7 +3,7 @@ import { TopBar } from "@/components/top-bar";
 import { Hero } from "@/components/hero";
 import { AskPanel } from "@/components/ask-panel";
 import { SearchPanel } from "@/components/search-panel";
-import { YiddishHelper, RashiHelper } from "@/components/helpers";
+import { YiddishHelper } from "@/components/helpers";
 import { StudySidebar } from "@/components/study-sidebar";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
@@ -48,12 +48,8 @@ function Index() {
                 <YiddishHelper />
               </motion.div>
 
-              <motion.div custom={2} initial="hidden" animate="show" variants={tile} className="md:col-span-2">
+              <motion.div custom={2} initial="hidden" animate="show" variants={tile} className="md:col-span-3">
                 <SearchPanel />
-              </motion.div>
-
-              <motion.div custom={3} initial="hidden" animate="show" variants={tile}>
-                <RashiHelper />
               </motion.div>
             </div>
 
