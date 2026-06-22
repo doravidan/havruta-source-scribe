@@ -35,7 +35,7 @@ const steps = [
     title: "Add Likkutei Amarim and Igeret HaTeshuvah",
     heTitle: "הוסיפו לקוטי אמרים ואגרת התשובה",
     body: "After the first few chapters of Tanya, move through the rest of Likkutei Amarim and then Igeret HaTeshuvah. These sections introduce the practical transformation of character through Torah and mitzvot — the core 'how-to' of Chassidus life.",
-    heBody: "אחרי הפרקים הראשונים של תניא, המשיכו בשאר לקוטי אמרים ולאחר מכן באגרת התשובה. קטעים אלה מציגים את השינוי המעשי באופי באמצעות תורה ומצוות — הליבה של ה"איך עושים" בחיי חסידות.",
+    heBody: "אחרי הפרקים הראשונים של תניא, המשיכו בשאר לקוטי אמרים ולאחר מכן באגרת התשובה. קטעים אלה מציגים את השינוי המעשי באופי באמצעות תורה ומצוות — הליבה של ה\"איך עושים\" בחיי חסידות.",
     tip: "Keep a short notebook: write one idea and one action per day. Chassidus is meant to change behavior, not just knowledge.",
     heTip: "שמרו מחברת קצרה: כתבו רעיון אחד ופעולה אחת ביום. חסידות נועדה לשנות התנהגות, לא רק ידע.",
   },
