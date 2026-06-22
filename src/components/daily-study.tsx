@@ -1,4 +1,4 @@
-import { ExternalLink, BookOpen, ScrollText, Sparkles, Crown } from "lucide-react";
+import { ExternalLink, BookOpen, ScrollText, Sparkles, Crown, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLang } from "@/lib/lang-context";
 
