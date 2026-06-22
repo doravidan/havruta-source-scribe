@@ -139,7 +139,7 @@ export function DailyStudyPanel() {
             {lang === "he" ? "לימוד יומי" : "Daily Study"}
           </h3>
           <p className="serif text-xl sm:text-2xl text-[var(--indigo-deep)]">
-            {lang === "he" ? 'חת"ת ורמב"ם' : "Chitas & Rambam"}
+            {lang === "he" ? 'חת"ת, רמב"ם ושו"ע הרב' : "Chitas, Rambam & Shulchan Aruch HaRav"}
           </p>
         </div>
         {hebDate && (
@@ -157,7 +157,7 @@ export function DailyStudyPanel() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
         <Group
           title={lang === "he" ? 'חת"ת — חומש · תהלים · תניא' : "Chitas — Chumash · Tehillim · Tanya"}
           items={CHITAS}
@@ -166,6 +166,11 @@ export function DailyStudyPanel() {
         <Group
           title={lang === "he" ? 'רמב"ם יומי' : "Daily Rambam"}
           items={RAMBAM}
+          lang={lang}
+        />
+        <Group
+          title={lang === "he" ? 'שו"ע הרב' : "Shulchan Aruch HaRav"}
+          items={SHULCHAN_ARUCH_HARAV}
           lang={lang}
         />
       </div>
