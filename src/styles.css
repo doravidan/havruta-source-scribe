@@ -61,49 +61,63 @@
 :root {
   --radius: 0.75rem;
 
-  /* Scholar Warmth — parchment + deep indigo + saffron gold + ruby */
-  --parchment: #fdf6e3;
-  --parchment-warm: #f6ecd0;
-  --parchment-deep: #efe2b8;
-  --indigo-deep: #1e2a78;
-  --indigo: #2f3fa3;
-  --indigo-soft: #e6e9fb;
-  --saffron: #e8a93a;
-  --saffron-soft: #fbe9bf;
-  --ruby: #c0392b;
-  --ruby-soft: #f6d8d2;
-  --sage: #4b7a52;
-  --sage-soft: #d8e7d3;
-  --ink: #2a2418;
-  --ink-soft: #6b6253;
+  /* ליל חב״ד — Chassiduta midnight: deep navy + antique gold + warm cream */
+  --night-0: #060d1c;
+  --night-1: #0a1426;
+  --night-2: #13234a;
+  --night-3: #1b2f63;
+  --gold: #c9a84c;
+  --gold-soft: #f0d78c;
+  --gold-deep: #8a7028;
+  --cream: #ece6d3;
+  --cream-dim: #b9b29c;
 
-  --background: var(--parchment);
-  --foreground: var(--ink);
-  --card: #fffaf0;
-  --card-foreground: var(--ink);
-  --popover: #fffaf0;
-  --popover-foreground: var(--ink);
-  --primary: var(--indigo-deep);
-  --primary-foreground: #fffaf0;
-  --secondary: var(--parchment-warm);
-  --secondary-foreground: var(--indigo-deep);
-  --muted: var(--parchment-warm);
-  --muted-foreground: var(--ink-soft);
-  --accent: var(--saffron-soft);
-  --accent-foreground: var(--indigo-deep);
+  /* Legacy token aliases — components reference these names; remap to night palette */
+  --parchment: var(--night-1);
+  --parchment-warm: var(--night-2);
+  --parchment-deep: var(--night-3);
+  --indigo-deep: var(--gold);          /* headings → gold on midnight */
+  --indigo: var(--gold-soft);
+  --indigo-soft: rgba(201, 168, 76, 0.12);
+  --saffron: var(--gold);
+  --saffron-soft: var(--gold-soft);
+  --ruby: #e0633f;
+  --ruby-soft: rgba(224, 99, 63, 0.15);
+  --sage: #6fb39a;
+  --sage-soft: rgba(111, 179, 154, 0.16);
+  --ink: var(--cream);
+  --ink-soft: var(--cream-dim);
+  --ink-deep: var(--cream);
+  --paper: var(--night-1);
+  --rule: rgba(240, 215, 140, 0.18);
+
+  --background: var(--night-1);
+  --foreground: var(--cream);
+  --card: var(--night-2);
+  --card-foreground: var(--cream);
+  --popover: var(--night-2);
+  --popover-foreground: var(--cream);
+  --primary: var(--gold);
+  --primary-foreground: var(--night-0);
+  --secondary: var(--night-3);
+  --secondary-foreground: var(--gold-soft);
+  --muted: var(--night-2);
+  --muted-foreground: var(--cream-dim);
+  --accent: rgba(201, 168, 76, 0.18);
+  --accent-foreground: var(--gold-soft);
   --destructive: var(--ruby);
-  --destructive-foreground: #fffaf0;
-  --border: rgba(30, 42, 120, 0.14);
-  --input: rgba(30, 42, 120, 0.22);
-  --ring: rgba(232, 169, 58, 0.55);
+  --destructive-foreground: var(--night-0);
+  --border: rgba(240, 215, 140, 0.16);
+  --input: rgba(240, 215, 140, 0.22);
+  --ring: rgba(201, 168, 76, 0.55);
 
-  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 24px -16px rgba(30, 42, 120, 0.30);
-  --shadow-rise: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 22px 48px -22px rgba(30, 42, 120, 0.45);
-  --shadow-glow: 0 0 0 1px rgba(232, 169, 58, 0.35), 0 18px 40px -20px rgba(232, 169, 58, 0.55);
+  --shadow-card: 0 1px 0 rgba(240, 215, 140, 0.06) inset, 0 14px 32px -18px rgba(0, 0, 0, 0.7);
+  --shadow-rise: 0 1px 0 rgba(240, 215, 140, 0.10) inset, 0 26px 56px -22px rgba(0, 0, 0, 0.85);
+  --shadow-glow: 0 0 0 1px rgba(201, 168, 76, 0.45), 0 18px 44px -14px rgba(201, 168, 76, 0.45);
 
-  --gradient-hero: radial-gradient(1200px 600px at 10% -10%, rgba(232,169,58,0.35), transparent 60%),
-                   radial-gradient(900px 500px at 90% 10%, rgba(192,57,43,0.18), transparent 60%),
-                   radial-gradient(800px 600px at 50% 110%, rgba(30,42,120,0.18), transparent 60%);
+  --gradient-hero: radial-gradient(1200px 600px at 10% -10%, rgba(201,168,76,0.28), transparent 60%),
+                   radial-gradient(900px 500px at 90% 10%, rgba(240,215,140,0.10), transparent 60%),
+                   radial-gradient(800px 600px at 50% 110%, rgba(27,47,99,0.55), transparent 60%);
 }
 
 @layer base {
@@ -117,10 +131,11 @@
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
     min-height: 100vh;
+    background-color: var(--night-0);
     background-image:
-      radial-gradient(1100px 600px at 8% -10%, rgba(232,169,58,0.22), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(192,57,43,0.10), transparent 55%),
-      radial-gradient(900px 700px at 50% 120%, rgba(30,42,120,0.10), transparent 60%);
+      radial-gradient(1100px 600px at 8% -10%, rgba(201,168,76,0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(240,215,140,0.06), transparent 55%),
+      radial-gradient(1200px 800px at 50% 120%, rgba(19,35,74,0.85), transparent 60%);
     background-attachment: fixed;
   }
   html[lang="he"] body { font-family: var(--font-serif-he); }
