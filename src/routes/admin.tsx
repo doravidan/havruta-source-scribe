@@ -77,28 +77,90 @@ function AdminPage() {
   const [sefariaSlice, setSefariaSlice] = useState<string>("tehillim");
   const [sefariaStart, setSefariaStart] = useState<number>(1);
   const [sefariaMax, setSefariaMax] = useState<number>(20);
-  const sefariaM = useMutation({
-    mutationFn: () =>
-      ingestSefariaFn({
-        data: {
-          sliceKey: sefariaSlice,
-          startChapter: sefariaStart,
-          maxChapters: sefariaMax,
-          language: "he",
-          embed: true,
-        },
-      }),
-    onSuccess: (r) => {
-      setResultMsg(
-        `Sefaria ${r.slice}: chapters ${r.processedRange[0]}–${r.processedRange[1]} of ${r.totalChapters} · new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, failures ${r.failures}.${
-          r.nextChapter ? ` Next: chapter ${r.nextChapter}.` : " ✓ slice complete."
-        }`,
-      );
-      if (r.nextChapter) setSefariaStart(r.nextChapter);
-      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
-    },
-    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
-  });
+  // Live progress state for the chapter-by-chapter run.
+  type SefProgress = {
+    running: boolean;
+    total: number;          // chapters planned this run
+    done: number;           // chapters attempted
+    currentChapter: number | null;
+    savedNew: number;
+    savedUpdated: number;
+    skippedUnchanged: number;
+    chunks: number;
+    embedded: number;
+    failures: number;
+    lastError?: string | null;
+    sliceTotal?: number;
+    nextChapter?: number | null;
+  };
+  const emptyProgress: SefProgress = {
+    running: false, total: 0, done: 0, currentChapter: null,
+    savedNew: 0, savedUpdated: 0, skippedUnchanged: 0,
+    chunks: 0, embedded: 0, failures: 0, lastError: null,
+  };
+  const [sefProgress, setSefProgress] = useState<SefProgress>(emptyProgress);
+  const cancelRef = useRef(false);
+
+  async function runSefariaIngest() {
+    cancelRef.current = false;
+    const slice = (slices ?? []).find((s) => s.key === sefariaSlice);
+    const sliceTotal = slice?.chapters ?? 0;
+    const start = sefariaStart;
+    const end = sliceTotal ? Math.min(sliceTotal, start + sefariaMax - 1) : start + sefariaMax - 1;
+    const total = Math.max(0, end - start + 1);
+
+    setSefProgress({ ...emptyProgress, running: true, total, currentChapter: start, sliceTotal });
+    setResultMsg(null);
+
+    let cursor = start;
+    let lastNext: number | null = null;
+    while (cursor <= end) {
+      if (cancelRef.current) break;
+      setSefProgress((p) => ({ ...p, currentChapter: cursor }));
+      try {
+        const r = await ingestSefariaFn({
+          data: {
+            sliceKey: sefariaSlice,
+            startChapter: cursor,
+            maxChapters: 1,
+            language: "he",
+            embed: true,
+          },
+        });
+        lastNext = r.nextChapter;
+        setSefProgress((p) => ({
+          ...p,
+          done: p.done + 1,
+          savedNew: p.savedNew + r.savedNew,
+          savedUpdated: p.savedUpdated + r.savedUpdated,
+          skippedUnchanged: p.skippedUnchanged + r.skippedUnchanged,
+          chunks: p.chunks + r.chunks,
+          embedded: p.embedded + r.embedded,
+          failures: p.failures + r.failures,
+          lastError: r.errors?.[0] ?? p.lastError ?? null,
+          nextChapter: r.nextChapter,
+        }));
+        if (r.nextChapter) setSefariaStart(r.nextChapter);
+      } catch (e: any) {
+        setSefProgress((p) => ({
+          ...p,
+          done: p.done + 1,
+          failures: p.failures + 1,
+          lastError: e?.message ?? String(e),
+        }));
+      }
+      cursor++;
+    }
+
+    setSefProgress((p) => ({ ...p, running: false, currentChapter: null }));
+    qc.invalidateQueries({ queryKey: ["corpus-stats"] });
+    setResultMsg(
+      cancelRef.current
+        ? `Sefaria ingest canceled. Next: chapter ${lastNext ?? cursor}.`
+        : `Sefaria ${sefariaSlice}: done. ${lastNext ? `Next: chapter ${lastNext}.` : "✓ slice complete."}`,
+    );
+  }
+
 
   const parsed = useMemo(() => {
     if (!json.trim()) return null;
