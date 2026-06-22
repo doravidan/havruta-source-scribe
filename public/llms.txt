@@ -1,0 +1,15 @@
+# חסידותא · Chassiduta — Havruta Chabad
+
+> A Hebrew/Yiddish study companion for Chabad Chassidus: search the corpus, browse the library, ask sourced Q&A, find a chavruta study-partner, and follow daily study cycles (Chumash, Tehillim, Tanya, Rambam).
+
+The site is in Hebrew (with English UI), focused on classical Chabad Chassidic literature (Tanya, Likkutei Sichos, Maamarim, etc.). All answers from the Ask panel are grounded in cited sources from the library.
+
+## Pages
+
+- [Home](/): Overview, Ask panel, search, daily study, helpers.
+- [Library](/library): Browse the full Chassidus corpus by section — maamarim, sichos, igrot, and more.
+- [Chavruta](/chavruta): Find a study partner by availability and learning level.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Machine-readable URL list.

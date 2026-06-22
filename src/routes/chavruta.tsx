@@ -12,7 +12,11 @@ export const Route = createFileRoute("/chavruta")({
     meta: [
       { title: "חברותות — חסידותא" },
       { name: "description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
+      { property: "og:title", content: "חברותות — חסידותא" },
+      { property: "og:description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
+      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/chavruta" },
     ],
+    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/chavruta" }],
   }),
   component: ChavrutaPage,
 });
