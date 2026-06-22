@@ -48,10 +48,7 @@ export function SourceReader({ sourceId, onClose }: Props) {
   const [showSummary, setShowSummary] = useState(false);
 
   const summary = useMutation({
-    mutationFn: () => summarizeFn({ data: { sourceId: sourceId!, lang } as any }).catch(async () => {
-      // fall back to correct payload shape if the above mismatches
-      return summarizeFn({ data: { id: sourceId!, lang } as any });
-    }),
+    mutationFn: () => summarizeFn({ data: { id: sourceId!, lang } }),
   });
 
   useEffect(() => {
