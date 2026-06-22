@@ -65,21 +65,24 @@ done
 
 hdr "4. GRANTs for authenticated + service_role"
 for t in "${TABLES[@]}"; do
-  auth_n=$(q "select count(distinct privilege_type) from information_schema.role_table_grants where grantee='authenticated' and table_schema='public' and table_name='$t' and privilege_type in ('SELECT','INSERT','UPDATE','DELETE');")
-  svc_n=$(q  "select count(distinct privilege_type) from information_schema.role_table_grants where grantee='service_role' and table_schema='public' and table_name='$t' and privilege_type in ('SELECT','INSERT','UPDATE','DELETE');")
-  [[ "$auth_n" -ge 1 ]] && ok "authenticated has grants on $t ($auth_n)" || bad "authenticated MISSING grants on $t"
-  [[ "$svc_n"  -ge 1 ]] && ok "service_role has grants on $t ($svc_n)"   || bad "service_role MISSING grants on $t"
+  for priv in SELECT INSERT UPDATE DELETE; do
+    a=$(q "select has_table_privilege('authenticated','public.$t','$priv');")
+    s=$(q "select has_table_privilege('service_role','public.$t','$priv');")
+    [[ "$a" == "t" ]] && ok "authenticated $priv on $t" || bad "authenticated MISSING $priv on $t"
+    [[ "$s" == "t" ]] && ok "service_role $priv on $t" || bad "service_role MISSING $priv on $t"
+  done
 done
 
-hdr "5. anon has NO grants (auth-only tables)"
+hdr "5. anon has NO table privileges (auth-only tables)"
 for t in "${TABLES[@]}"; do
-  anon_n=$(q "select count(*) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and table_name='$t';")
-  if [[ "$anon_n" == "0" ]]; then
-    ok "anon has no access to $t"
-  else
-    bad "anon has $anon_n grant(s) on $t — should be 0 (auth-only)"
-  fi
+  any="f"
+  for priv in SELECT INSERT UPDATE DELETE; do
+    p=$(q "select has_table_privilege('anon','public.$t','$priv');")
+    [[ "$p" == "t" ]] && any="t"
+  done
+  [[ "$any" == "f" ]] && ok "anon has no access to $t" || bad "anon has access to $t (should be none)"
 done
+
 
 hdr "6. RPCs exist & are SECURITY DEFINER"
 for fn in "${RPCS[@]}"; do
