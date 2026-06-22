@@ -87,7 +87,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
 
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    const text = data.text ?? "";
+    const text = decodeEntities(data.text ?? "");
     const needleTrim = needle.trim();
     const re = needleTrim ? new RegExp(escapeReg(needleTrim), "gi") : null;
     let count = 0;
@@ -388,3 +388,26 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 function escapeReg(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: "\u00A0", thinsp: "\u2009", ensp: "\u2002", emsp: "\u2003",
+  hairsp: "\u200A", zwj: "\u200D", zwnj: "\u200C", lrm: "\u200E", rlm: "\u200F",
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+  ldquo: "\u201C", rdquo: "\u201D", lsquo: "\u2018", rsquo: "\u2019",
+  hellip: "\u2026", ndash: "\u2013", mdash: "\u2014", middot: "\u00B7",
+};
+
+function decodeEntities(s: string): string {
+  return s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, body) => {
+    if (body[0] === "#") {
+      const code = body[1] === "x" || body[1] === "X"
+        ? parseInt(body.slice(2), 16)
+        : parseInt(body.slice(1), 10);
+      if (Number.isFinite(code)) {
+        try { return String.fromCodePoint(code); } catch { return m; }
+      }
+      return m;
+    }
+    return NAMED_ENTITIES[body] ?? m;
+  });
+}
