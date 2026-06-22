@@ -27,6 +27,20 @@ function isUnsupportedScript(s: string): boolean {
   return /[\u0400-\u04FF\u0600-\u06FF\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\u0370-\u03FF]/.test(s);
 }
 
+function escLike(s: string) {
+  return s.replace(/[%_,()]/g, "\\$&");
+}
+
+function sliceAroundQuery(text: string, terms: string[], max = 1800) {
+  const lower = text.toLowerCase();
+  const hit = terms.map((t) => lower.indexOf(t.toLowerCase())).find((i) => i >= 0) ?? 0;
+  const start = Math.max(0, hit - Math.floor(max / 3));
+  const end = Math.min(text.length, start + max);
+  const prefix = start > 0 ? "…" : "";
+  const suffix = end < text.length ? "…" : "";
+  return prefix + text.slice(start, end) + suffix;
+}
+
 export const askHavruta = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
@@ -34,6 +48,7 @@ export const askHavruta = createServerFn({ method: "POST" })
     const { embed, chatCompletion } = await import("./ai-gateway.server");
     const { getPublicServerClient } = await import("./supabase-public.server");
     const { deterministicHelper } = await import("./helpers-deterministic");
+    const { normalizeQuery } = await import("./normalize-query");
     const sb = getPublicServerClient();
 
     // Deterministic shortcuts (Yiddish translate / Rashi script) — no AI needed.
@@ -69,22 +84,34 @@ export const askHavruta = createServerFn({ method: "POST" })
       if (!error) matches = (rows ?? []) as Match[];
     }
 
-    // 3. Keyword fallback if no matches
+    // 3. Keyword/source fallback if no vector matches. This keeps the companion
+    // working with OpenRouter-only setup, where embeddings may be disabled.
     if (matches.length === 0) {
-      const ql = `%${data.question.replace(/[%_]/g, "\\$&")}%`;
+      const { terms } = normalizeQuery(data.question);
+      const searchTerms = terms.length > 0 ? terms : [data.question.trim()];
+      const orParts: string[] = [];
+      for (const term of searchTerms.slice(0, 5)) {
+        const like = `%${escLike(term)}%`;
+        orParts.push(`title.ilike.${like}`);
+        orParts.push(`tree.ilike.${like}`);
+        orParts.push(`text.ilike.${like}`);
+      }
+
       const { data: rows } = await sb
-        .from("source_chunks")
-        .select("id, source_id, chunk_index, text, sources(title, tree)")
-        .ilike("text", ql)
-        .limit(6);
-      matches = (rows ?? []).map((r: any) => ({
-        chunk_id: r.id,
-        source_id: r.source_id,
-        chunk_index: r.chunk_index,
-        text: r.text,
-        similarity: 0,
-        title: r.sources?.title ?? "",
-        tree: r.sources?.tree ?? "",
+        .from("sources")
+        .select("id, title, tree, text")
+        .or(orParts.join(","))
+        .gte("char_count", 200)
+        .limit(8);
+
+      matches = (rows ?? []).map((r: any, i: number) => ({
+        chunk_id: `${r.id}:keyword:${i}`,
+        source_id: r.id,
+        chunk_index: 0,
+        text: sliceAroundQuery(r.text ?? "", searchTerms),
+        similarity: 0.25,
+        title: r.title ?? "",
+        tree: r.tree ?? "",
       }));
     }
 
@@ -131,11 +158,9 @@ export const askHavruta = createServerFn({ method: "POST" })
     // 6. Call model with retry on unsupported script output
     let answer = "";
     let attempt = 0;
-    const model = "google/gemini-3-flash-preview";
     while (attempt < 2) {
       try {
         answer = await chatCompletion({
-          model,
           system,
           messages: [{ role: "user", content: userMsg }],
           temperature: 0.3,

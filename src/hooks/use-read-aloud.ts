@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { synthesizeSpeechChunk } from "@/lib/tts.functions";
 
-// Split text into chunks at sentence/paragraph boundaries, each ≤ maxChars.
-// Falls back to word-splitting for any single sentence that exceeds the cap.
-function chunkText(text: string, maxChars = 600): string[] {
+// Free client-side read-aloud using the browser SpeechSynthesis API.
+// This avoids Lovable AI Gateway / paid TTS entirely. Voice quality depends on
+// the user's browser/OS, but it keeps the reader feature working at zero API cost.
+function chunkText(text: string, maxChars = 260): string[] {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return [];
-  // Sentence terminators include Hebrew sof-pasuk (׃) and standard . ! ?
   const sentences = clean.match(/[^.!?׃\n]+[.!?׃]?\s*/g) ?? [clean];
   const chunks: string[] = [];
   let cur = "";
@@ -42,40 +40,42 @@ function chunkText(text: string, maxChars = 600): string[] {
 
 type Status = "idle" | "loading" | "playing" | "paused" | "error";
 
+function pickVoice(lang: "he" | "en") {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return undefined;
+  const voices = window.speechSynthesis.getVoices();
+  const prefix = lang === "he" ? "he" : "en";
+  return voices.find((v) => v.lang.toLowerCase().startsWith(prefix)) ?? voices.find((v) => v.lang.toLowerCase().startsWith("en"));
+}
+
 export function useReadAloud() {
-  const synth = useServerFn(synthesizeSpeechChunk);
   const [status, setStatus] = useState<Status>("idle");
-  const [progress, setProgress] = useState(0); // 0..1
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlsRef = useRef<string[]>([]);
   const cancelRef = useRef(false);
-
-  const cleanup = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current = null;
-    }
-    urlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-    urlsRef.current = [];
-  }, []);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const stop = useCallback(() => {
     cancelRef.current = true;
-    cleanup();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    utteranceRef.current = null;
     setStatus("idle");
     setProgress(0);
-  }, [cleanup]);
+  }, []);
 
   const pause = useCallback(() => {
-    audioRef.current?.pause();
-    setStatus("paused");
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.pause();
+      setStatus("paused");
+    }
   }, []);
 
   const resume = useCallback(() => {
-    audioRef.current?.play().then(() => setStatus("playing")).catch(() => {});
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.resume();
+      setStatus("playing");
+    }
   }, []);
 
   const speak = useCallback(
@@ -86,53 +86,57 @@ export function useReadAloud() {
       setStatus("loading");
       setProgress(0);
 
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        setError("speech_synthesis_unavailable");
+        setStatus("error");
+        return;
+      }
+
       const chunks = chunkText(text);
       if (chunks.length === 0) {
         setStatus("idle");
         return;
       }
 
-      const playOne = (url: string) =>
+      const voice = pickVoice(lang);
+      const playOne = (chunk: string) =>
         new Promise<void>((resolve, reject) => {
-          const a = new Audio(url);
-          audioRef.current = a;
-          a.onended = () => resolve();
-          a.onerror = () => reject(new Error("audio_error"));
-          a.play().then(() => setStatus("playing")).catch(reject);
+          const u = new SpeechSynthesisUtterance(chunk);
+          u.lang = lang === "he" ? "he-IL" : "en-US";
+          u.rate = lang === "he" ? 0.9 : 0.95;
+          u.pitch = 1;
+          if (voice) u.voice = voice;
+          u.onstart = () => setStatus("playing");
+          u.onend = () => resolve();
+          u.onerror = (event) => reject(new Error(event.error || "speech_error"));
+          utteranceRef.current = u;
+          window.speechSynthesis.speak(u);
         });
 
       try {
+        // Some browsers populate voices asynchronously.
+        if (window.speechSynthesis.getVoices().length === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 150));
+        }
         for (let i = 0; i < chunks.length; i++) {
           if (cancelRef.current) break;
-          const { audioBase64, mime } = await synth({
-            data: { text: chunks[i], lang },
-          });
-          if (cancelRef.current) break;
-          // Convert base64 → Blob (avoid stack overflow on large strings).
-          const bin = atob(audioBase64);
-          const bytes = new Uint8Array(bin.length);
-          for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
-          const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-          urlsRef.current.push(url);
-          await playOne(url);
+          await playOne(chunks[i]);
           setProgress((i + 1) / chunks.length);
         }
         if (!cancelRef.current) {
           setStatus("idle");
           setProgress(0);
-          cleanup();
         }
       } catch (e: unknown) {
-        const msg = (e as Error)?.message ?? "tts_failed";
+        const msg = (e as Error)?.message ?? "speech_failed";
         setError(msg);
         setStatus("error");
-        cleanup();
       }
     },
-    [cleanup, stop, synth],
+    [stop],
   );
 
-  useEffect(() => () => cleanup(), [cleanup]);
+  useEffect(() => () => stop(), [stop]);
 
   return { status, progress, error, speak, pause, resume, stop };
 }

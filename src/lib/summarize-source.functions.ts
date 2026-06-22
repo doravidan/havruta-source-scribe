@@ -43,7 +43,6 @@ export const summarizeSource = createServerFn({ method: "POST" })
     let summary = "";
     try {
       summary = await chatCompletion({
-        model: "google/gemini-3-flash-preview",
         system,
         messages: [{ role: "user", content: userMsg }],
         temperature: 0.2,
