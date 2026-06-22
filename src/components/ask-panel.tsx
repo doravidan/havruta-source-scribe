@@ -131,7 +131,7 @@ export function AskPanel() {
         </article>
       )}
 
-      <SourceReader sourceId={openSourceId} onClose={() => setOpenSourceId(null)} />
+      <SourceReader sourceId={openSourceId} onClose={() => setOpenSourceId(null)} autoSummarize={openSummarize} />
     </section>
   );
 }
