@@ -23,6 +23,8 @@ function AdminPage() {
   const qc = useQueryClient();
   const [json, setJson] = useState("");
   const [resultMsg, setResultMsg] = useState<string | null>(null);
+  const [selectedRoots, setSelectedRoots] = useState<string[]>([CHABAD_ROOT_IDS[0].id]);
+  const [maxPages, setMaxPages] = useState(40);
 
   useEffect(() => {
     if (!loading && !session) nav({ to: "/auth" });
