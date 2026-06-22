@@ -108,7 +108,7 @@ export const ingestSources = createServerFn({ method: "POST" })
         chunk_index: i,
         text: t,
         token_count: Math.ceil(t.length / 4),
-        embedding: embeddings[i] && embeddings[i].length > 0 ? embeddings[i] as unknown as string : null,
+        embedding: embeddings[i] && embeddings[i].length > 0 ? JSON.stringify(embeddings[i]) : null,
       }));
 
       if (rows.length > 0) {
@@ -185,7 +185,7 @@ export const seedCorpus = createServerFn({ method: "POST" })
         chunk_index: i,
         text: t,
         token_count: Math.ceil(t.length / 4),
-        embedding: embeddings[i] && embeddings[i].length > 0 ? embeddings[i] as unknown as string : null,
+        embedding: embeddings[i] && embeddings[i].length > 0 ? JSON.stringify(embeddings[i]) : null,
       }));
       if (rows.length > 0) {
         await supabaseAdmin.from("source_chunks").insert(rows as any);

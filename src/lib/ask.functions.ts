@@ -49,7 +49,7 @@ export const askHavruta = createServerFn({ method: "POST" })
     let matches: Match[] = [];
     if (queryEmbedding.length > 0) {
       const { data: rows, error } = await sb.rpc("match_chunks", {
-        query_embedding: queryEmbedding as unknown as string,
+        query_embedding: JSON.stringify(queryEmbedding),
         match_count: 8,
         min_similarity: 0.0,
       });
