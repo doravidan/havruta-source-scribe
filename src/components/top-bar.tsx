@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, Sparkles, ShieldCheck, LogOut, Library } from "lucide-react";
+import { Languages, ShieldCheck, LogOut, Library, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
@@ -19,15 +19,15 @@ export function TopBar() {
   });
 
   return (
-    <header className="sticky top-0 z-40 bg-[color:var(--paper)]/85 backdrop-blur-md border-b border-[color:var(--rule)]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-8 h-16 flex items-center gap-3 sm:gap-6 flex-wrap">
-        <Link to="/" className="flex items-center gap-3 min-w-0 group">
+    <header className="sticky top-0 z-40 bg-[color:var(--paper)]/92 backdrop-blur-xl border-b border-[color:var(--rule)]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-8 min-h-16 py-2 flex items-center gap-2 sm:gap-6 flex-wrap">
+        <Link to="/" className="hidden sm:flex items-center gap-3 min-w-0 max-w-[48%] sm:max-w-none group">
           <img
             src={logo}
             alt={t.brand}
             width={40}
             height={40}
-            className="h-9 w-9 rounded-full ring-1 ring-[color:var(--gold)]/40 shadow-[0_0_18px_-6px_rgba(201,168,76,0.6)] transition-transform group-hover:rotate-[6deg]"
+            className="h-9 w-9 rounded-full ring-1 ring-[color:var(--gold)]/30 shadow-[0_10px_28px_-18px_rgba(215,189,120,0.9)] transition-transform group-hover:scale-[1.03]"
           />
           <div className="flex flex-col leading-tight min-w-0">
             <span
@@ -56,7 +56,7 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-0 sm:ms-auto flex items-center gap-2 max-w-full overflow-hidden">
           <Link
             to="/library"
             className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
@@ -70,7 +70,7 @@ export function TopBar() {
             aria-label="Toggle language"
           >
             <Languages className="h-4 w-4" />
-            <span>{t.langToggle}</span>
+            <span className="hidden sm:inline">{t.langToggle}</span>
           </button>
 
           {isAdmin && (
@@ -92,7 +92,7 @@ export function TopBar() {
               to="/auth"
               className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md bg-primary text-primary-foreground hover:opacity-90 text-sm font-medium"
             >
-              <Sparkles className="h-4 w-4" />{t.signIn}
+              <LogIn className="h-4 w-4" /><span className="hidden sm:inline">{t.signIn}</span>
             </Link>
           )}
         </div>

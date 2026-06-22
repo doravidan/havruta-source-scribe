@@ -4,9 +4,9 @@ export const dict = {
   he: {
     brand: "חסידותא",
     brandTagline: "חברותא לחסידות, בכל זמן ובכל מקום",
-    tagline: "חברותא לחסידות, בכל זמן ובכל מקום.",
+    tagline: "חסידות עם מקורות. לימוד בלי רעש.",
     heroSubtext:
-      "חסידותא — חסידות עם חברותא. חפש, פתח ולמד מקורות חסידות מלאים. שאל שאלות בעברית או באנגלית וקבל תשובה שמבוססת רק על המקורות שנשמרו במאגר.",
+      "חפש במאגר חסידות חב״ד, פתח מקורות מלאים, ושאל שאלות שמקבלות תשובה רק מתוך הטקסטים שנשמרו במאגר.",
     langToggle: "English",
     // top bar status
     statusSources: "מקורות",
@@ -81,9 +81,9 @@ export const dict = {
   en: {
     brand: "Chassiduta",
     brandTagline: "A chavruta for Chassidus, anytime, anywhere",
-    tagline: "A chavruta for Chassidus, anytime, anywhere.",
+    tagline: "Chassidus with sources. Study without noise.",
     heroSubtext:
-      "Chassiduta — Chassidus with a chavruta. Search, open and learn full Chassidus sources. Ask in Hebrew or English and get answers grounded only in the saved corpus.",
+      "Search the Chabad Chassidus corpus, open full sources, and ask questions answered only from texts saved in the database.",
     langToggle: "עברית",
     statusSources: "sources",
     statusChunks: "chunks",

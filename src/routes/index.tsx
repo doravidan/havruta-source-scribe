@@ -38,8 +38,8 @@ function Index() {
       <main>
         <Hero />
 
-        <section className="mx-auto max-w-7xl px-4 sm:px-8 mt-2 sm:mt-4 pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 sm:gap-6 items-start">
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 mt-8 sm:mt-10 pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 sm:gap-7 items-start">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 auto-rows-min order-2 lg:order-1">
               <motion.div custom={0} initial="hidden" animate="show" variants={tile} className="md:col-span-2">
                 <AskPanel />

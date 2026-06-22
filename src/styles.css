@@ -59,99 +59,160 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.92rem;
 
-  /* ליל חב״ד — Chassiduta midnight: deep navy + antique gold + warm cream */
-  --night-0: #060d1c;
-  --night-1: #0a1426;
-  --night-2: #13234a;
-  --night-3: #1b2f63;
-  --gold: #c9a84c;
-  --gold-soft: #f0d78c;
-  --gold-deep: #8a7028;
-  --cream: #ece6d3;
-  --cream-dim: #b9b29c;
+  --night-0: #05070d;
+  --night-1: #090d16;
+  --night-2: #101722;
+  --night-3: #172232;
+  --panel: rgba(15, 22, 33, 0.78);
+  --panel-strong: rgba(18, 27, 40, 0.94);
+  --line: rgba(229, 204, 143, 0.13);
+  --line-strong: rgba(229, 204, 143, 0.24);
+  --gold: #d7bd78;
+  --gold-soft: #f0dcab;
+  --gold-muted: #9f8751;
+  --cream: #efe8d4;
+  --cream-dim: #a9a493;
+  --cream-soft: #d7d0bc;
+  --ruby: #c56a52;
+  --sage: #83b7a2;
 
-  /* Legacy token aliases — components reference these names; remap to night palette */
-  --parchment: var(--night-1);
-  --parchment-warm: var(--night-2);
+  --parchment: var(--panel);
+  --parchment-warm: rgba(215, 189, 120, 0.08);
   --parchment-deep: var(--night-3);
-  --indigo-deep: var(--gold);          /* headings → gold on midnight */
-  --indigo: var(--gold-soft);
-  --indigo-soft: rgba(201, 168, 76, 0.12);
+  --indigo-deep: var(--gold-soft);
+  --indigo: var(--gold);
+  --indigo-soft: rgba(215, 189, 120, 0.10);
   --saffron: var(--gold);
   --saffron-soft: var(--gold-soft);
-  --ruby: #e0633f;
-  --ruby-soft: rgba(224, 99, 63, 0.15);
-  --sage: #6fb39a;
-  --sage-soft: rgba(111, 179, 154, 0.16);
+  --ruby-soft: rgba(197, 106, 82, 0.13);
+  --sage-soft: rgba(131, 183, 162, 0.13);
   --ink: var(--cream);
   --ink-soft: var(--cream-dim);
   --ink-deep: var(--cream);
-  --paper: var(--night-1);
-  --rule: rgba(240, 215, 140, 0.18);
+  --paper: rgba(8, 12, 20, 0.86);
+  --rule: var(--line);
 
-  --background: var(--night-1);
+  --background: var(--night-0);
   --foreground: var(--cream);
-  --card: var(--night-2);
+  --card: var(--panel);
   --card-foreground: var(--cream);
-  --popover: var(--night-2);
+  --popover: var(--panel-strong);
   --popover-foreground: var(--cream);
   --primary: var(--gold);
   --primary-foreground: var(--night-0);
-  --secondary: var(--night-3);
+  --secondary: rgba(215, 189, 120, 0.08);
   --secondary-foreground: var(--gold-soft);
-  --muted: var(--night-2);
+  --muted: rgba(255, 255, 255, 0.04);
   --muted-foreground: var(--cream-dim);
-  --accent: rgba(201, 168, 76, 0.18);
+  --accent: rgba(215, 189, 120, 0.10);
   --accent-foreground: var(--gold-soft);
   --destructive: var(--ruby);
   --destructive-foreground: var(--night-0);
-  --border: rgba(240, 215, 140, 0.16);
-  --input: rgba(240, 215, 140, 0.22);
-  --ring: rgba(201, 168, 76, 0.55);
+  --border: var(--line);
+  --input: rgba(229, 204, 143, 0.20);
+  --ring: rgba(215, 189, 120, 0.55);
 
-  --shadow-card: 0 1px 0 rgba(240, 215, 140, 0.06) inset, 0 14px 32px -18px rgba(0, 0, 0, 0.7);
-  --shadow-rise: 0 1px 0 rgba(240, 215, 140, 0.10) inset, 0 26px 56px -22px rgba(0, 0, 0, 0.85);
-  --shadow-glow: 0 0 0 1px rgba(201, 168, 76, 0.45), 0 18px 44px -14px rgba(201, 168, 76, 0.45);
-
-  --gradient-hero: radial-gradient(1200px 600px at 10% -10%, rgba(201,168,76,0.28), transparent 60%),
-                   radial-gradient(900px 500px at 90% 10%, rgba(240,215,140,0.10), transparent 60%),
-                   radial-gradient(800px 600px at 50% 110%, rgba(27,47,99,0.55), transparent 60%);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 56px -36px rgba(0, 0, 0, 0.95);
+  --shadow-rise: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 28px 70px -34px rgba(0, 0, 0, 0.95);
+  --shadow-glow: 0 0 0 1px rgba(215, 189, 120, 0.22), 0 28px 90px -48px rgba(215, 189, 120, 0.45);
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
-  html { overflow-x: hidden; }
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    overflow-x: hidden;
+    background: var(--night-0);
+  }
+
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  *,
+  *::before,
+  *::after {
+    min-width: 0;
+  }
+
+  html,
   body {
+    color: var(--color-foreground);
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
     font-family: var(--font-sans);
     font-feature-settings: "kern", "liga", "calt";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
-    min-height: 100vh;
-    background-color: var(--night-0);
-    background-image:
-      radial-gradient(1100px 600px at 8% -10%, rgba(201,168,76,0.16), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(240,215,140,0.06), transparent 55%),
-      radial-gradient(1200px 800px at 50% 120%, rgba(19,35,74,0.85), transparent 60%);
+    background:
+      linear-gradient(180deg, rgba(5, 7, 13, 0.4), var(--night-0) 44rem),
+      radial-gradient(900px 520px at 78% -10%, rgba(215, 189, 120, 0.13), transparent 62%),
+      radial-gradient(700px 480px at 10% 12%, rgba(131, 183, 162, 0.08), transparent 58%),
+      var(--night-0);
     background-attachment: fixed;
   }
-  html[lang="he"] body { font-family: var(--font-serif-he); }
-  h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.015em;
-    color: var(--indigo-deep);
-    font-weight: 600;
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.32;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(to bottom, black, transparent 80%);
   }
-  html[lang="he"] h1, html[lang="he"] h2, html[lang="he"] h3, html[lang="he"] h4 {
+
+  html[lang="he"] body {
+    font-family: var(--font-serif-he);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--gold-soft);
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+  }
+
+  html[lang="he"] h1,
+  html[lang="he"] h2,
+  html[lang="he"] h3,
+  html[lang="he"] h4 {
     font-family: var(--font-serif-he);
     letter-spacing: 0;
   }
-  ::selection { background: rgba(232, 169, 58, 0.45); color: var(--indigo-deep); }
+
+  button,
+  a,
+  input,
+  textarea {
+    outline-color: var(--ring);
+  }
+
+  ::selection {
+    background: rgba(215, 189, 120, 0.32);
+    color: var(--cream);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
@@ -159,66 +220,117 @@
 }
 
 @utility paper-card {
-  background: var(--card);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px);
 }
+
 @utility scholar-card {
-  background: var(--card);
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+    var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
-  transition: transform 240ms cubic-bezier(.2,.8,.2,1), box-shadow 240ms ease, border-color 240ms ease;
+  backdrop-filter: blur(18px);
+  transition:
+    transform 220ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease;
 }
+
 @utility scholar-card-hover {
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-rise);
-    border-color: rgba(232, 169, 58, 0.45);
+    border-color: var(--line-strong);
   }
 }
+
 @utility eyebrow {
   font-family: var(--font-sans);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: color-mix(in srgb, var(--cream-dim), var(--gold) 26%);
 }
-@utility hairline { height: 1px; background: var(--border); }
-@utility serif { font-family: var(--font-serif); }
-@utility gold-text { color: var(--saffron); }
+
+@utility hairline {
+  height: 1px;
+  background: var(--border);
+}
+
+@utility serif {
+  font-family: var(--font-serif);
+}
+
+@utility gold-text {
+  color: var(--gold-soft);
+}
+
 @utility gradient-text {
-  background: linear-gradient(110deg, var(--indigo-deep) 0%, var(--ruby) 55%, var(--saffron) 100%);
+  background: linear-gradient(118deg, #fff5d7 0%, var(--gold-soft) 38%, var(--gold-muted) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-@keyframes float-soft {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(-1.5deg); }
+@utility professional-button {
+  border: 1px solid rgba(215, 189, 120, 0.22);
+  background: linear-gradient(180deg, rgba(215, 189, 120, 0.14), rgba(215, 189, 120, 0.07));
+  color: var(--gold-soft);
 }
-@keyframes blink-eyes {
-  0%, 92%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.1); }
-}
+
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232,169,58,0.45); }
-  50% { box-shadow: 0 0 0 12px rgba(232,169,58,0); }
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
 }
-@utility animate-float { animation: float-soft 6s ease-in-out infinite; }
-@utility animate-glow-pulse { animation: glow-pulse 2.6s ease-out infinite; }
+
+@utility animate-glow-pulse {
+  animation: glow-pulse 2.8s ease-in-out infinite;
+}
+
 @utility shimmer-text {
-  background: linear-gradient(90deg, var(--indigo-deep) 0%, var(--saffron) 50%, var(--indigo-deep) 100%);
+  background: linear-gradient(90deg, var(--gold-soft) 0%, #fff4d0 50%, var(--gold-soft) 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: shimmer 5s linear infinite;
+}
+
+@media (max-width: 640px) {
+  html[dir="rtl"] {
+    direction: ltr;
+  }
+
+  html[dir="rtl"] body,
+  html[dir="rtl"] #root {
+    direction: rtl;
+  }
+
+  main,
+  section {
+    max-width: 100vw;
+    overflow-x: clip;
+  }
+
+  .scholar-card,
+  .paper-card {
+    width: 100%;
+    max-width: calc(100vw - 2rem);
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
 }

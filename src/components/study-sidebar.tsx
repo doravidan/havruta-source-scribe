@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Flame, BookCheck, Sparkles, Trophy } from "lucide-react";
+import { Flame, BookCheck, BookOpen, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
@@ -24,7 +24,7 @@ export function StudySidebar() {
       <aside className="scholar-card p-5 sm:p-6 relative overflow-hidden">
         <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.35), transparent 70%)" }} />
         <h3 className="eyebrow mb-2 flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[var(--saffron)]" />
+          <BookOpen className="h-3.5 w-3.5 text-[var(--saffron)]" />
           {lang === "he" ? "התקדמות לימוד" : "Study Progress"}
         </h3>
         <p className="text-sm text-muted-foreground mb-4">

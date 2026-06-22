@@ -27,26 +27,53 @@ const YIDDISH: Record<string, { he: string; en: string }> = {
   "טאַקע": { he: "אכן / באמת", en: "indeed" },
 };
 
+const EXAMPLES = ["וואס", "איז", "ענין", "טאקע"];
+
 export function YiddishHelper() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [w, setW] = useState("");
   const hit = YIDDISH[w.trim()];
+
   return (
-    <div className="scholar-card scholar-card-hover p-5 sm:p-6 relative overflow-hidden h-full">
-      <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(75,122,82,0.22), transparent 70%)" }} />
+    <div className="scholar-card scholar-card-hover p-5 sm:p-6 h-full flex flex-col">
       <h3 className="eyebrow mb-3 flex items-center gap-2">
-        <span className="inline-block h-2 w-2 rounded-full bg-[var(--sage)]" />
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--sage)]" />
         {t.yiddishHelper}
       </h3>
+
+      <p className="text-sm leading-6 text-muted-foreground mb-4">
+        {lang === "he"
+          ? "עזר קטן לפענוח מילים שחוזרות במקורות ובשיחות."
+          : "A small aid for recurring words in sources and sichos."}
+      </p>
+
       <input
         value={w}
         onChange={(e) => setW(e.target.value)}
         placeholder={t.yiddishPlaceholder}
-        className="w-full px-3 h-11 rounded-md border border-border bg-background/50 outline-none text-base"
+        className="w-full px-3 h-11 rounded-xl border border-border bg-background/45 outline-none text-base"
       />
-      <div className="mt-3 min-h-[44px] text-sm">
-        {w.trim() === "" ? null : hit ? (
-          <div className="space-y-1">
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex}
+            type="button"
+            onClick={() => setW(ex)}
+            className="rounded-full border border-border/80 bg-secondary/40 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40"
+          >
+            {ex}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-auto pt-5 min-h-[76px] text-sm">
+        {w.trim() === "" ? (
+          <p className="text-muted-foreground/80">
+            {lang === "he" ? "בחר דוגמה או הקלד מילה." : "Choose an example or type a word."}
+          </p>
+        ) : hit ? (
+          <div className="rounded-xl border border-border/70 bg-background/35 p-3 space-y-1">
             <div><span className="text-muted-foreground">עברית:</span> {hit.he}</div>
             <div><span className="text-muted-foreground">English:</span> {hit.en}</div>
           </div>
@@ -57,4 +84,3 @@ export function YiddishHelper() {
     </div>
   );
 }
-

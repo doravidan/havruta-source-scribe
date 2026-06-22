@@ -28,11 +28,15 @@ export function AskPanel() {
   return (
     <section className="w-full">
       <div className="scholar-card scholar-card-hover p-5 sm:p-7 relative overflow-hidden" style={{ boxShadow: "var(--shadow-glow)" }}>
-        <div aria-hidden className="absolute -top-16 -right-16 h-48 w-48 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.30), transparent 70%)" }} />
-        <h2 className="eyebrow mb-3 flex items-center gap-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" />
-          {t.askTitle}
-        </h2>
+        <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/70 pb-4">
+          <h2 className="eyebrow flex items-center gap-2">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--sage)]" />
+            {t.askTitle}
+          </h2>
+          <span className="hidden sm:inline text-[11px] text-muted-foreground">
+            {lang === "he" ? "מבוסס מאגר" : "corpus grounded"}
+          </span>
+        </div>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}

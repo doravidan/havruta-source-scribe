@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, ScrollText, Sparkles, Crown, Loader2, ChevronRight } from "lucide-react";
+import { BookOpen, ScrollText, Crown, Loader2, ChevronRight, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +27,7 @@ const CHITAS: Item[] = [
     icon: <ScrollText className="h-4 w-4" />, accent: "saffron" },
   { key: "tehillim", he: "תהלים — לפי ימי החודש", en: "Tehillim — monthly cycle",
     subHe: "חלוקת המזמורים היומית", subEn: "Daily psalms portion",
-    icon: <Sparkles className="h-4 w-4" />, accent: "indigo" },
+    icon: <CalendarDays className="h-4 w-4" />, accent: "indigo" },
   { key: "tanya", he: "תניא — שיעור יומי", en: "Tanya — daily lesson",
     subHe: "לפי לוח השיעורים", subEn: "Per the daily study calendar",
     icon: <BookOpen className="h-4 w-4" />, accent: "ruby" },
