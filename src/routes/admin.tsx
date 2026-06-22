@@ -35,7 +35,13 @@ function AdminPage() {
   const seedFn = useServerFn(seedCorpus);
   const crawlFn = useServerFn(crawlChabadLibrary);
   const statsFn = useServerFn(corpusStats);
+  const coverageFn = useServerFn(chabadCoverage);
   const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn() });
+  const [coverageDepth, setCoverageDepth] = useState(2);
+  const coverageM = useMutation({
+    mutationFn: (depth: number) => coverageFn({ data: { depth, maxFetchesPerRoot: 60 } }),
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
 
   const parsed = useMemo(() => {
     if (!json.trim()) return null;
