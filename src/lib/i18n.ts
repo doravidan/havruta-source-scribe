@@ -99,7 +99,6 @@ export const dict = {
       "What does dirah betachtonim mean?",
       "What is a beinoni in Tanya?",
       "Translate Yiddish: וואס איז דער ענין",
-      "How do I identify dalet in Rashi script?",
     ],
     sourcesUsed: "Sources used in this answer",
     noSources: "No matching sources found.",
