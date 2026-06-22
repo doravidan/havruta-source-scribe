@@ -18,27 +18,28 @@ export function TopBar() {
   });
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border/60">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center gap-3 sm:gap-6 flex-wrap">
-        <Link to="/" className="flex items-center gap-2 group min-w-0">
-          <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: "var(--gradient-gold)" }}>
-            <BookOpen className="h-5 w-5 text-[oklch(0.18_0.02_60)]" />
-          </span>
-          <span className="text-base sm:text-lg font-semibold truncate" style={{ fontFamily: "var(--font-display)" }}>
+    <header className="sticky top-0 z-40 bg-[color:var(--paper)]/85 backdrop-blur-md border-b border-[color:var(--rule)]">
+      <div className="mx-auto max-w-6xl px-4 sm:px-8 h-16 flex items-center gap-3 sm:gap-6 flex-wrap">
+        <Link to="/" className="flex items-center gap-3 min-w-0">
+          <BookOpen className="h-4 w-4 text-[color:var(--ink-deep)]" />
+          <span
+            className="text-lg sm:text-xl truncate text-[color:var(--ink-deep)]"
+            style={{ fontFamily: "var(--font-display)", fontWeight: 500, letterSpacing: "-0.01em" }}
+          >
             {t.brand}
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--ink-deep)]" />
             {stats?.ok ? t.statusOnline : t.statusOffline}
           </span>
           {stats && (
             <>
+              <span className="text-[color:var(--rule)]">·</span>
               <span>{stats.sources} {t.statusSources}</span>
               <span>{stats.chunks} {t.statusChunks}</span>
-              <span>{stats.chars.toLocaleString()} {t.statusChars}</span>
             </>
           )}
         </div>
