@@ -298,6 +298,35 @@ export type Database = {
         }
         Relationships: []
       }
+      study_progress: {
+        Row: {
+          completed_at: string
+          section: string | null
+          source_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          section?: string | null
+          source_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          section?: string | null
+          source_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_progress_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -420,6 +449,20 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      study_active_dates: {
+        Args: { _user_id: string }
+        Returns: {
+          d: string
+        }[]
+      }
+      study_section_counts: {
+        Args: { _user_id: string }
+        Returns: {
+          done: number
+          section: string
+          total: number
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
