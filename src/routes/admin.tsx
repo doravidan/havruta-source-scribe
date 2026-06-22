@@ -16,7 +16,17 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [
+      { title: "Admin — Havruta Chabad" },
+      { name: "description", content: "Internal admin console for corpus ingest, Chabad Library crawl orchestration, and Sefaria sync." },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Admin — Havruta Chabad" },
+      { property: "og:description", content: "Internal admin console." },
+      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/admin" },
+    ],
+    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/admin" }],
+  }),
   component: AdminPage,
 });
 
