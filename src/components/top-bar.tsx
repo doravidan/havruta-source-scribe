@@ -21,7 +21,10 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 bg-[color:var(--paper)]/92 backdrop-blur-xl border-b border-[color:var(--rule)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-8 min-h-16 py-2 flex items-center gap-2 sm:gap-6 flex-wrap">
-        <Link to="/" className="hidden sm:flex items-center gap-3 min-w-0 max-w-[48%] sm:max-w-none group">
+        <Link
+          to="/"
+          className="hidden sm:flex items-center gap-3 min-w-0 max-w-[48%] sm:max-w-none group"
+        >
           <img
             src={logo}
             alt={t.brand}
@@ -32,7 +35,11 @@ export function TopBar() {
           <div className="flex flex-col leading-tight min-w-0">
             <span
               className="text-lg sm:text-xl truncate text-[color:var(--gold-soft)]"
-              style={{ fontFamily: "var(--font-serif-he), var(--font-display)", fontWeight: 500, letterSpacing: "-0.005em" }}
+              style={{
+                fontFamily: "var(--font-serif-he), var(--font-display)",
+                fontWeight: 500,
+                letterSpacing: "-0.005em",
+              }}
             >
               {t.brand}
             </span>
@@ -50,8 +57,12 @@ export function TopBar() {
           {stats && (
             <>
               <span className="text-[color:var(--rule)]">·</span>
-              <span>{stats.sources} {t.statusSources}</span>
-              <span>{stats.chunks} {t.statusChunks}</span>
+              <span>
+                {stats.sources} {t.statusSources}
+              </span>
+              <span>
+                {stats.chunks} {t.statusChunks}
+              </span>
             </>
           )}
         </div>
@@ -81,8 +92,12 @@ export function TopBar() {
           </button>
 
           {isAdmin && (
-            <Link to="/admin" className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-primary/40 text-primary hover:bg-primary/10 text-sm">
-              <ShieldCheck className="h-4 w-4" /><span className="hidden sm:inline">{t.adminTitle}</span>
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-primary/40 text-primary hover:bg-primary/10 text-sm"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">{t.adminTitle}</span>
             </Link>
           )}
 
@@ -99,7 +114,8 @@ export function TopBar() {
               to="/auth"
               className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md bg-primary text-primary-foreground hover:opacity-90 text-sm font-medium"
             >
-              <LogIn className="h-4 w-4" /><span className="hidden sm:inline">{t.signIn}</span>
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">{t.signIn}</span>
             </Link>
           )}
         </div>
