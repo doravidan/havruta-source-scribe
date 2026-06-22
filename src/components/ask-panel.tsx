@@ -3,10 +3,11 @@ import { useLang } from "@/lib/lang-context";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { askHavruta } from "@/lib/ask.functions";
-import { Send, Loader2 } from "lucide-react";
+import { BookMarked, Loader2, Send } from "lucide-react";
 import { SourceReader } from "./source-reader";
 
 type AskResult = Awaited<ReturnType<typeof askHavruta>>;
+type SourceCard = AskResult["sources"][number] & { source_url?: string | null };
 
 export function AskPanel() {
   const { lang, t } = useLang();
@@ -27,59 +28,71 @@ export function AskPanel() {
 
   return (
     <section className="w-full">
-      <div className="scholar-card scholar-card-hover p-5 sm:p-7 relative overflow-hidden" style={{ boxShadow: "var(--shadow-glow)" }}>
-        <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/70 pb-4">
-          <h2 className="eyebrow flex items-center gap-2">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--sage)]" />
-            {t.askTitle}
-          </h2>
-          <span className="hidden sm:inline text-[11px] text-muted-foreground">
+      <div className="scholar-card scholar-card-hover p-5 sm:p-7 xl:p-8 border-primary/25">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-border/70 pb-5 mb-5">
+          <div>
+            <h2 className="eyebrow flex items-center gap-2">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--sage)]" />
+              {t.askTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {lang === "he"
+                ? "שאלה אחת, מקורות תחילה. התשובה נשענת על הטקסטים במאגר."
+                : "One question, sources first. Answers are grounded in corpus text."}
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/35 px-3 py-1.5 text-xs text-muted-foreground self-start">
+            <BookMarked className="h-3.5 w-3.5 text-primary" />
             {lang === "he" ? "מבוסס מאגר" : "corpus grounded"}
-          </span>
+          </div>
         </div>
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
-          }}
-          placeholder={t.askPlaceholder}
-          rows={3}
-          className="w-full resize-none bg-transparent text-base sm:text-lg outline-none placeholder:text-muted-foreground/60 leading-relaxed"
-        />
-        <div className="mt-3 flex flex-wrap gap-2">
-          {t.askExamples.map((ex) => (
+
+        <div className="rounded-2xl border border-border/70 bg-background/35 p-4 sm:p-5">
+          <textarea
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+            }}
+            placeholder={t.askPlaceholder}
+            rows={4}
+            className="w-full resize-none bg-transparent text-base sm:text-lg outline-none placeholder:text-muted-foreground/55 leading-relaxed"
+          />
+
+          <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {t.askExamples.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  onClick={() => submit(ex)}
+                  className="text-xs sm:text-sm px-3 py-2 min-h-10 rounded-full border border-border/80 bg-card/45 hover:bg-secondary hover:border-primary/35 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
             <button
-              key={ex}
-              type="button"
-              onClick={() => submit(ex)}
-              className="text-xs sm:text-sm px-3 py-2 min-h-11 rounded-full border border-border/80 bg-card/50 hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => submit()}
+              disabled={m.isPending || !question.trim()}
+              className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-40 hover:opacity-95 shrink-0"
             >
-              {ex}
+              {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {m.isPending ? t.askThinking : t.askSubmit}
             </button>
-          ))}
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => submit()}
-            disabled={m.isPending || !question.trim()}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 hover:opacity-95"
-          >
-            {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {m.isPending ? t.askThinking : t.askSubmit}
-          </button>
+          </div>
         </div>
       </div>
 
       {m.isError && (
-        <div className="mt-4 p-4 rounded-md border border-destructive/40 bg-destructive/10 text-sm text-destructive-foreground">
+        <div className="mt-4 p-4 rounded-xl border border-destructive/40 bg-destructive/10 text-sm text-destructive-foreground">
           {t.askErrorGeneric} {String((m.error as Error)?.message ?? "")}
         </div>
       )}
 
       {m.data && (
         <article className="mt-6 scholar-card p-5 sm:p-7">
-          <div className="text-xs text-muted-foreground mb-3">
+          <div className="text-xs text-muted-foreground mb-4 flex items-center gap-2">
             {m.data.mode === "weak" && <span className="text-amber-300/90">{t.weakAnswer} · </span>}
             <span>{m.data.latency_ms}ms</span>
           </div>
@@ -92,41 +105,51 @@ export function AskPanel() {
 
           {m.data.sources.length > 0 ? (
             <div className="mt-6">
-              <h3 className="text-xs uppercase tracking-widest text-primary/70 mb-3">
-                {t.sourcesUsed}
-              </h3>
+              <h3 className="eyebrow mb-3">{t.sourcesUsed}</h3>
               <div className="grid sm:grid-cols-2 gap-3">
-                {m.data.sources.map((s) => (
-                  <div
-                    key={s.id}
-                    className="text-start rounded-lg border border-border/70 bg-card/40 hover:bg-card hover:border-primary/40 p-4 transition-colors flex flex-col"
-                  >
-                    <button onClick={() => { setOpenSummarize(false); setOpenSourceId(s.id); }} className="text-start flex-1">
-                      {s.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{s.tree}</div>}
-                      <div className="font-medium mb-2">{s.title}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-3">{s.excerpt}</div>
-                    </button>
-                    <div className="mt-3 flex items-center gap-2 text-xs">
+                {m.data.sources.map((raw) => {
+                  const s = raw as SourceCard;
+                  return (
+                    <div
+                      key={s.id}
+                      className="text-start rounded-xl border border-border/70 bg-background/30 hover:bg-secondary/30 hover:border-primary/40 p-4 transition-colors flex flex-col"
+                    >
                       <button
-                        onClick={() => { setOpenSummarize(true); setOpenSourceId(s.id); }}
-                        className="px-2 py-1 rounded border border-[var(--saffron)]/50 text-[var(--indigo-deep)] bg-[color:var(--saffron-soft,transparent)] hover:bg-[var(--saffron)] hover:text-white transition-colors"
+                        onClick={() => {
+                          setOpenSummarize(false);
+                          setOpenSourceId(s.id);
+                        }}
+                        className="text-start flex-1"
                       >
-                        ✦ {t.cardSummary}
+                        {s.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{s.tree}</div>}
+                        <div className="font-medium mb-2">{s.title}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-3">{s.excerpt}</div>
                       </button>
-                      {(s as any).source_url && (
-                        <a
-                          href={(s as any).source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2 py-1 rounded border border-border hover:bg-secondary inline-flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
+                      <div className="mt-3 flex items-center gap-2 text-xs">
+                        <button
+                          onClick={() => {
+                            setOpenSummarize(true);
+                            setOpenSourceId(s.id);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg border border-primary/35 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-colors"
                         >
-                          ↗ {t.cardOpenOriginal}
-                        </a>
-                      )}
+                          {t.cardSummary}
+                        </button>
+                        {s.source_url && (
+                          <a
+                            href={s.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg border border-border hover:bg-secondary inline-flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {t.cardOpenOriginal}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (

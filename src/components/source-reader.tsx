@@ -41,8 +41,8 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   });
 
   const [fontStep, setFontStep] = useState<number>(() => {
-    if (typeof localStorage === "undefined") return 1;
-    return Number(localStorage.getItem("reader_font") ?? 1);
+    if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") return 1;
+    return Number(window.localStorage.getItem("reader_font") ?? 1);
   });
   const [needle, setNeedle] = useState("");
   const [copied, setCopied] = useState(false);
@@ -61,7 +61,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   }, [sourceId]);
 
   useEffect(() => {
-    try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
+    try { window.localStorage.setItem("reader_font", String(fontStep)); } catch {}
   }, [fontStep]);
 
   // Reset / auto-trigger summary when switching sources

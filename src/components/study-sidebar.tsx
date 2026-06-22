@@ -21,8 +21,7 @@ export function StudySidebar() {
 
   if (!session) {
     return (
-      <aside className="scholar-card p-5 sm:p-6 relative overflow-hidden">
-        <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.35), transparent 70%)" }} />
+      <aside className="scholar-card p-5 sm:p-6">
         <h3 className="eyebrow mb-2 flex items-center gap-2">
           <BookOpen className="h-3.5 w-3.5 text-[var(--saffron)]" />
           {lang === "he" ? "התקדמות לימוד" : "Study Progress"}
@@ -43,9 +42,7 @@ export function StudySidebar() {
   }
 
   return (
-    <aside className="scholar-card p-5 sm:p-6 relative overflow-hidden">
-      <div aria-hidden className="absolute -top-12 -right-12 h-36 w-36 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.32), transparent 70%)" }} />
-
+    <aside className="scholar-card p-5 sm:p-6">
       <h3 className="eyebrow mb-4 flex items-center gap-2">
         <span className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)] animate-glow-pulse" />
         {lang === "he" ? "התקדמות לימוד" : "Study Progress"}

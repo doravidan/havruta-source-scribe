@@ -83,13 +83,8 @@ export function DailyStudyPanel() {
   };
 
   return (
-    <section className="scholar-card p-5 sm:p-6 relative overflow-hidden">
-      <div
-        aria-hidden
-        className="absolute -top-16 -right-16 h-44 w-44 rounded-full"
-        style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.30), transparent 70%)" }}
-      />
-      <div className="flex items-start justify-between gap-3 mb-4 relative">
+    <section className="scholar-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="eyebrow mb-1 flex items-center gap-2">
             <span className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)] animate-glow-pulse" />
