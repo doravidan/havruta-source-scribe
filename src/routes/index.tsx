@@ -14,9 +14,11 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "חסידותא · Chassiduta — חברותא לחסידות" },
       { name: "description", content: "חסידותא — לימוד, חיפוש ושאלות מבוססות מקור על מקורות חסידות חב״ד." },
-      { property: "og:title", content: "חסידותא · Chassiduta" },
+      { property: "og:title", content: "חסידותא · Chassiduta — חברותא לחסידות" },
       { property: "og:description", content: "חסידות עם מקורות. לימוד בלי רעש." },
+      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/" }],
   }),
   component: Index,
 });
