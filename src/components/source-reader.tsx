@@ -231,6 +231,37 @@ export function SourceReader({ sourceId, onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-8">
+          {showSummary && (
+            <div className="mx-auto max-w-[68ch] mb-6 rounded-xl border border-[var(--saffron)]/50 bg-[color:var(--saffron-soft,#fff7e0)] p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--indigo-deep)]">
+                  <Sparkles className="h-4 w-4" />
+                  {t.readerSummaryTitle}
+                </div>
+                <button
+                  onClick={() => setShowSummary(false)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {t.readerHideSummary}
+                </button>
+              </div>
+              {summary.isPending ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t.readerSummarizing}
+                </div>
+              ) : summary.isError ? (
+                <div className="text-sm text-destructive">{t.readerSummaryError}</div>
+              ) : summary.data ? (
+                <div
+                  className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
+                  style={{ fontFamily: data?.language === "he" ? "var(--font-serif-he)" : "var(--font-sans)" }}
+                >
+                  {summary.data.summary}
+                </div>
+              ) : null}
+            </div>
+          )}
           {isLoading || !data ? (
             <div className="space-y-3 animate-pulse">
               <div className="h-4 bg-secondary rounded w-3/4" />
