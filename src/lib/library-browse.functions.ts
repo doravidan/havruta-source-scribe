@@ -23,7 +23,7 @@ export const browseLibrary = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<LibraryNode> => {
     const { getPublicServerClient } = await import("./supabase-public.server");
     const sb = getPublicServerClient();
-    const { data: row, error } = await sb.rpc("library_browse", {
+    const { data: row, error } = await (sb.rpc as any)("library_browse", {
       _path: data.path,
     });
     if (error) throw new Error(error.message);
