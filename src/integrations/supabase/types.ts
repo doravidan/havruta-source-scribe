@@ -14,16 +14,227 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ask_sessions: {
+        Row: {
+          answer: string | null
+          created_at: string
+          id: string
+          lang: string
+          latency_ms: number | null
+          mode: string | null
+          question: string
+          source_ids: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          lang: string
+          latency_ms?: number | null
+          mode?: string | null
+          question: string
+          source_ids?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          lang?: string
+          latency_ms?: number | null
+          mode?: string | null
+          question?: string
+          source_ids?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          preferred_lang: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          preferred_lang?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          preferred_lang?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      source_chunks: {
+        Row: {
+          chunk_index: number
+          created_at: string
+          embedding: string | null
+          fts: unknown
+          id: string
+          source_id: string
+          text: string
+          token_count: number | null
+        }
+        Insert: {
+          chunk_index: number
+          created_at?: string
+          embedding?: string | null
+          fts?: unknown
+          id?: string
+          source_id: string
+          text: string
+          token_count?: number | null
+        }
+        Update: {
+          chunk_index?: number
+          created_at?: string
+          embedding?: string | null
+          fts?: unknown
+          id?: string
+          source_id?: string
+          text?: string
+          token_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sources: {
+        Row: {
+          char_count: number
+          content_type: string | null
+          created_at: string
+          excerpt: string | null
+          fetched_at: string | null
+          fts: unknown
+          id: string
+          language: string
+          raw_payload: Json | null
+          sha256: string | null
+          source_id: string
+          source_provider: string
+          source_url: string | null
+          text: string
+          title: string
+          tree: string | null
+          tree_parts: Json | null
+          updated_at: string
+        }
+        Insert: {
+          char_count?: number
+          content_type?: string | null
+          created_at?: string
+          excerpt?: string | null
+          fetched_at?: string | null
+          fts?: unknown
+          id?: string
+          language?: string
+          raw_payload?: Json | null
+          sha256?: string | null
+          source_id: string
+          source_provider?: string
+          source_url?: string | null
+          text: string
+          title: string
+          tree?: string | null
+          tree_parts?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          char_count?: number
+          content_type?: string | null
+          created_at?: string
+          excerpt?: string | null
+          fetched_at?: string | null
+          fts?: unknown
+          id?: string
+          language?: string
+          raw_payload?: Json | null
+          sha256?: string | null
+          source_id?: string
+          source_provider?: string
+          source_url?: string | null
+          text?: string
+          title?: string
+          tree?: string | null
+          tree_parts?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      match_chunks: {
+        Args: {
+          match_count?: number
+          min_similarity?: number
+          query_embedding: string
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          language: string
+          similarity: number
+          source_id: string
+          text: string
+          title: string
+          tree: string
+          tree_parts: Json
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +361,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
