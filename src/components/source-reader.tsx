@@ -8,6 +8,7 @@ import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles, Play, Pause, Square } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
+import { parseSefariaText } from "@/lib/sefaria-text";
 
 type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
