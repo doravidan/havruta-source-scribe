@@ -395,7 +395,64 @@ function AdminPage() {
           </button>
         </div>
 
-        <div className="scholar-card p-5">
+        <div className="scholar-card p-5 mb-6">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            {lang === "he" ? "ייבוא מ-Sefaria (פלחים)" : "Sefaria slice ingest"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "מושך פרק־אחר־פרק מ-Sefaria לתוך המאגר. הרצה חוזרת ממשיכה מהפרק הבא. עד 50 פרקים לקריאה."
+              : "Pulls chapter-by-chapter from Sefaria into the corpus. Re-run to continue from the next chapter. Up to 50 chapters per run."}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 text-sm">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "מקור" : "Slice"}</span>
+              <select
+                value={sefariaSlice}
+                onChange={(e) => { setSefariaSlice(e.target.value); setSefariaStart(1); }}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              >
+                {(slices ?? []).map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {lang === "he" ? s.titleHe : s.titleEn} ({s.chapters})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "פרק התחלה" : "Start chapter"}</span>
+              <input
+                type="number"
+                min={1}
+                value={sefariaStart}
+                onChange={(e) => setSefariaStart(Math.max(1, Number(e.target.value) || 1))}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "מקס׳ פרקים" : "Max chapters"}</span>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={sefariaMax}
+                onChange={(e) => setSefariaMax(Math.max(1, Math.min(50, Number(e.target.value) || 20)))}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              />
+            </label>
+          </div>
+          <button
+            onClick={() => sefariaM.mutate()}
+            disabled={sefariaM.isPending}
+            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+          >
+            {sefariaM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {lang === "he" ? "ייבא פלח" : "Ingest slice"}
+          </button>
+        </div>
+
+
           <h2 className="font-medium mb-3 flex items-center gap-2"><Upload className="h-4 w-4 text-primary" />{t.adminIngest}</h2>
           <textarea
             value={json}
