@@ -64,6 +64,21 @@ function AdminPage() {
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
 
+  const crawlM = useMutation({
+    mutationFn: () =>
+      crawlFn({ data: { rootIds: selectedRoots, maxPages, embed: true, language: "he" } }),
+    onSuccess: (r) => {
+      setResultMsg(
+        `Crawl: visited ${r.visited}, text pages ${r.textPages}, new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, fetch failures ${r.fetchFailures}, queue remaining ${r.queueRemaining}.`,
+      );
+      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+
+  const toggleRoot = (id: string) =>
+    setSelectedRoots((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
   if (!session) return null;
 
