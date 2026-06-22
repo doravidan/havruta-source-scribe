@@ -5,6 +5,7 @@ import { AskPanel } from "@/components/ask-panel";
 import { SearchPanel } from "@/components/search-panel";
 import { YiddishHelper } from "@/components/helpers";
 import { StudySidebar } from "@/components/study-sidebar";
+import { DailyStudyPanel } from "@/components/daily-study";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
 
