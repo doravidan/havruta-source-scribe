@@ -12,6 +12,7 @@ export function AskPanel() {
   const { lang, t } = useLang();
   const [question, setQuestion] = useState("");
   const [openSourceId, setOpenSourceId] = useState<string | null>(null);
+  const [openSummarize, setOpenSummarize] = useState(false);
   const fn = useServerFn(askHavruta);
   const m = useMutation({
     mutationFn: (q: string) => fn({ data: { question: q, lang } }) as Promise<AskResult>,
