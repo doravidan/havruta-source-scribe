@@ -6,7 +6,8 @@ import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
 import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles, Play, Pause, Square } from "lucide-react";
+import { useReadAloud } from "@/hooks/use-read-aloud";
 
 type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
@@ -50,6 +51,14 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   const summary = useMutation({
     mutationFn: () => summarizeFn({ data: { id: sourceId!, lang } }),
   });
+
+  const read = useReadAloud();
+
+  // Stop audio when switching sources or closing.
+  useEffect(() => {
+    return () => read.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceId]);
 
   useEffect(() => {
     try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
@@ -187,6 +196,55 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
             {summary.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             <span className="hidden sm:inline">{summary.isPending ? t.readerSummarizing : t.readerSummary}</span>
           </button>
+          {/* Read aloud */}
+          {(() => {
+            const playing = read.status === "playing";
+            const paused = read.status === "paused";
+            const loading = read.status === "loading";
+            const active = playing || paused || loading;
+            const label = lang === "he"
+              ? loading ? "טוען…" : playing ? "השהה" : paused ? "המשך" : "הקרא בקול"
+              : loading ? "Loading…" : playing ? "Pause" : paused ? "Resume" : "Read aloud";
+            const Icon = loading ? Loader2 : playing ? Pause : Play;
+            return (
+              <div className="inline-flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (!data?.text) return;
+                    if (playing) return read.pause();
+                    if (paused) return read.resume();
+                    read.speak(data.text, (data.language as "he" | "en") ?? lang);
+                  }}
+                  disabled={!data || loading}
+                  className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-60 ${
+                    active
+                      ? "bg-[var(--saffron)] text-white border border-[var(--saffron)] hover:opacity-95"
+                      : "border border-[var(--saffron)] text-[var(--indigo-deep)] bg-[color:var(--saffron-soft)] hover:bg-[var(--saffron)] hover:text-white"
+                  }`}
+                  title={label}
+                  aria-label={label}
+                >
+                  <Icon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  <span className="hidden sm:inline">{label}</span>
+                  {active && read.progress > 0 && (
+                    <span className="hidden md:inline text-[11px] opacity-80 tabular-nums">
+                      {Math.round(read.progress * 100)}%
+                    </span>
+                  )}
+                </button>
+                {active && (
+                  <button
+                    onClick={() => read.stop()}
+                    className="h-10 w-10 rounded-md border border-border hover:bg-secondary inline-flex items-center justify-center"
+                    title={lang === "he" ? "עצור" : "Stop"}
+                    aria-label={lang === "he" ? "עצור" : "Stop"}
+                  >
+                    <Square className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           {data?.source_url && (
             <a
               href={data.source_url}
