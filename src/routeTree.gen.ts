@@ -15,6 +15,7 @@ import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuidesPidyonNefeshExplainedRouteImport } from './routes/guides.pidyon-nefesh-explained'
 import { Route as GuidesJewishMysticismIntroRouteImport } from './routes/guides.jewish-mysticism-intro'
 import { Route as GuidesHowToLearnChassidusRouteImport } from './routes/guides.how-to-learn-chassidus'
 import { Route as GuidesDailyTanyaGuideRouteImport } from './routes/guides.daily-tanya-guide'
@@ -53,6 +54,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesPidyonNefeshExplainedRoute =
+  GuidesPidyonNefeshExplainedRouteImport.update({
+    id: '/guides/pidyon-nefesh-explained',
+    path: '/guides/pidyon-nefesh-explained',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuidesJewishMysticismIntroRoute =
   GuidesJewishMysticismIntroRouteImport.update({
     id: '/guides/jewish-mysticism-intro',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
+  '/guides/pidyon-nefesh-explained': typeof GuidesPidyonNefeshExplainedRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
+  '/guides/pidyon-nefesh-explained': typeof GuidesPidyonNefeshExplainedRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
+  '/guides/pidyon-nefesh-explained': typeof GuidesPidyonNefeshExplainedRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
+    | '/guides/pidyon-nefesh-explained'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
+    | '/guides/pidyon-nefesh-explained'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
+    | '/guides/pidyon-nefesh-explained'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -197,6 +210,7 @@ export interface RootRouteChildren {
   GuidesDailyTanyaGuideRoute: typeof GuidesDailyTanyaGuideRoute
   GuidesHowToLearnChassidusRoute: typeof GuidesHowToLearnChassidusRoute
   GuidesJewishMysticismIntroRoute: typeof GuidesJewishMysticismIntroRoute
+  GuidesPidyonNefeshExplainedRoute: typeof GuidesPidyonNefeshExplainedRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -245,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/pidyon-nefesh-explained': {
+      id: '/guides/pidyon-nefesh-explained'
+      path: '/guides/pidyon-nefesh-explained'
+      fullPath: '/guides/pidyon-nefesh-explained'
+      preLoaderRoute: typeof GuidesPidyonNefeshExplainedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides/jewish-mysticism-intro': {
@@ -309,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuidesDailyTanyaGuideRoute: GuidesDailyTanyaGuideRoute,
   GuidesHowToLearnChassidusRoute: GuidesHowToLearnChassidusRoute,
   GuidesJewishMysticismIntroRoute: GuidesJewishMysticismIntroRoute,
+  GuidesPidyonNefeshExplainedRoute: GuidesPidyonNefeshExplainedRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
