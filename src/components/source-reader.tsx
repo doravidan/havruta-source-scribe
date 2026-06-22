@@ -55,12 +55,13 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
     try { localStorage.setItem("reader_font", String(fontStep)); } catch {}
   }, [fontStep]);
 
-  // Reset summary state when switching sources
+  // Reset / auto-trigger summary when switching sources
   useEffect(() => {
-    setShowSummary(false);
+    setShowSummary(!!autoSummarize);
     summary.reset();
+    if (autoSummarize && sourceId) summary.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceId]);
+  }, [sourceId, autoSummarize]);
 
   useEffect(() => {
     if (!open) return;
