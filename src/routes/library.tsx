@@ -161,7 +161,7 @@ function LibraryPage() {
                     >
                       <FileText className="h-4 w-4 text-primary/80 shrink-0" />
                       <span className="flex-1 min-w-0">
-                        <span className="block font-medium truncate">{leaf.title ?? "—"}</span>
+                        <span className="block font-medium truncate">{leaf.title ?? (lang === "he" ? "מקור ללא כותרת" : "Untitled source")}</span>
                         {leaf.char_count != null && (
                           <span className="block text-xs text-muted-foreground tabular-nums mt-0.5">
                             {leaf.char_count.toLocaleString()} {t.charsLabel}
