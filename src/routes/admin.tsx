@@ -10,8 +10,9 @@ import { CHABAD_ROOT_IDS } from "@/lib/chabad-clean";
 import { corpusStats } from "@/lib/corpus.functions";
 import { chabadCoverage } from "@/lib/chabad-coverage.functions";
 import { startFullCrawl, retryFailedCrawl, crawlQueueStats } from "@/lib/chabad-crawl-queue.functions";
+import { ingestSefariaSlice, listSefariaSlices } from "@/lib/sefaria-ingest.functions";
 import { TopBar } from "@/components/top-bar";
-import { Loader2, Sprout, Upload, Library, BarChart3, Rocket } from "lucide-react";
+import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Havruta Chabad" }, { name: "robots", content: "noindex" }] }),
@@ -64,6 +65,36 @@ function AdminPage() {
     onSuccess: (r) => {
       setResultMsg(`Reset ${r.retried} failed items to pending.`);
       qc.invalidateQueries({ queryKey: ["crawl-queue-stats"] });
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+
+  // ── Sefaria ingest ────────────────────────────────────────────
+  const listSlicesFn = useServerFn(listSefariaSlices);
+  const ingestSefariaFn = useServerFn(ingestSefariaSlice);
+  const { data: slices } = useQuery({ queryKey: ["sefaria-slices"], queryFn: () => listSlicesFn() });
+  const [sefariaSlice, setSefariaSlice] = useState<string>("tehillim");
+  const [sefariaStart, setSefariaStart] = useState<number>(1);
+  const [sefariaMax, setSefariaMax] = useState<number>(20);
+  const sefariaM = useMutation({
+    mutationFn: () =>
+      ingestSefariaFn({
+        data: {
+          sliceKey: sefariaSlice,
+          startChapter: sefariaStart,
+          maxChapters: sefariaMax,
+          language: "he",
+          embed: true,
+        },
+      }),
+    onSuccess: (r) => {
+      setResultMsg(
+        `Sefaria ${r.slice}: chapters ${r.processedRange[0]}–${r.processedRange[1]} of ${r.totalChapters} · new ${r.savedNew}, updated ${r.savedUpdated}, unchanged ${r.skippedUnchanged}, chunks ${r.chunks}, embedded ${r.embedded}, failures ${r.failures}.${
+          r.nextChapter ? ` Next: chapter ${r.nextChapter}.` : " ✓ slice complete."
+        }`,
+      );
+      if (r.nextChapter) setSefariaStart(r.nextChapter);
+      qc.invalidateQueries({ queryKey: ["corpus-stats"] });
     },
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
@@ -361,6 +392,63 @@ function AdminPage() {
           >
             {crawlM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {lang === "he" ? "התחל סריקה" : "Start crawl"}
+          </button>
+        </div>
+
+        <div className="scholar-card p-5 mb-6">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            {lang === "he" ? "ייבוא מ-Sefaria (פלחים)" : "Sefaria slice ingest"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "מושך פרק־אחר־פרק מ-Sefaria לתוך המאגר. הרצה חוזרת ממשיכה מהפרק הבא. עד 50 פרקים לקריאה."
+              : "Pulls chapter-by-chapter from Sefaria into the corpus. Re-run to continue from the next chapter. Up to 50 chapters per run."}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 text-sm">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "מקור" : "Slice"}</span>
+              <select
+                value={sefariaSlice}
+                onChange={(e) => { setSefariaSlice(e.target.value); setSefariaStart(1); }}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              >
+                {(slices ?? []).map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {lang === "he" ? s.titleHe : s.titleEn} ({s.chapters})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "פרק התחלה" : "Start chapter"}</span>
+              <input
+                type="number"
+                min={1}
+                value={sefariaStart}
+                onChange={(e) => setSefariaStart(Math.max(1, Number(e.target.value) || 1))}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">{lang === "he" ? "מקס׳ פרקים" : "Max chapters"}</span>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={sefariaMax}
+                onChange={(e) => setSefariaMax(Math.max(1, Math.min(50, Number(e.target.value) || 20)))}
+                className="bg-background/40 border border-border rounded-md px-2 h-10"
+              />
+            </label>
+          </div>
+          <button
+            onClick={() => sefariaM.mutate()}
+            disabled={sefariaM.isPending}
+            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+          >
+            {sefariaM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {lang === "he" ? "ייבא פלח" : "Ingest slice"}
           </button>
         </div>
 
