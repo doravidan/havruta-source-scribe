@@ -4,7 +4,7 @@ import { dict, type Lang } from "./i18n";
 type Ctx = {
   lang: Lang;
   dir: "rtl" | "ltr";
-  t: (typeof dict)["en"];
+  t: (typeof dict)["en"] | (typeof dict)["he"];
   setLang: (l: Lang) => void;
   toggle: () => void;
 };
