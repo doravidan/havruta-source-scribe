@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /auth
 Disallow: /api/
 
-Sitemap: https://havruta-source-scribe.lovable.app/sitemap.xml
+Sitemap: https://chassiduta.lovable.app/sitemap.xml

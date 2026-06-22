@@ -67,8 +67,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "חסידותא · Chassiduta — חברותא לחסידות" },
-      { name: "description", content: "חסידותא — חברותא לחסידות, בכל זמן ובכל מקום. לימוד מקורות חסידות חב״ד, חיפוש, שאלות ותשובות מבוססות מקור." },
       { name: "theme-color", content: "#0a1426" },
       { property: "og:site_name", content: "חסידותא · Chassiduta" },
       { property: "og:type", content: "website" },
@@ -85,12 +83,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@type": "Organization",
               name: "Havruta Chabad",
               alternateName: "חסידותא · Chassiduta",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
             },
             {
               "@type": "WebSite",
               name: "חסידותא · Chassiduta",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
               inLanguage: ["he", "en", "yi"],
             },
             {
@@ -98,7 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "Havruta Chabad",
               applicationCategory: "EducationApplication",
               operatingSystem: "Web",
-              url: "https://havruta-source-scribe.lovable.app",
+              url: "https://chassiduta.lovable.app",
               offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             },
           ],
