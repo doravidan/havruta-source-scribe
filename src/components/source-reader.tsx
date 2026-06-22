@@ -175,6 +175,30 @@ export function SourceReader({ sourceId, onClose }: Props) {
             )}
           </div>
           <button
+            onClick={() => {
+              setShowSummary(true);
+              if (!summary.data && !summary.isPending) summary.mutate();
+            }}
+            disabled={summary.isPending || !data}
+            className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium border border-[var(--indigo-deep)]/40 text-[var(--indigo-deep)] bg-[color:var(--indigo-soft,transparent)] hover:bg-[var(--indigo-deep)] hover:text-white transition-colors disabled:opacity-60"
+            title={t.readerSummary}
+          >
+            {summary.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            <span className="hidden sm:inline">{summary.isPending ? t.readerSummarizing : t.readerSummary}</span>
+          </button>
+          {data?.source_url && (
+            <a
+              href={data.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
+              title={t.readerOpenOriginal}
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="hidden sm:inline">{t.readerOpenOriginal}</span>
+            </a>
+          )}
+          <button
             onClick={copyAll}
             className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
           >
