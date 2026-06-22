@@ -9,6 +9,11 @@ The site is in Hebrew (with English UI), focused on classical Chabad Chassidic l
 - [Home](/): Overview, Ask panel, search, daily study, helpers.
 - [Library](/library): Browse the full Chassidus corpus by section — maamarim, sichos, igrot, and more.
 - [Chavruta](/chavruta): Find a study partner by availability and learning level.
+- [How to Learn Chassidus](/guides/how-to-learn-chassidus): Step-by-step learning methodology starting with Tanya, progressing to Maamarim and Sichos, with links to the source library and chavruta matching tools.
+
+## Guides
+
+- [How to Learn Chassidus](/guides/how-to-learn-chassidus): A practical step-by-step guide for learning Chabad Chassidus.
 
 ## Optional
 
