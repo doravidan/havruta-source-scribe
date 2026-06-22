@@ -1,0 +1,72 @@
+import { useState } from "react";
+import { useLang } from "@/lib/lang-context";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { searchSources } from "@/lib/search.functions";
+import { Search, Loader2 } from "lucide-react";
+import { SourceReader } from "./source-reader";
+
+type SearchResult = Awaited<ReturnType<typeof searchSources>>;
+
+export function SearchPanel() {
+  const { lang, t } = useLang();
+  const [q, setQ] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const fn = useServerFn(searchSources);
+  const m = useMutation({
+    mutationFn: (query: string) => fn({ data: { query, lang, limit: 12 } }) as Promise<SearchResult>,
+  });
+
+  const submit = () => {
+    const text = q.trim();
+    if (!text) return;
+    m.mutate(text);
+  };
+
+  return (
+    <section className="mx-auto max-w-4xl px-4 sm:px-6 mt-12 sm:mt-16">
+      <h2 className="text-sm uppercase tracking-widest text-primary/80 mb-3">{t.searchTitle}</h2>
+      <div className="scholar-card p-3 flex items-center gap-2">
+        <Search className="h-4 w-4 text-muted-foreground ms-2" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder={t.searchPlaceholder}
+          className="flex-1 bg-transparent outline-none text-base h-11"
+        />
+        <button
+          onClick={submit}
+          disabled={m.isPending || !q.trim()}
+          className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40"
+        >
+          {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t.searchSubmit}
+        </button>
+      </div>
+
+      {m.data && (
+        <div className="mt-5 space-y-3">
+          {m.data.results.length === 0 && (
+            <p className="text-sm text-muted-foreground p-4">{t.searchEmpty}</p>
+          )}
+          {m.data.results.map((r: any) => (
+            <button
+              key={r.id}
+              onClick={() => setOpenId(r.id)}
+              className="block w-full text-start scholar-card p-4 sm:p-5 hover:border-primary/40 transition-colors"
+            >
+              {r.tree && <div className="text-[11px] text-muted-foreground mb-1 truncate">{r.tree}</div>}
+              <div className="font-medium mb-1.5">{r.title}</div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{r.excerpt}</p>
+              <div className="mt-2 text-[11px] text-muted-foreground/80">
+                {r.char_count?.toLocaleString()} {t.charsLabel}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} />
+    </section>
+  );
+}
