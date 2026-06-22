@@ -8,9 +8,9 @@ import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles } from "lucide-react";
 
-type Props = { sourceId: string | null; onClose: () => void };
+type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
 
-export function SourceReader({ sourceId, onClose }: Props) {
+export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
   const qc = useQueryClient();
