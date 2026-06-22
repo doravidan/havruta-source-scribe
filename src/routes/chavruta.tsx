@@ -108,18 +108,19 @@ function ChavrutaPage() {
     enabled: !!user,
     queryFn: async () => {
       const { data: profile } = await db
-        .from("chavruta_profiles")
+        .from<Profile>("chavruta_profiles")
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       const { data: contact } = await db
-        .from("chavruta_contact_info")
+        .from<{ phone: string }>("chavruta_contact_info")
         .select("phone")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (profile?.topics?.length) setTopicInput(profile.topics.join(", "));
       return { profile: profile as Profile | null, phone: contact?.phone ?? "" };
     },
+
   });
 
   const availabilityQ = useQuery({
