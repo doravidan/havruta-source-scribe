@@ -79,6 +79,29 @@ const RAMBAM: Item[] = [
   },
 ];
 
+const SHULCHAN_ARUCH_HARAV: Item[] = [
+  {
+    key: "sh1",
+    he: 'שו"ע הרב — סימן אחד ליום',
+    en: "Shulchan Aruch HaRav — 1 siman/day",
+    subHe: "מחזור בן שנה",
+    subEn: "One-year cycle",
+    url: "https://www.chabad.org/dailystudy/shulchanAruchHarav.asp",
+    icon: <Scale className="h-4 w-4" />,
+    accent: "saffron",
+  },
+  {
+    key: "sh2",
+    he: 'שו"ע הרב — שני סימנים ליום',
+    en: "Shulchan Aruch HaRav — 2 simanim/day",
+    subHe: "מחזור בן שנתיים",
+    subEn: "Two-year cycle",
+    url: "https://www.chabad.org/dailystudy/shulchanAruchHarav.asp?shulchanAruchHarav=2",
+    icon: <Scale className="h-4 w-4" />,
+    accent: "indigo",
+  },
+];
+
 const ACCENT: Record<Item["accent"], { bar: string; bg: string; border: string }> = {
   saffron: { bar: "var(--saffron)", bg: "rgba(232,169,58,0.10)", border: "rgba(232,169,58,0.45)" },
   ruby:    { bar: "var(--ruby)", bg: "rgba(192,57,43,0.08)", border: "rgba(192,57,43,0.40)" },
