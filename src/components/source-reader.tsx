@@ -87,56 +87,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
 
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    const text = decodeEntities(data.text ?? "");
-    const needleTrim = needle.trim();
-    const re = needleTrim ? new RegExp(escapeReg(needleTrim), "gi") : null;
-    let count = 0;
-
-    const highlight = (s: string) => {
-      const esc = escapeHtml(s);
-      if (!re) return esc;
-      return esc.replace(re, (m) => {
-        count++;
-        return `<mark class="rounded px-0.5" style="background:oklch(0.80 0.13 80 / 0.35);color:inherit">${m}</mark>`;
-      });
-    };
-
-    // Lightweight, safe markdown-ish rendering for headers and rules:
-    //   "# X"   → big section header
-    //   "## X"  → chapter header
-    //   "### X" → subheader
-    //   "---"   → horizontal rule
-    const lines = text.split("\n");
-    const parts: string[] = [];
-    for (const raw of lines) {
-      const line = raw;
-      if (/^---+\s*$/.test(line)) {
-        parts.push('<hr class="my-4 border-[var(--saffron)]/30" />');
-        continue;
-      }
-      let m: RegExpMatchArray | null;
-      if ((m = line.match(/^#\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-5 mb-2 text-[1.25em] font-bold text-[var(--indigo-deep)]">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      if ((m = line.match(/^##\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-4 mb-2 text-[1.1em] font-semibold text-[var(--indigo-deep)] border-b border-[var(--saffron)]/40 pb-1">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      if ((m = line.match(/^###\s+(.*)$/))) {
-        parts.push(
-          `<div class="mt-3 mb-1 text-[0.95em] font-semibold text-[var(--saffron)] uppercase tracking-wide">${highlight(m[1])}</div>`,
-        );
-        continue;
-      }
-      parts.push(highlight(line));
-    }
-    return { html: parts.join("\n"), matchCount: count };
+    return parseSefariaText(data.text ?? "", { highlight: needle });
   }, [data, needle]);
+
 
   if (!open) return null;
 
