@@ -54,8 +54,6 @@ export const dict = {
     yiddishHelper: "מילון יידיש→עברית",
     yiddishPlaceholder: "הזן מילה ביידיש",
     yiddishNotFound: "המילה לא במאגר.",
-    rashiHelper: "מדריך כתב רש\u05F4י",
-    rashiSubtitle: "התאמה בין אותיות רגילות לכתב רש\u05F4י",
     // auth
     signIn: "התחברות",
     signUp: "הרשמה",
@@ -127,8 +125,6 @@ export const dict = {
     yiddishHelper: "Yiddish → Hebrew/English",
     yiddishPlaceholder: "Enter a Yiddish word",
     yiddishNotFound: "Not in the mini dictionary.",
-    rashiHelper: "Rashi-script guide",
-    rashiSubtitle: "Standard letters paired with their Rashi form",
     signIn: "Sign in",
     signUp: "Sign up",
     signOut: "Sign out",
