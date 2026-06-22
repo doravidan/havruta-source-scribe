@@ -235,13 +235,14 @@ function formatStructured(
   const startChapter = parseInt(json.sections?.[0] ?? "1", 10);
 
   const isHe = lang === "he";
+  const isPsalms = (json.book ?? "").toLowerCase().includes("psalm");
   const chapterWord = isHe
-    ? sectionNames[0]?.toLowerCase().includes("psalm")
+    ? isPsalms
       ? "מזמור"
-      : sectionNames[0]?.toLowerCase().includes("chapter")
-        ? "פרק"
-        : "פרק"
-    : sectionNames[0] || "Chapter";
+      : "פרק"
+    : isPsalms
+      ? "Psalm"
+      : sectionNames[0] || "Chapter";
 
   const verseWord =
     opts.verseLabel === null
