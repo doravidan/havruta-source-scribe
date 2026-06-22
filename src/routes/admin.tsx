@@ -147,22 +147,57 @@ function AdminPage() {
               ? "מוסיף את כל 8 הכרכים לתור עיבוד ברקע. עבודה אוטומטית כל דקה עד שהתור ריק — הליך זה יכול לקחת שעות/ימים."
               : "Queues all 8 root volumes for background processing. A cron job ticks every minute until the queue is empty — this may take hours or days."}
           </p>
-          {queueStats && (
-            <div className="flex flex-wrap gap-3 mb-3 text-sm">
-              <span className="px-2 py-1 rounded bg-background/40 border border-border">
-                {lang === "he" ? "ממתינים" : "Pending"}: <b className="tabular-nums">{queueStats.counts.pending ?? 0}</b>
-              </span>
-              <span className="px-2 py-1 rounded bg-background/40 border border-border">
-                {lang === "he" ? "בעיבוד" : "Processing"}: <b className="tabular-nums">{queueStats.counts.processing ?? 0}</b>
-              </span>
-              <span className="px-2 py-1 rounded bg-background/40 border border-border">
-                {lang === "he" ? "הושלמו" : "Done"}: <b className="tabular-nums">{queueStats.counts.done ?? 0}</b>
-              </span>
-              <span className="px-2 py-1 rounded bg-background/40 border border-border">
-                {lang === "he" ? "נכשלו" : "Failed"}: <b className="tabular-nums">{queueStats.counts.failed ?? 0}</b>
-              </span>
-            </div>
-          )}
+          {queueStats && (() => {
+            const pending = queueStats.counts.pending ?? 0;
+            const processing = queueStats.counts.processing ?? 0;
+            const done = queueStats.counts.done ?? 0;
+            const failed = queueStats.counts.failed ?? 0;
+            const total = pending + processing + done + failed;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            return (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-3 mb-2 text-sm">
+                  <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                    {lang === "he" ? "ממתינים" : "Pending"}: <b className="tabular-nums">{pending}</b>
+                  </span>
+                  <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                    {lang === "he" ? "בעיבוד" : "Processing"}: <b className="tabular-nums">{processing}</b>
+                  </span>
+                  <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                    {lang === "he" ? "הושלמו" : "Done"}: <b className="tabular-nums">{done}</b>
+                  </span>
+                  <span className="px-2 py-1 rounded bg-background/40 border border-border">
+                    {lang === "he" ? "נכשלו" : "Failed"}: <b className="tabular-nums">{failed}</b>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span>{lang === "he" ? "התקדמות ייבוא" : "Import progress"}</span>
+                  <span className="tabular-nums">{done.toLocaleString()} / {total.toLocaleString()} ({pct}%)</span>
+                </div>
+                <div
+                  className="h-2 w-full rounded-full bg-background/40 border border-border overflow-hidden"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={pct}
+                >
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {processing > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {lang === "he"
+                      ? `${processing.toLocaleString()} פריטים בעיבוד כעת`
+                      : `${processing.toLocaleString()} item${processing === 1 ? "" : "s"} processing now`}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => startFullM.mutate()}
