@@ -194,6 +194,7 @@ export const askHavruta = createServerFn({ method: "POST" })
         source_ids: sourceList.map((s) => s.id),
         mode: weak ? "weak" : "ok",
         latency_ms: Date.now() - t0,
+        user_id: context.userId,
       });
     } catch {}
 
