@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GuidesJewishMysticismIntroRouteImport } from './routes/guides.jewish-mysticism-intro'
 import { Route as GuidesHowToLearnChassidusRouteImport } from './routes/guides.how-to-learn-chassidus'
+import { Route as GuidesDailyTanyaGuideRouteImport } from './routes/guides.daily-tanya-guide'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -64,6 +65,11 @@ const GuidesHowToLearnChassidusRoute =
     path: '/guides/how-to-learn-chassidus',
     getParentRoute: () => rootRouteImport,
   } as any)
+const GuidesDailyTanyaGuideRoute = GuidesDailyTanyaGuideRouteImport.update({
+  id: '/guides/daily-tanya-guide',
+  path: '/guides/daily-tanya-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/guides/daily-tanya-guide': typeof GuidesDailyTanyaGuideRoute
   '/guides/how-to-learn-chassidus': typeof GuidesHowToLearnChassidusRoute
   '/guides/jewish-mysticism-intro': typeof GuidesJewishMysticismIntroRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/guides/daily-tanya-guide'
     | '/guides/how-to-learn-chassidus'
     | '/guides/jewish-mysticism-intro'
     | '/api/public/hooks/chabad-crawl-tick'
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   ChavrutaRoute: typeof ChavrutaRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  GuidesDailyTanyaGuideRoute: typeof GuidesDailyTanyaGuideRoute
   GuidesHowToLearnChassidusRoute: typeof GuidesHowToLearnChassidusRoute
   GuidesJewishMysticismIntroRoute: typeof GuidesJewishMysticismIntroRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
@@ -248,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuidesHowToLearnChassidusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/daily-tanya-guide': {
+      id: '/guides/daily-tanya-guide'
+      path: '/guides/daily-tanya-guide'
+      fullPath: '/guides/daily-tanya-guide'
+      preLoaderRoute: typeof GuidesDailyTanyaGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChavrutaRoute: ChavrutaRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  GuidesDailyTanyaGuideRoute: GuidesDailyTanyaGuideRoute,
   GuidesHowToLearnChassidusRoute: GuidesHowToLearnChassidusRoute,
   GuidesJewishMysticismIntroRoute: GuidesJewishMysticismIntroRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
