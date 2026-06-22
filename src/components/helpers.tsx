@@ -51,8 +51,12 @@ export function YiddishHelper() {
   const [w, setW] = useState("");
   const hit = YIDDISH[w.trim()];
   return (
-    <div className="scholar-card p-5">
-      <h3 className="text-sm uppercase tracking-widest text-primary/80 mb-3">{t.yiddishHelper}</h3>
+    <div className="scholar-card scholar-card-hover p-5 sm:p-6 relative overflow-hidden h-full">
+      <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(75,122,82,0.22), transparent 70%)" }} />
+      <h3 className="eyebrow mb-3 flex items-center gap-2">
+        <span className="inline-block h-2 w-2 rounded-full bg-[var(--sage)]" />
+        {t.yiddishHelper}
+      </h3>
       <input
         value={w}
         onChange={(e) => setW(e.target.value)}
@@ -76,8 +80,12 @@ export function YiddishHelper() {
 export function RashiHelper() {
   const { t, lang } = useLang();
   return (
-    <div className="scholar-card p-5">
-      <h3 className="text-sm uppercase tracking-widest text-primary/80 mb-1">{t.rashiHelper}</h3>
+    <div className="scholar-card scholar-card-hover p-5 sm:p-6 relative overflow-hidden h-full">
+      <div aria-hidden className="absolute -top-10 -left-10 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(192,57,43,0.18), transparent 70%)" }} />
+      <h3 className="eyebrow mb-1 flex items-center gap-2">
+        <span className="inline-block h-2 w-2 rounded-full bg-[var(--indigo-deep)]" />
+        {t.rashiHelper}
+      </h3>
       <p className="text-xs text-muted-foreground mb-4">{t.rashiSubtitle}</p>
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {RASHI.map(([std, rashi]) => (

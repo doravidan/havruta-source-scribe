@@ -25,9 +25,13 @@ export function AskPanel() {
   };
 
   return (
-    <section className="mx-auto max-w-4xl px-4 sm:px-6 -mt-2">
-      <div className="scholar-card p-5 sm:p-6" style={{ boxShadow: "var(--shadow-glow)" }}>
-        <h2 className="text-sm uppercase tracking-widest text-primary/80 mb-3">{t.askTitle}</h2>
+    <section className="w-full">
+      <div className="scholar-card scholar-card-hover p-5 sm:p-7 relative overflow-hidden" style={{ boxShadow: "var(--shadow-glow)" }}>
+        <div aria-hidden className="absolute -top-16 -right-16 h-48 w-48 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(232,169,58,0.30), transparent 70%)" }} />
+        <h2 className="eyebrow mb-3 flex items-center gap-2">
+          <span className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" />
+          {t.askTitle}
+        </h2>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
