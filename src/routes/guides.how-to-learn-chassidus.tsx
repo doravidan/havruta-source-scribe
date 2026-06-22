@@ -25,7 +25,9 @@ const steps = [
     title: "Begin with Tanya — the gateway to Chassidus",
     heTitle: "התחלו בתניא — שער לחסידות",
     body: "The Tanya is the natural first step for anyone learning Chassidus. It defines key concepts — the nefesh, the two souls, the purpose of mitzvot — in systematic language. Read one chapter a day (or follow the daily Tanya cycle), and use the source reader to look up unfamiliar Hebrew or Yiddish terms.",
+    heBody: "תניא הוא הצעד הטבעי הראשון לכל לומד חסידות. הוא מגדיר מושגי יסוד — הנפש, שתי הנשמות, מטרת המצוות — בשפה שיטתית. קראו פרק אחד ביום (או עקבו אחרי מחזור התניא היומי), והשתמשו בקורא המקורות כדי לבדוק מונחים בעברית או ביידיש שאינכם מכירים.",
     tip: "If the Hebrew is dense, read with an English translation side-by-side, then return to the original to absorb the terminology.",
+    heTip: "אם העברית צפופה, קראו עם תרגום לאנגלית לצד המקור, ואז חזרו למקור כדי לספוג את המונחים.",
   },
   {
     number: "02",
@@ -33,7 +35,9 @@ const steps = [
     title: "Add Likkutei Amarim and Igeret HaTeshuvah",
     heTitle: "הוסיפו לקוטי אמרים ואגרת התשובה",
     body: "After the first few chapters of Tanya, move through the rest of Likkutei Amarim and then Igeret HaTeshuvah. These sections introduce the practical transformation of character through Torah and mitzvot — the core 'how-to' of Chassidus life.",
+    heBody: "אחרי הפרקים הראשונים של תניא, המשיכו בשאר לקוטי אמרים ולאחר מכן באגרת התשובה. קטעים אלה מציגים את השינוי המעשי באופי באמצעות תורה ומצוות — הליבה של ה"איך עושים" בחיי חסידות.",
     tip: "Keep a short notebook: write one idea and one action per day. Chassidus is meant to change behavior, not just knowledge.",
+    heTip: "שמרו מחברת קצרה: כתבו רעיון אחד ופעולה אחת ביום. חסידות נועדה לשנות התנהגות, לא רק ידע.",
   },
   {
     number: "03",
@@ -41,7 +45,9 @@ const steps = [
     title: "Progress to Maamarim (Chassidic discourses)",
     heTitle: "התקדמו למאמרים",
     body: "Maamarim are deeper, more allusive works. Start with well-known Maamarim such as 'V'atah Tetzaveh' or 'Basi Legani' before approaching complex series. Use the search panel to find related Maamarim by topic or phrase, and read them slowly — often one discourse rewards many revisits.",
+    heBody: "מאמרים הם יצירות עמוקות ורמוזות יותר. התחילו במאמרים מוכרים כמו 'ואתה תצוה' או 'באתי לגני' לפני שפונים לסדרות מורכבות. השתמשו בלוח החיפוש כדי למצוא מאמרים קשורים לפי נושא או ביטוי, וקראו לאט — לעתים קרובות דרשה אחת משתפרת בכל חזרה.",
     tip: "Read the Maamar aloud. The syntax and phrasing were composed to be heard, not just scanned.",
+    heTip: "קראו את המאמר בקול. התחביר והניסוח נכתבו כדי להישמע, לא רק להיקרא.",
   },
   {
     number: "04",
@@ -49,7 +55,9 @@ const steps = [
     title: "Layer in Sichos and Igrot Kodesh",
     heTitle: "שלבו שיחות ואגרות קודש",
     body: "Sichos apply Chassidus to current events and daily life; Igrot Kodesh show the Rebbe's guidance in real situations. These texts make the earlier study concrete. The library lets you browse by section, so you can follow a theme across sources.",
+    heBody: "שיחות מיישמות חסידות על אירועים עכשוויים וחיי יומיום; אגרות קודש מציגות את הדרכת הרבי במצבים אמיתיים. טקסטים אלה הופכים את הלימוד הקודם למוחשי. הספרייה מאפשרת לעיין לפי קטגוריות, כך שאפשר לעקוב אחרי נושא לאורך מקורות שונים.",
     tip: "Pick one Sicha a week and discuss it with a friend or chavruta. Conversation reveals points you miss alone.",
+    heTip: "בחרו שיחה אחת בשבוע ודונו בה עם חבר או חברותא. שיחה מגלה נקודות שמפספסים לבד.",
   },
   {
     number: "05",
@@ -57,7 +65,9 @@ const steps = [
     title: "Find a chavruta and build a steady schedule",
     heTitle: "מצאו חברותא ובנו לוח זמנים קבוע",
     body: "Sustainable Chassidus learning happens in partnership. Use the Chavruta matching tool to find a study partner by availability and level, set a fixed time, and commit to a small, regular amount rather than long, irregular sessions.",
+    heBody: "לימוד חסידות מתמשך קורה בשותפות. השתמשו בכלי ההתאמה לחברותא כדי למצוא שותף לימוד לפי זמינות ורמה, קבעו שעה קבועה, והתחייבו לכמות קטנה וקבועה במקום מפגשים ארוכים ובלתי סדירים.",
     tip: "Fifteen focused minutes at the same time each day beats two scattered hours.",
+    heTip: "חמש עשרה דקות מרוכזות באותה שעה כל יום עדיפות על שעתיים מפוזרות.",
   },
 ];
 
