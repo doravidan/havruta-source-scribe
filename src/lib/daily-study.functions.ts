@@ -328,6 +328,7 @@ function formatStructured(
 }
 
 export const getDailyStudySource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const day = todayIso();
