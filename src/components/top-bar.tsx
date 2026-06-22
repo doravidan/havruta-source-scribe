@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, Sparkles, ShieldCheck, LogOut, BookOpen } from "lucide-react";
+import { Languages, Sparkles, ShieldCheck, LogOut, BookOpen, Library } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function TopBar() {
