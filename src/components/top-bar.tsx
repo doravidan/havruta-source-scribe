@@ -27,7 +27,7 @@ export function TopBar() {
         >
           <img
             src={logo}
-            alt={t.brand}
+            alt={`${t.brand} — Chassidus learning platform logo`}
             width={40}
             height={40}
             className="h-9 w-9 rounded-full ring-1 ring-[color:var(--gold)]/30 shadow-[0_10px_28px_-18px_rgba(215,189,120,0.9)] transition-transform group-hover:scale-[1.03]"
