@@ -1,10 +1,10 @@
-import { useLang } from "@/lib/lang-context";
-import { useAuth } from "@/hooks/use-auth";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Users } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, ShieldCheck, LogOut, Library, LogIn, Users, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
@@ -19,82 +19,64 @@ export function TopBar() {
   });
 
   return (
-    <header className="sticky top-0 z-40 bg-[color:var(--paper)]/92 backdrop-blur-xl border-b border-[color:var(--rule)]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-8 min-h-16 py-2 flex items-center gap-2 sm:gap-6 flex-wrap">
-        <Link
-          to="/"
-          className="hidden sm:flex items-center gap-3 min-w-0 max-w-[48%] sm:max-w-none group"
-        >
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-[rgba(248,242,230,0.86)] backdrop-blur-xl">
+      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center gap-2 px-4 py-2 sm:gap-5 sm:px-8">
+        <Link to="/" className="group hidden min-w-0 items-center gap-3 sm:flex">
           <img
             src={logo}
             alt={`${t.brand} — Chassidus learning platform logo`}
-            width={40}
-            height={40}
-            className="h-9 w-9 rounded-full ring-1 ring-[color:var(--gold)]/30 shadow-[0_10px_28px_-18px_rgba(215,189,120,0.9)] transition-transform group-hover:scale-[1.03]"
+            width={42}
+            height={42}
+            className="h-10 w-10 rounded-full border border-border bg-white/50 p-0.5 shadow-sm transition-transform group-hover:scale-[1.03]"
           />
-          <div className="flex flex-col leading-tight min-w-0">
-            <span
-              className="text-lg sm:text-xl truncate text-[color:var(--gold-soft)]"
-              style={{
-                fontFamily: "var(--font-serif-he), var(--font-display)",
-                fontWeight: 500,
-                letterSpacing: "-0.005em",
-              }}
-            >
+          <div className="min-w-0 leading-tight">
+            <span className="block truncate text-xl font-semibold text-[var(--ink)]">
               {t.brand}
             </span>
-            <span className="hidden sm:block text-[10px] uppercase tracking-[0.2em] text-[color:var(--cream-dim)] truncate">
-              {t.brandTagline}
+            <span className="hidden truncate text-[10px] uppercase tracking-[0.22em] text-muted-foreground md:block">
+              {lang === "he" ? "מקורות · לימוד · חברותא" : "sources · study · chavruta"}
             </span>
           </div>
         </Link>
 
-        <div className="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted-foreground)]">
+        <div className="hidden items-center gap-3 rounded-full border border-border/70 bg-white/25 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-muted-foreground md:flex">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--ink-deep)]" />
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${stats?.ok ? "bg-[var(--moss)]" : "bg-[var(--oxide)]"}`}
+            />
             {stats?.ok ? t.statusOnline : t.statusOffline}
           </span>
           {stats && (
             <>
-              <span className="text-[color:var(--rule)]">·</span>
+              <span className="text-border">/</span>
               <span>
                 {stats.sources} {t.statusSources}
-              </span>
-              <span>
-                {stats.chunks} {t.statusChunks}
               </span>
             </>
           )}
         </div>
 
-        <div className="ms-0 sm:ms-auto flex items-center gap-2 max-w-full overflow-hidden">
-          <Link
+        <nav className="ms-0 flex max-w-full items-center gap-1.5 overflow-hidden sm:ms-auto">
+          <NavLink
             to="/library"
-            aria-label={lang === "he" ? "ספרייה" : "Library"}
-            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
-          >
-            <Library className="h-4 w-4" />
-            <span className="hidden sm:inline">{lang === "he" ? "ספרייה" : "Library"}</span>
-          </Link>
-          <Link
+            icon={<Library className="h-4 w-4" />}
+            label={lang === "he" ? "ספרייה" : "Library"}
+          />
+          <NavLink
             to="/chavruta"
-            aria-label={lang === "he" ? "חברותות" : "Chavruta"}
-            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
-          >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">{lang === "he" ? "חברותות" : "Chavruta"}</span>
-          </Link>
-          <Link
+            icon={<Users className="h-4 w-4" />}
+            label={lang === "he" ? "חברותות" : "Chavruta"}
+          />
+          <NavLink
             to="/beit-midrash"
-            aria-label={lang === "he" ? "בית המדרש שלי" : "My Beit Midrash"}
-            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
-          >
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden lg:inline">{lang === "he" ? "בית מדרש" : "My room"}</span>
-          </Link>
+            icon={<BookOpen className="h-4 w-4" />}
+            label={lang === "he" ? "בית מדרש" : "My room"}
+            wide
+          />
+
           <button
             onClick={toggle}
-            className="inline-flex items-center gap-1.5 px-3 h-10 min-w-11 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
+            className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
             aria-label="Toggle language"
           >
             <Languages className="h-4 w-4" />
@@ -104,7 +86,7 @@ export function TopBar() {
           {isAdmin && (
             <Link
               to="/admin"
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-primary/40 text-primary hover:bg-primary/10 text-sm"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-primary/35 px-3 text-sm font-medium text-primary hover:bg-primary/10"
             >
               <ShieldCheck className="h-4 w-4" />
               <span className="hidden sm:inline">{t.adminTitle}</span>
@@ -114,7 +96,7 @@ export function TopBar() {
           {session ? (
             <button
               onClick={() => supabase.auth.signOut()}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md hover:bg-card text-sm text-muted-foreground"
+              className="inline-flex h-10 min-w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-white/45"
               aria-label={t.signOut}
             >
               <LogOut className="h-4 w-4" />
@@ -122,14 +104,37 @@ export function TopBar() {
           ) : (
             <Link
               to="/auth"
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md bg-primary text-primary-foreground hover:opacity-90 text-sm font-medium"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-95"
             >
               <LogIn className="h-4 w-4" />
               <span className="hidden sm:inline">{t.signIn}</span>
             </Link>
           )}
-        </div>
+        </nav>
       </div>
     </header>
+  );
+}
+
+function NavLink({
+  to,
+  icon,
+  label,
+  wide,
+}: {
+  to: "/library" | "/chavruta" | "/beit-midrash";
+  icon: React.ReactNode;
+  label: string;
+  wide?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      aria-label={label}
+      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
+    >
+      {icon}
+      <span className={wide ? "hidden lg:inline" : "hidden sm:inline"}>{label}</span>
+    </Link>
   );
 }

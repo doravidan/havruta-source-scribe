@@ -1,186 +1,164 @@
 import { Link } from "@tanstack/react-router";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
-import { BookOpen, Database, MessageCircle, Search, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowDown,
+  BookOpen,
+  Library,
+  MessageCircle,
+  Search,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
 export function Hero() {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const rtl = lang === "he";
-  const metrics =
-    lang === "he"
-      ? [
-          { label: "מקורות מלאים", value: "35k+" },
-          { label: "חברותות", value: "חי" },
-          { label: "תשובות עם מקור", value: "AI" },
-        ]
-      : [
-          { label: "full sources", value: "35k+" },
-          { label: "chavruta network", value: "live" },
-          { label: "sourced answers", value: "AI" },
-        ];
+  const proof = rtl
+    ? [
+        ["35k+", "מקורות מלאים"],
+        ["יומי", "חת״ת ורמב״ם"],
+        ["חי", "התאמת חברותא"],
+      ]
+    : [
+        ["35k+", "full sources"],
+        ["daily", "Chitas & Rambam"],
+        ["live", "chavruta matching"],
+      ];
 
   return (
-    <section className="relative overflow-hidden border-b border-border/40 hero-stage">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hero-aurora" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"
-      />
-
-      <div className="mx-auto max-w-7xl px-4 sm:px-8 pt-12 sm:pt-20 pb-10 sm:pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.98fr)_minmax(360px,0.82fr)] items-center gap-8 lg:gap-14">
-          <div className="text-center lg:text-start">
+    <section className="hero-stage relative isolate overflow-hidden border-b border-border/70">
+      <div aria-hidden className="hero-aurora pointer-events-none absolute inset-0 -z-10" />
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-8 sm:pb-18 sm:pt-16">
+        <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.8fr)] lg:gap-16">
+          <div>
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="eyebrow mb-5 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/50 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+              transition={{ duration: 0.4 }}
+              className="mb-5 inline-flex items-center gap-2 border-y border-border/80 bg-transparent px-1 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--oxide)]"
             >
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--sage)] animate-glow-pulse" />
-              {lang === "he"
-                ? "בית מדרש דיגיטלי · מקורות · חברותות"
-                : "digital beit midrash · sources · chavrutot"}
+              <span className="h-2 w-2 rounded-full bg-[var(--moss)]" />
+              {rtl ? "בית מדרש מקוון לחסידות חב״ד" : "A digital study hall for Chabad Chassidus"}
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.04 }}
-              className="max-w-[21rem] sm:max-w-5xl mx-auto lg:mx-0 text-[2.4rem] sm:text-6xl lg:text-[5.35rem] leading-[1.05] sm:leading-[0.95] gradient-text break-words"
-              style={{ fontWeight: 500 }}
+              transition={{ duration: 0.62, delay: 0.04 }}
+              className="max-w-5xl text-[3.15rem] leading-[0.94] tracking-[-0.055em] text-[var(--ink)] sm:text-7xl lg:text-[6.6rem]"
             >
               {rtl ? (
                 <>
-                  חסידות שנפתחת
+                  ללמוד חסידות
                   <br />
-                  כמו בית מדרש חי.
+                  עם מקור, קול וחברותא.
                 </>
               ) : (
                 <>
-                  Chassidus that feels
+                  Study Chassidus
                   <br />
-                  like a living beit midrash.
+                  with source, voice, and chavruta.
                 </>
               )}
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.12 }}
-              className="mt-6 max-w-2xl text-base sm:text-lg leading-8 text-muted-foreground mx-auto lg:mx-0"
+              transition={{ duration: 0.62, delay: 0.12 }}
+              className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground"
             >
               {rtl
-                ? "שאל מקור, פתח טקסט מלא, מצא חברותא בזמן שמתאים לך, והמשך לימוד בלי תחושת כלי AI גנרי."
-                : "Ask from sources, open the full text, find a chavruta that matches your time, and keep learning without generic AI-app noise."}
+                ? "לא עוד מסך AI נוצץ. שולחן לימוד נקי: שאלה עם מקורות, קורא מלא, שיעורים יומיים, וחיבור לחברותא אמיתית."
+                : "Not another shiny AI screen. A calm study table: sourced answers, a full reader, daily study, and real chavruta connection."}
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.18 }}
-              className="mt-7 flex flex-col sm:flex-row flex-wrap justify-center lg:justify-start gap-3"
+              transition={{ duration: 0.62, delay: 0.18 }}
+              className="mt-8 flex flex-col gap-3 sm:flex-row"
             >
               <a
                 href="#ask"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_18px_54px_-28px_rgba(215,189,120,0.9)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[0_18px_46px_-32px_rgba(92,37,31,0.8)] transition-transform hover:-translate-y-0.5"
               >
                 <MessageCircle className="h-4 w-4" />
-                {rtl ? "שאל על מקור" : "Ask from sources"}
+                {rtl ? "פתח שאלה" : "Ask a question"}
               </a>
               <Link
-                to="/chavruta"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-border/90 bg-card/55 px-5 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-secondary/60"
+                to="/beit-midrash"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-[rgba(255,250,239,0.72)] px-6 text-sm font-semibold text-foreground transition-colors hover:border-[var(--oxide)]/40 hover:bg-white/70"
               >
-                <Users className="h-4 w-4 text-primary" />
-                {rtl ? "מצא חברותא" : "Find a chavruta"}
+                <BookOpen className="h-4 w-4 text-primary" />
+                {rtl ? "בית המדרש שלי" : "My study room"}
               </Link>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.24 }}
-              className="mt-7 flex flex-wrap justify-center lg:justify-start gap-2.5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.62, delay: 0.24 }}
+              className="mt-9 grid max-w-2xl grid-cols-3 divide-x divide-border/70 overflow-hidden rounded-2xl border border-border/80 bg-[rgba(255,250,239,0.56)] rtl:divide-x-reverse"
             >
-              {metrics.map((m) => (
-                <div
-                  key={m.label}
-                  className="rounded-full border border-border/80 bg-card/45 px-4 py-2 text-sm text-muted-foreground"
-                >
-                  <span className="text-foreground font-medium tabular-nums">{m.value}</span>
-                  <span className="mx-2 text-border">/</span>
-                  {m.label}
+              {proof.map(([value, label]) => (
+                <div key={label} className="p-3 sm:p-4">
+                  <div className="font-sans text-xl font-semibold tabular-nums text-[var(--oxide-deep)]">
+                    {value}
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">{label}</div>
                 </div>
               ))}
             </motion.div>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="relative min-w-0 max-w-full"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08 }}
+            className="relative"
           >
-            <div
-              aria-hidden
-              className="absolute -inset-8 -z-10 rounded-[3rem] bg-[radial-gradient(circle_at_50%_15%,rgba(215,189,120,0.18),transparent_58%)] blur-xl"
-            />
-            <div className="scholar-card p-3 sm:p-4 min-w-0 max-w-full hero-orbit-card">
-              <div className="rounded-[1.35rem] border border-border/80 bg-[rgba(5,7,13,0.52)] p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-3 border-b border-border/70 pb-3">
+            <div className="paper-card p-3 sm:p-4">
+              <div className="rounded-[1.4rem] border border-border/80 bg-[rgba(255,250,239,0.88)] p-4 sm:p-5">
+                <div className="mb-5 flex items-start justify-between gap-4 border-b border-border/70 pb-4">
                   <div>
-                    <div className="eyebrow">{rtl ? "לוח לימוד חי" : "living study board"}</div>
-                    <div className="mt-1 text-xl font-medium text-foreground">
-                      {rtl ? "תניא · מאמרים · חברותא" : "Tanya · Maamarim · chavruta"}
+                    <div className="eyebrow">{rtl ? "שולחן לימוד" : "study table"}</div>
+                    <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">
+                      {rtl ? "תניא · לקוטי אמרים" : "Tanya · Likkutei Amarim"}
                     </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {rtl ? "מקור, שאלה, לימוד המשך" : "source, question, continued learning"}
+                    </p>
                   </div>
-                  <BookOpen className="h-5 w-5 text-primary" />
+                  <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--oxide-soft)] text-primary">
+                    <Library className="h-5 w-5" />
+                  </div>
                 </div>
 
-                <div className="grid gap-3 py-5">
-                  <StudySignal
+                <div className="space-y-3">
+                  <Row
                     icon={<Search className="h-4 w-4" />}
-                    title={rtl ? "שאל" : "Ask"}
-                    body={
-                      rtl
-                        ? "שאלה בעברית, תשובה עם מקורות בלבד."
-                        : "A question in plain language, answered only from sources."
-                    }
+                    title={rtl ? "חפש בתוך המאגר" : "Search the corpus"}
+                    body={rtl ? "כותרת, נתיב וטקסט מלא." : "Title, path, and full text."}
                   />
-                  <StudySignal
-                    icon={<Database className="h-4 w-4" />}
-                    title={rtl ? "פתח" : "Open"}
-                    body={
-                      rtl
-                        ? "המקור המלא נפתח בתוך הקורא, עם חיפוש וסיכום."
-                        : "The full source opens in the reader with search and summary."
-                    }
+                  <Row
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    title={rtl ? "קבל תשובה עם מקורות" : "Get a sourced answer"}
+                    body={rtl ? "התשובה מחזירה אותך לטקסט." : "The answer points back to the text."}
                   />
-                  <StudySignal
+                  <Row
                     icon={<Users className="h-4 w-4" />}
-                    title={rtl ? "המשך ביחד" : "Continue together"}
-                    body={
-                      rtl
-                        ? "מצא חברותא לפי זמן, שפה ונושא לימוד."
-                        : "Match with a chavruta by time, language, and topic."
-                    }
+                    title={rtl ? "המשך עם חברותא" : "Continue with chavruta"}
+                    body={rtl ? "שלח מקור כפתיח לשיחה." : "Use a source as the chat opener."}
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <Mini
-                    label={rtl ? "מקור" : "Source"}
-                    icon={<ShieldCheck className="h-3.5 w-3.5" />}
-                  />
-                  <Mini
-                    label={rtl ? "מאגר" : "Corpus"}
-                    icon={<Database className="h-3.5 w-3.5" />}
-                  />
-                  <Mini
-                    label={rtl ? "חברותא" : "Chavruta"}
-                    icon={<Users className="h-3.5 w-3.5" />}
-                  />
+                <div className="mt-5 flex items-center justify-between rounded-2xl border border-border/70 bg-[var(--moss-soft)] px-4 py-3 text-sm">
+                  <span className="font-medium text-[var(--moss)]">
+                    {rtl ? "קריאה שקטה. בלי רעש." : "Quiet reading. No noise."}
+                  </span>
+                  <ArrowDown className="h-4 w-4 text-[var(--moss)]" />
                 </div>
               </div>
             </div>
@@ -191,35 +169,18 @@ export function Hero() {
   );
 }
 
-function StudySignal({
-  title,
-  body,
-  icon,
-}: {
-  title: string;
-  body: string;
-  icon: React.ReactNode;
-}) {
+function Row({ title, body, icon }: { title: string; body: string; icon: React.ReactNode }) {
   return (
-    <div className="group rounded-2xl border border-border/70 bg-background/35 p-3.5 transition-colors hover:border-primary/35 hover:bg-secondary/35">
+    <div className="rounded-2xl border border-border/70 bg-white/30 p-3.5">
       <div className="flex items-start gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary transition-transform group-hover:-translate-y-0.5">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--saffron-soft)] text-[var(--oxide)]">
           {icon}
         </div>
         <div>
-          <div className="text-sm font-medium text-foreground">{title}</div>
+          <div className="text-sm font-semibold text-foreground">{title}</div>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Mini({ label, icon }: { label: string; icon: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-secondary/40 px-3 py-2 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-      <span className="text-primary">{icon}</span>
-      {label}
     </div>
   );
 }
