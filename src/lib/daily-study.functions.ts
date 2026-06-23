@@ -159,10 +159,14 @@ type CalendarItem = {
 
 async function getCalendarRef(
   calendarTitleEn: string,
+  iso?: string,
 ): Promise<{ ref: string; heRef: string; displayHe: string; displayEn: string }> {
-  const res = await fetch("https://www.sefaria.org/api/calendars", {
-    headers: { accept: "application/json" },
-  });
+  let url = "https://www.sefaria.org/api/calendars";
+  if (iso) {
+    const [y, m, d] = iso.split("-");
+    url += `?year=${y}&month=${parseInt(m, 10)}&day=${parseInt(d, 10)}`;
+  }
+  const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`calendars fetch ${res.status}`);
   const json = (await res.json()) as { calendar_items: CalendarItem[] };
   const item = json.calendar_items.find((c) => c.title?.en === calendarTitleEn);
