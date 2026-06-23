@@ -47,7 +47,7 @@ type Props = {
   dateNav?: DateNav;
 };
 
-export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
+export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Props) {
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
   const qc = useQueryClient();
