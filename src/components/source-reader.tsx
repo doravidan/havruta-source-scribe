@@ -159,6 +159,16 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
         onClick={(e) => e.stopPropagation()}
       >
         <header className="p-4 sm:p-5 border-b border-border/70 flex items-start gap-3">
+          {dateNav && (
+            <button
+              onClick={onClose}
+              className="h-10 w-10 inline-flex items-center justify-center rounded-md hover:bg-secondary shrink-0"
+              aria-label={lang === "he" ? "חזרה" : "Back"}
+              title={lang === "he" ? "חזרה" : "Back"}
+            >
+              <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+            </button>
+          )}
           <div className="min-w-0 flex-1">
             {data?.tree && (
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -191,6 +201,47 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
             <X className="h-5 w-5" />
           </button>
         </header>
+
+        {dateNav && (
+          <div className="px-4 sm:px-5 py-2 border-b border-border/70 flex items-center justify-between gap-2 bg-secondary/30">
+            <button
+              type="button"
+              onClick={dateNav.onPrev}
+              disabled={dateNav.canPrev === false || dateNav.loading}
+              className="h-9 px-3 rounded-md border border-border hover:bg-background inline-flex items-center gap-1.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label={lang === "he" ? "יום קודם" : "Previous day"}
+            >
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+              <span className="hidden sm:inline">{lang === "he" ? "יום קודם" : "Previous"}</span>
+            </button>
+            <div className="min-w-0 flex-1 text-center">
+              <div className="text-sm font-medium truncate inline-flex items-center gap-2">
+                {dateNav.loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {dateNav.label}
+              </div>
+              {dateNav.onToday && (
+                <button
+                  type="button"
+                  onClick={dateNav.onToday}
+                  disabled={dateNav.loading}
+                  className="block mx-auto mt-0.5 text-[11px] text-primary hover:underline disabled:opacity-50"
+                >
+                  {dateNav.todayLabel ?? (lang === "he" ? "חזרה להיום" : "Jump to today")}
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={dateNav.onNext}
+              disabled={dateNav.canNext === false || dateNav.loading}
+              className="h-9 px-3 rounded-md border border-border hover:bg-background inline-flex items-center gap-1.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label={lang === "he" ? "יום הבא" : "Next day"}
+            >
+              <span className="hidden sm:inline">{lang === "he" ? "יום הבא" : "Next"}</span>
+              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+            </button>
+          </div>
+        )}
 
         <div className="p-3 sm:p-4 border-b border-border/70 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 me-auto">
