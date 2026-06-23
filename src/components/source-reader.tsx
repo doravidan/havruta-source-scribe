@@ -22,11 +22,30 @@ import {
   Pause,
   Square,
   Users,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
 
-type Props = { sourceId: string | null; onClose: () => void; autoSummarize?: boolean };
+export type DateNav = {
+  label: string;
+  onPrev: () => void;
+  onNext: () => void;
+  canPrev?: boolean;
+  canNext?: boolean;
+  onToday?: () => void;
+  todayLabel?: string;
+  loading?: boolean;
+};
+
+type Props = {
+  sourceId: string | null;
+  onClose: () => void;
+  autoSummarize?: boolean;
+  dateNav?: DateNav;
+};
 
 export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   const { lang, t, dir } = useLang();
