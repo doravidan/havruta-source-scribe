@@ -1158,9 +1158,7 @@ function ChavrutaPage() {
                               className="h-10 rounded-xl border border-border px-4 text-muted-foreground inline-flex items-center gap-2"
                             >
                               <Users className="h-4 w-4" />
-                              {lang === "he"
-                                ? "בחר מקור לחדר לימוד"
-                                : "Pick a source for study"}
+                              {lang === "he" ? "בחר מקור לחדר לימוד" : "Pick a source for study"}
                             </Link>
                           )}
                         </div>
