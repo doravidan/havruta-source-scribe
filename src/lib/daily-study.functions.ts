@@ -68,10 +68,6 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function stripHtml(s: string): string {
   return s
     .replace(/<sup[^>]*>[\s\S]*?<\/sup>/gi, "")
