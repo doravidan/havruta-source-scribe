@@ -25,5 +25,16 @@ export default defineConfig({
         "entities": path.resolve(__dirname, "node_modules/entities"),
       },
     },
+    server: {
+      // When the dev server is served through the Lovable preview iframe
+      // (https://*.lovableproject.com), Vite's HMR client defaults to
+      // ws://localhost:8080 and fails to connect. Route HMR over the same
+      // origin the browser used, on the standard HTTPS port, so it works
+      // both locally and inside the sandboxed iframe.
+      hmr: {
+        clientPort: 443,
+        protocol: "wss",
+      },
+    },
   },
 });
