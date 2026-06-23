@@ -1,0 +1,1 @@
+ALTER TABLE public.chavruta_profiles ADD COLUMN IF NOT EXISTS time_zone TEXT NOT NULL DEFAULT 'Asia/Jerusalem';

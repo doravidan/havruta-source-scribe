@@ -1,160 +1,57 @@
-# חסידותה — תכנית בנייה: "משפיע AI אישי"
+## Goal
 
-## חזון מוצרי
+Add a clear "Find me a chavruta" flow on `/chavruta` that ranks candidates by **time zone–aware availability overlap**, **language compatibility**, **learning level**, and **topic overlap**. Reuses the existing `chavruta_profiles`, `chavruta_availability`, `chavruta_matches` schema and the `propose_chavruta_match` RPC — no new RPCs.
 
-חסידותה אינה ספרייה דיגיטלית — היא **משפיע חב"די דיגיטלי** שמלווה את היהודי בלימוד חסידות ובעבודת ה' מדי יום. המערכת זוכרת מי המשתמש, מה הוא למד, במה הוא מתקשה, ומכוונת אותו הלאה.
+## What exists today
 
-הצעד הראשון: שדרוג ה-Ask הקיים ל**צ'אט שיחתי עם זיכרון אישי**, מבוסס על המאגר הקיים (Tanya, מאמרים, שיחות, היום יום), עם פרופיל לימודי מתפתח.
+- `chavruta_profiles` (display_name, bio, learning_level, preferred_lang, topics, is_active)
+- `chavruta_availability` (day_of_week, start_time, end_time — stored as local clock time, no tz)
+- `chavruta_matches` + `propose_chavruta_match` / `accept_chavruta_match` RPCs
+- Suggestions panel on `/chavruta` already overlaps slots and ranks by topic count, but ignores tz, language, level
 
----
+Gap: time zone is missing, language and level are not used for filtering/ranking, and there is no dedicated "Find me a chavruta" entry point — it's a passive sidebar.
 
-## עקרונות
+## Changes
 
-1. **שיחה, לא שאילתות.** כל שאלה ממשיכה את ההקשר הקודם. המשפיע שואל בחזרה ובודק הבנה.
-2. **זיכרון אישי.** מה המשתמש לומד עכשיו (פרק בתניא, מאמר), נושאים שחזרו, שאלות פתוחות, רמת הבנה משוערת.
-3. **גרונדינג בקורפוס.** כל תשובה מסתמכת על מקורות שהמשתמש יכול לפתוח. הסברים מקושרים לציטוטים.
-4. **כיוון לפעולה.** סוף כל שיחה: הצעת המשך — מקור לקרוא, שאלה למחשבה, או חזרה לחומר קודם.
+### 1. Migration — add time zone
+- Add `time_zone TEXT NOT NULL DEFAULT 'UTC'` to `public.chavruta_profiles` (IANA name, e.g. `Asia/Jerusalem`).
+- Backfill existing rows to `'Asia/Jerusalem'`.
+- No new GRANTs needed (column added to existing table).
 
----
+### 2. Profile form (`/chavruta`)
+- Add a Time zone `<select>` populated from `Intl.supportedValuesOf('timeZone')`, defaulting to `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+- Persist via the existing `chavruta_profiles` upsert.
 
-## ארכיטקטורה
+### 3. "Find me a chavruta" panel
+- Prominent button + result list at the top of `/chavruta` (above the existing passive suggestions, which we keep).
+- Filters (client-side, from `socialQ.data`):
+  - **Language**: keep candidate if `their.preferred_lang === mine` OR either side is `both`.
+  - **Level**: keep if same level, or one step apart (beginner↔intermediate, intermediate↔advanced).
+  - **Time overlap**: convert each side's `{day_of_week, start_time, end_time}` into UTC minute-of-week windows using their profile `time_zone`, then intersect. Handles wrap across days.
+  - **Topic**: at least one topic in common preferred but not required (used in scoring, not filter).
+- Score = `language_match*3 + level_match*3 + topic_overlap*2 + overlap_minutes/30`.
+- Each result shows: name, level, language, topics, and the overlap rendered in **the viewer's local tz** (so "Wed 21:00–22:00 your time"). Buttons: "Propose chavruta" (existing RPC) and "View profile".
+- Empty state suggests broadening availability or topics.
 
-### צד שרת — AI SDK + OpenRouter בלבד
+### 4. UI copy & i18n
+- Hebrew/English strings added to the existing inline `lang === "he"` ternaries in `chavruta.tsx`. No new i18n keys file.
 
-> **החלטה מחייבת**: כל קריאות ה-AI במוצר (chat, סיכומים, ask, כל קוד עתידי) עוברות **אך ורק** דרך OpenRouter עם `OPENROUTER_API_KEY` המוגדר ב-secrets/`.env`. **אסור** להשתמש ב-Lovable AI Gateway (`ai.gateway.lovable.dev`), ב-`LOVABLE_API_KEY`, או ב-helper `createLovableAiGatewayProvider`. אין fallback ל-Lovable AI. embeddings ממשיכים דרך Gemini ישיר (`GEMINI_API_KEY`) או fallback מילולי — לא דרך Lovable.
+### 5. Out of scope
+- No new tables, no edge function, no server function — all matching is client-side over the same data already fetched by `socialQ`.
+- No changes to `propose_chavruta_match` / `accept_chavruta_match`.
 
-החלפת `askHavruta` (one-shot) ב-**streaming chat agent** עם tools.
+## Technical notes
 
-- **Route חדש**: `src/routes/api/mashpia.ts` — POST handler עם `streamText` + `toUIMessageStreamResponse({ originalMessages, onFinish })`.
-- **Provider**: helper יחיד `src/lib/ai-openrouter.server.ts` שמייצא `createOpenRouterProvider()` המבוסס על `@ai-sdk/openai-compatible`:
-  ```ts
-  createOpenAICompatible({
-    name: "openrouter",
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-    headers: {
-      "HTTP-Referer": process.env.APP_PUBLIC_URL ?? "https://chassiduta.lovable.app",
-      "X-Title": "Chassiduta Mashpia",
-    },
-  })
-  ```
-  ה-helper הקיים `src/lib/ai-gateway.server.ts` יוחלף/יוסר; כל קוד שמשתמש בו (`ask.functions.ts`, `summarize-source.functions.ts`, וכו') יעודכן לייבא מ-`ai-openrouter.server.ts`.
-- **מודל ברירת מחדל**: `process.env.OPENROUTER_CHAT_MODEL ?? "openrouter/auto"`. המשתמש יכול להחליף מ-`.env` (למשל `anthropic/claude-3.5-sonnet`, `meta-llama/llama-3.3-70b-instruct:free`) ללא שינוי קוד.
-- **System prompt**: זהות "משפיע חב"די" — חם, מבוסס מקורות, מסיים בשאלת המשך אחת. עברית/אנגלית לפי `lang`.
-- **Tools** (`tool({ inputSchema: z..., execute })`):
-  - `search_corpus({ query, top_k })` — RPC `match_chunks` הקיים + fallback מילולי, עד 6 קטעים עם `source_id`.
-  - `open_source({ source_id })` — טקסט מלא חתוך ל-8K תווים.
-  - `record_learning_event({ kind, source_id?, topic?, note? })` — `'studied' | 'struggled' | 'asked_followup' | 'insight'`.
-  - `recommend_next({ context })` — לפי `study_progress` + `learning_events`.
-- **Loop control**: `stopWhen: stepCountIs(50)`.
-- **Auth**: ה-handler קורא Bearer מ-`request.headers`, בונה supabase client לכל בקשה. ב-`onFinish` שומר הודעות ל-`mashpia_messages`.
-- **טיפול שגיאות OpenRouter**: `401` (מפתח חסר/שגוי), `402` (קרדיטים), `429` (rate) — toast ברור למשתמש; הודעת המשתמש המקורית נשמרת ב-composer.
+- Time zone conversion: build a `Date` for a reference week (e.g. the upcoming Sunday 00:00 in the user's tz), add `day*1440 + minutes`, then read its UTC minute-of-week. Use `Intl.DateTimeFormat` with `timeZone` option for the offset — no extra deps. DST is handled because conversion happens through `Date`.
+- Slot times remain stored as local `HH:MM` + `day_of_week` (no schema churn for availability). The tz lives on the profile and is applied at query time.
+- Reuse `db` typed client already defined in `chavruta.tsx`.
 
-### צד שרת — Server functions תומכות
+## Files
 
-- `src/lib/mashpia.functions.ts` (`createServerFn` עם `requireSupabaseAuth`):
-  - `listConversations` — שיחות של המשתמש (id, title, updated_at, last_message_preview).
-  - `createConversation` — שיחה חדשה, מחזירה `id`.
-  - `getConversation({ id })` — מטה-דאטה + `UIMessage[]` משוחזרים מ-`mashpia_messages`.
-  - `deleteConversation({ id })`.
-  - `getLearningContext` — סיכום קצר של הפרופיל הלימודי לזריקה ל-system prompt בכל שיחה חדשה (מה לומד עכשיו, נושאים חוזרים, אחרון שנעצר).
+- `supabase/migrations/<new>.sql` — add `time_zone` to `chavruta_profiles`.
+- `src/routes/chavruta.tsx` — tz select in profile form, new `FindChavrutaPanel` section, tz-aware `overlap()` helper.
 
-### Database — מיגרציה חדשה
+## Verification
 
-טבלאות (public, עם GRANTs ו-RLS):
-
-- `mashpia_conversations`
-  - `id uuid pk`, `user_id uuid` (FK `auth.users`, on delete cascade)
-  - `title text` (נוצר אוטומטית מהשאלה הראשונה אחרי 1-2 turns)
-  - `created_at`, `updated_at` (trigger)
-  - RLS: own rows only.
-- `mashpia_messages`
-  - `id uuid pk`, `conversation_id uuid` (FK cascade), `user_id uuid`
-  - `role text check in ('user','assistant','system')`
-  - `parts jsonb` — full AI SDK `UIMessage.parts` (text + tool calls/results)
-  - `created_at`
-  - אינדקס על `(conversation_id, created_at)`
-  - RLS: own rows only (via `user_id`).
-- `learning_events`
-  - `id uuid pk`, `user_id uuid`, `kind text`, `source_id uuid null` (FK `sources`), `topic text null`, `note text null`, `created_at`
-  - אינדקס על `(user_id, created_at desc)`
-  - RLS: own rows only; writes גם דרך service-role מתוך handler ה-tool.
-- שדרוג `profiles`: עמודות `learning_level text default 'beginner'`, `interests text[] default '{}'`, `daily_minutes int default 15`.
-
-GRANTs: `authenticated` SELECT/INSERT/UPDATE/DELETE על שלוש הטבלאות; `service_role ALL`. אין `anon`.
-
-### Frontend — UI חדש
-
-**ניתוב לפי `chat-agent-ui-contract`**: threads + database persistence (המשתמש בחר "משפיע AI" כמשמעותי, ופרופיל לימודי דורש DB). מבנה:
-
-- `src/routes/_authenticated/mashpia.tsx` — דף ראשי: בוחר/יוצר שיחה ומנווט ל-`/mashpia/$conversationId`.
-- `src/routes/_authenticated/mashpia.$conversationId.tsx` — דף שיחה. Layout עם sidebar רשימת שיחות + אזור הצ'אט.
-- `MashpiaChatWindow` (keyed by `conversationId`):
-  - שימוש ב-AI Elements: `Conversation`, `Message`/`MessageContent`/`MessageResponse`, `PromptInput`/`PromptInputTextarea`/`PromptInputFooter`/`PromptInputSubmit`, `Shimmer`, `Tool`/`ToolHeader`/`ToolContent` (כל אלה דרך `bun x ai-elements@latest add ...` לפני כתיבת UI).
-  - `useChat({ id: conversationId, messages: loaded, transport: new DefaultChatTransport({ api: '/api/mashpia' }) })`.
-  - Optimistic user message + Shimmer "המשפיע חושב…" כשה-status הוא `submitted`.
-  - רינדור `message.parts`: טקסט עם markdown (`react-markdown`), tool calls כקלפסות סגורות (`<Tool defaultOpen={false}>`).
-  - כשmsg מכיל קריאה ל-`search_corpus` או `open_source`, מציגים מתחת לטקסט "מקורות בשיחה" — לחיצה פותחת את `SourceReader` הקיים.
-- `MashpiaSidebar`: רשימת שיחות, כפתור "שיחה חדשה" (יוצר, מנווט), מחיקה בכפתור נפרד (לא nested button), היילייט פעיל.
-- Composer textarea ממקד עצמו: ב-mount, אחרי שליחה, אחרי גמר stream, ובמעבר שיחה.
-
-### זהות חזותית
-
-- לוגו זעיר חדש למשפיע (תמונה מיוצרת — נר/אות אלף סטיילז, לא `Sparkles`). מיובא מ-`src/assets/mashpia-logo.png`.
-- צבעי הצ'אט: assistant ללא רקע (טקסט על הקנבס הראשי), user bubble ב-`bg-primary text-primary-foreground` כמו טוקני המערכת הקיימים.
-- שומר על שפת העיצוב הקיימת (scholar-card, פונט עברי `Frank Ruhl Libre`).
-
-### עדכון `start.ts`
-
-- ודא ש-`attachSupabaseAuth` כבר ב-`functionMiddleware` (קיים) — אין שינוי.
-- אם ה-route `/api/mashpia` קורא ל-Supabase מתוך ה-handler עם ה-bearer של המשתמש, קוראים ידנית ל-`Authorization` מ-`request.headers` ובונים supabase client לכל בקשה (לא middleware של server-fn).
-
----
-
-## שלבים (לפי סדר ביצוע)
-
-1. **מיגרציה**: `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
-2. **OpenRouter provider helper**: יצירת `src/lib/ai-openrouter.server.ts` (`createOpenRouterProvider`, `defaultChatModel`). מחיקת `src/lib/ai-gateway.server.ts` אחרי שכל הצרכנים הוסבו. ודא ש-`OPENROUTER_API_KEY` קיים ב-secrets (אם חסר — להוסיף דרך `add_secret`, **לא** ליצור LOVABLE_API_KEY).
-3. **המרת קריאות AI קיימות ל-OpenRouter**: `ask.functions.ts`, `summarize-source.functions.ts`, וכל מקום אחר שמייבא מ-`ai-gateway.server.ts` — להעביר ל-helper החדש. וידוא שאין יותר ייבוא של `LOVABLE_API_KEY`, `ai.gateway.lovable.dev`, או `createLovableAiGatewayProvider`.
-4. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
-5. **התקנת חבילות AI SDK**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible` (`zod` כבר קיים).
-6. **Route `/api/mashpia`**: `streamText` עם provider של OpenRouter + tools + `onFinish` שכותב ל-DB.
-7. **Server functions** ל-conversations + learning context.
-8. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
-9. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
-10. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
-11. **תרגומים** ב-`i18n.ts` (he/en).
-12. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה (וידוא קריאה חיצונית ל-`openrouter.ai`), רענון = ההודעות חוזרות, אין דליפה בין שיחות, לחיצה על מקור פותחת קורא.
-13. **בדיקת ניקיון**: `rg -n "lovable.*gateway|LOVABLE_API_KEY|createLovableAiGatewayProvider"` חייב להחזיר 0 התאמות בקוד המוצר (חוץ ממסמכי הידע).
-
----
-
-## הערות טכניות
-
-- שיחה חדשה: ה-frontend קורא `createConversation` → מקבל `id` → `navigate({ to: '/mashpia/$conversationId', params: { conversationId: id }})`. אין `useEffect` שיוצר שיחה אוטומטית בעמוד / (StrictMode).
-- ID של הודעות AI SDK הם `msg_...` strings — לא מכניסים אותם לעמודת `uuid`. ה-`id` של `mashpia_messages` הוא UUID נוצר ב-DB; ה-`UIMessage.id` של ה-SDK נשמר רק אם נדרש לעמודה `text` נפרדת (כרגע לא נדרש).
-- `onFinish` שומר את הודעת המשתמש + הודעת ה-assistant המלאה (כולל tool parts) בטרנזקציה הגיונית — אם insert נכשל, מחזירים שגיאה ל-stream לוג ולא מסתירים.
-- שגיאות gateway: `402` (credits) ו-`429` (rate) מוצגות למשתמש ב-toast עם הודעה ברורה.
-- Tool `search_corpus` משתמש ב-RPC `match_chunks` הקיים — אין שינוי במאגר העובדות.
-- ה-system prompt מוזרק עם `getLearningContext` בתחילת כל שיחה חדשה; בשיחה קיימת לא חוזרים על זה אלא משתמשים בהיסטוריית ה-messages.
-- מובייל: sidebar הופך ל-Drawer מתחת ל-`md`.
-
----
-
-## תוצרים (Definition of Done)
-
-- משתמש מחובר יכול להיכנס ל-`/mashpia`, ליצור שיחה, לכתוב "תסביר לי דירה בתחתונים", לקבל תשובה זורמת עם 2-3 מקורות שלחיצה עליהם פותחת את ה-Reader.
-- שיחה שנייה היא URL נפרד; רענון משחזר את ההודעות.
-- כשמשתמש כותב "לא הבנתי", ה-tool `record_learning_event({ kind: 'struggled' })` נקרא וניתן לראות את הרשומה ב-`learning_events`.
-- המשפיע מסיים תמיד בשאלת המשך או בהצעת מקור.
-- אין דליפה של הודעות בין שיחות. אין כפילויות שיחה ב-StrictMode.
-- Build + typecheck ירוקים.
-
----
-
-## פיצ'רים עתידיים (לא בסבב הזה — לתיעוד בלבד)
-
-- **לימוד יומי מותאם** (חת"ת/רמב"ם/היום יום/מאמר) — דורש cron + מנוע המלצה מבוסס `learning_events`.
-- **חברותא חכמה** ("מצא לי חברותא עכשיו") — דורש WebRTC + matchmaking + נוכחות חיה. בנפרד, אחרי שהמשפיע יציב.
-- **פיד "התוועדות"** — תובנות שמשתמשים מפרסמים. דורש moderation.
-- **מסע חסידי** — visualization של ההתקדמות (טיימליין, לא ניקוד).
+- Build passes (TS types regenerate after migration).
+- Manual: set profile tz to `Asia/Jerusalem`, second account tz `America/New_York` with overlapping evenings — confirm overlap appears in each viewer's local time.

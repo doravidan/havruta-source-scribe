@@ -29,6 +29,7 @@ type Profile = {
   preferred_lang: "he" | "en" | "both";
   topics: string[] | null;
   is_active: boolean;
+  time_zone: string | null;
 };
 
 type Availability = {
@@ -96,6 +97,107 @@ function overlap(a: Availability, b: Availability) {
   const start = Math.max(mins(a.start_time), mins(b.start_time));
   const end = Math.min(mins(a.end_time), mins(b.end_time));
   return end > start ? { day: a.day_of_week, start: time(start), end: time(end) } : null;
+}
+
+// ---------- Time-zone aware matching ----------
+const WEEK_MIN = 7 * 24 * 60;
+// Sunday 2024-01-07 00:00:00 UTC — reference week start
+const REF_SUNDAY_UTC = new Date(Date.UTC(2024, 0, 7));
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
+function detectTz(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jerusalem";
+  } catch {
+    return "Asia/Jerusalem";
+  }
+}
+
+function listTimeZones(): string[] {
+  try {
+    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    if (typeof fn === "function") return fn("timeZone");
+  } catch { /* noop */ }
+  return [
+    "Asia/Jerusalem", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "America/Toronto", "America/Mexico_City", "America/Argentina/Buenos_Aires", "America/Sao_Paulo",
+    "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Singapore",
+    "Asia/Hong_Kong", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland", "UTC",
+  ];
+}
+
+// offset = (local time in tz) - UTC, in minutes, for the given instant
+function tzOffsetMinutes(instant: Date, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(instant);
+  const map: Record<string, string> = {};
+  for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+  const hour = map.hour === "24" ? 0 : Number(map.hour);
+  const asUtc = Date.UTC(
+    Number(map.year), Number(map.month) - 1, Number(map.day),
+    hour, Number(map.minute), Number(map.second),
+  );
+  return Math.round((asUtc - instant.getTime()) / 60000);
+}
+
+// Convert a (day, "HH:MM") wall-clock in tz to UTC minute-of-week relative to REF_SUNDAY_UTC.
+function localToUtcMinOfWeek(day: number, hhmm: string, tz: string): number {
+  const [h, m] = hhmm.slice(0, 5).split(":").map(Number);
+  const naive = new Date(REF_SUNDAY_UTC.getTime() + (day * 1440 + h * 60 + m) * 60000);
+  const offset = tzOffsetMinutes(naive, tz);
+  const utc = naive.getTime() - offset * 60000;
+  let mw = Math.round((utc - REF_SUNDAY_UTC.getTime()) / 60000);
+  mw = ((mw % WEEK_MIN) + WEEK_MIN) % WEEK_MIN;
+  return mw;
+}
+
+function utcMinOfWeekToLocal(mw: number, tz: string): { day: number; hhmm: string } {
+  const instant = new Date(REF_SUNDAY_UTC.getTime() + mw * 60000);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false, weekday: "short", hour: "2-digit", minute: "2-digit",
+  });
+  const parts = dtf.formatToParts(instant);
+  const map: Record<string, string> = {};
+  for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+  const hour = map.hour === "24" ? "00" : map.hour;
+  return { day: WEEKDAY_INDEX[map.weekday] ?? 0, hhmm: `${hour}:${map.minute}` };
+}
+
+type UtcInterval = { start: number; end: number };
+
+function slotToUtcIntervals(slot: Availability, tz: string): UtcInterval[] {
+  const s = localToUtcMinOfWeek(slot.day_of_week, slot.start_time, tz);
+  const eRaw = localToUtcMinOfWeek(slot.day_of_week, slot.end_time, tz);
+  // Local end > local start within a slot, so if eRaw <= s we crossed the UTC week boundary.
+  if (eRaw > s) return [{ start: s, end: eRaw }];
+  const e = eRaw === 0 ? WEEK_MIN : eRaw;
+  if (e > s) return [{ start: s, end: e }];
+  return [{ start: s, end: WEEK_MIN }, { start: 0, end: e }];
+}
+
+function intersectIntervals(a: UtcInterval, b: UtcInterval): UtcInterval | null {
+  const s = Math.max(a.start, b.start);
+  const e = Math.min(a.end, b.end);
+  return e > s ? { start: s, end: e } : null;
+}
+
+function languagesCompatible(a: Profile["preferred_lang"], b: Profile["preferred_lang"]): boolean {
+  if (a === "both" || b === "both") return true;
+  return a === b;
+}
+
+const LEVEL_ORDER: Record<Profile["learning_level"], number> = {
+  beginner: 0, intermediate: 1, advanced: 2,
+};
+function levelDistance(a: Profile["learning_level"], b: Profile["learning_level"]): number {
+  return Math.abs(LEVEL_ORDER[a] - LEVEL_ORDER[b]);
 }
 
 function ChavrutaPage() {
@@ -208,6 +310,7 @@ function ChavrutaPage() {
         bio: String(form.get("bio") || ""),
         learning_level: String(form.get("learning_level") || "beginner"),
         preferred_lang: String(form.get("preferred_lang") || "he"),
+        time_zone: String(form.get("time_zone") || detectTz()),
         topics: topicInput
           .split(",")
           .map((x) => x.trim())
@@ -266,6 +369,83 @@ function ChavrutaPage() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
   });
+
+  const viewerTz = myProfile?.time_zone ?? detectTz();
+
+  const finderMatches = useMemo(() => {
+    if (!user || !socialQ.data || !myProfile || mySlots.length === 0) return [];
+    const myTz = myProfile.time_zone ?? detectTz();
+    const myTopics = new Set(myProfile.topics ?? []);
+    const existing = new Set(
+      (socialQ.data.matches ?? []).map((m) =>
+        [m.requester_id, m.suggested_user_id].sort().join(":"),
+      ),
+    );
+    const myIntervals = mySlots.flatMap((s) => slotToUtcIntervals(s, myTz));
+    type FinderResult = {
+      profile: Profile;
+      utc: UtcInterval;
+      mine: { day: number; startHHMM: string; endHHMM: string };
+      theirs: { day: number; startHHMM: string; endHHMM: string };
+      score: number;
+      reasons: { lang: boolean; level: number; topics: number; minutes: number };
+    };
+    const out: FinderResult[] = [];
+    for (const p of socialQ.data.profiles) {
+      if (p.user_id === user.id || !p.is_active) continue;
+      if (existing.has([p.user_id, user.id].sort().join(":"))) continue;
+      if (!languagesCompatible(myProfile.preferred_lang, p.preferred_lang)) continue;
+      const ldist = levelDistance(myProfile.learning_level, p.learning_level);
+      if (ldist > 1) continue;
+      const theirTz = p.time_zone ?? "Asia/Jerusalem";
+      const theirSlots = socialQ.data.slots.filter((s) => s.user_id === p.user_id);
+      const theirIntervals = theirSlots.flatMap((s) => slotToUtcIntervals(s, theirTz));
+      let best: UtcInterval | null = null;
+      for (const a of myIntervals)
+        for (const b of theirIntervals) {
+          const o = intersectIntervals(a, b);
+          if (o && (!best || o.end - o.start > best.end - best.start)) best = o;
+        }
+      if (!best) continue;
+      const minutes = best.end - best.start;
+      if (minutes < 15) continue;
+      const topicOverlap = (p.topics ?? []).filter((t) => myTopics.has(t)).length;
+      const langExact = myProfile.preferred_lang === p.preferred_lang;
+      const score =
+        (langExact ? 3 : 1) * 3 +
+        (2 - ldist) * 3 +
+        topicOverlap * 2 +
+        Math.min(minutes, 180) / 30;
+      const mineLocal = utcMinOfWeekToLocal(best.start, myTz);
+      const mineLocalEnd = utcMinOfWeekToLocal(best.end % WEEK_MIN, myTz);
+      const theirLocal = utcMinOfWeekToLocal(best.start, theirTz);
+      const theirLocalEnd = utcMinOfWeekToLocal(best.end % WEEK_MIN, theirTz);
+      out.push({
+        profile: p,
+        utc: best,
+        mine: { day: mineLocal.day, startHHMM: mineLocal.hhmm, endHHMM: mineLocalEnd.hhmm },
+        theirs: { day: theirLocal.day, startHHMM: theirLocal.hhmm, endHHMM: theirLocalEnd.hhmm },
+        score,
+        reasons: { lang: langExact, level: ldist, topics: topicOverlap, minutes },
+      });
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, 10);
+  }, [user, socialQ.data, myProfile, mySlots]);
+
+  const proposeFinder = useMutation({
+    mutationFn: async (r: { profile: Profile; mine: { day: number; startHHMM: string; endHHMM: string } }) => {
+      const { error } = await db.rpc("propose_chavruta_match", {
+        _target_user_id: r.profile.user_id,
+        _day: r.mine.day,
+        _start: r.mine.startHHMM,
+        _end: r.mine.endHHMM,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+  });
+
+
 
   const sendMessage = useMutation({
     mutationFn: async (matchId: string) => {
@@ -409,6 +589,18 @@ function ChavrutaPage() {
                   <option value="both">{lang === "he" ? "שתיהן" : "Both"}</option>
                 </select>
               </div>
+              <select
+                name="time_zone"
+                defaultValue={profileQ.data?.profile?.time_zone ?? detectTz()}
+                className="w-full h-11 rounded-xl border border-border bg-background/45 px-3"
+                aria-label={lang === "he" ? "אזור זמן" : "Time zone"}
+              >
+                {listTimeZones().map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
               <input
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
@@ -490,6 +682,117 @@ function ChavrutaPage() {
           </aside>
 
           <section className="space-y-6 min-w-0">
+            <div className="scholar-card p-5 sm:p-6 border border-primary/40">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="eyebrow flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    {lang === "he" ? "מצא לי חברותא" : "Find me a chavruta"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lang === "he"
+                      ? `התאמה לפי אזור זמן (${viewerTz}), שפה, רמה ונושאים`
+                      : `Matched by time zone (${viewerTz}), language, level, and topics`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] })}
+                  className="h-9 rounded-xl border border-primary/40 px-3 text-sm text-primary"
+                >
+                  {lang === "he" ? "רענן" : "Refresh"}
+                </button>
+              </div>
+              {!myProfile ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "שמור פרופיל כדי לקבל התאמות."
+                    : "Save your profile to get matches."}
+                </p>
+              ) : mySlots.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "הוסף לפחות זמן זמינות אחד כדי שנמצא חברותא."
+                    : "Add at least one availability slot so we can match you."}
+                </p>
+              ) : finderMatches.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "אין כרגע התאמות חדשות. נסה להרחיב זמנים או נושאים."
+                    : "No new matches yet. Try broadening your availability or topics."}
+                </p>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-3">
+                  {finderMatches.map((r) => (
+                    <article
+                      key={`${r.profile.user_id}-${r.utc.start}`}
+                      className="rounded-2xl border border-border/80 bg-background/30 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-medium truncate">{r.profile.display_name}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {(lang === "he"
+                              ? { beginner: "מתחיל", intermediate: "בינוני", advanced: "מתקדם" }
+                              : { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }
+                            )[r.profile.learning_level]}
+                            {" · "}
+                            {r.profile.preferred_lang === "he"
+                              ? "עברית"
+                              : r.profile.preferred_lang === "en"
+                                ? "English"
+                                : lang === "he" ? "עברית/אנגלית" : "Hebrew/English"}
+                            {" · "}
+                            {r.profile.time_zone ?? "—"}
+                          </p>
+                        </div>
+                        <Clock className="h-4 w-4 text-primary shrink-0" />
+                      </div>
+                      <div className="mt-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">
+                            {lang === "he" ? "אצלך: " : "Your time: "}
+                          </span>
+                          {days[r.mine.day]} · {r.mine.startHHMM}–{r.mine.endHHMM}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {lang === "he" ? "אצלם: " : "Their time: "}
+                          {days[r.theirs.day]} · {r.theirs.startHHMM}–{r.theirs.endHHMM}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {(r.profile.topics ?? []).slice(0, 4).map((x) => (
+                          <span
+                            key={x}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                              (myProfile?.topics ?? []).includes(x)
+                                ? "border-primary/60 text-primary"
+                                : "border-border/70 text-muted-foreground"
+                            }`}
+                          >
+                            {x}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {lang === "he"
+                            ? `${r.reasons.minutes} דק׳ חפיפה · ${r.reasons.topics} נושאים משותפים`
+                            : `${r.reasons.minutes} min overlap · ${r.reasons.topics} shared topics`}
+                        </span>
+                        <button
+                          onClick={() => proposeFinder.mutate(r)}
+                          disabled={proposeFinder.isPending}
+                          className="h-9 rounded-xl bg-primary px-3 text-sm font-medium text-primary-foreground"
+                        >
+                          {lang === "he" ? "פתח שיחה" : "Start chat"}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="scholar-card p-5 sm:p-6">
               <h2 className="eyebrow mb-4">
                 {lang === "he" ? "הצעות התאמה" : "Suggested matches"}
