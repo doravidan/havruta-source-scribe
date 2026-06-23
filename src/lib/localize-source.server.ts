@@ -1,10 +1,11 @@
 type LocalizableSource = {
   title?: string | null;
   tree?: string | null;
-  tree_parts?: string[] | null;
+  tree_parts?: unknown;
   text?: string | null;
   language?: string | null;
 };
+
 
 function normalizeLang(lang: string | null | undefined): "he" | "en" {
   return lang === "en" ? "en" : "he";
