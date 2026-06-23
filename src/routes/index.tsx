@@ -13,7 +13,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "חסידותא · Chassiduta — חברותא לחסידות" },
-      { name: "description", content: "חסידותא — לימוד, חיפוש ושאלות מבוססות מקור על מקורות חסידות חב״ד." },
+      {
+        name: "description",
+        content: "חסידותא — לימוד, חיפוש ושאלות מבוססות מקור על מקורות חסידות חב״ד.",
+      },
       { property: "og:title", content: "חסידותא · Chassiduta — חברותא לחסידות" },
       { property: "og:description", content: "חסידות עם מקורות. לימוד בלי רעש." },
       { property: "og:url", content: "https://chassiduta.lovable.app/" },
@@ -43,7 +46,7 @@ function Index() {
         <section className="mx-auto max-w-7xl px-4 sm:px-8 mt-8 sm:mt-10 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-7 items-start">
             <div className="space-y-6 min-w-0">
-              <motion.div custom={0} initial="hidden" animate="show" variants={tile}>
+              <motion.div id="ask" custom={0} initial="hidden" animate="show" variants={tile}>
                 <AskPanel />
               </motion.div>
 
@@ -68,9 +71,7 @@ function Index() {
             </motion.aside>
           </div>
 
-          <footer className="mt-14 text-center text-xs text-muted-foreground">
-            {t.poweredBy}
-          </footer>
+          <footer className="mt-14 text-center text-xs text-muted-foreground">{t.poweredBy}</footer>
         </section>
       </main>
     </div>

@@ -174,6 +174,18 @@
     mask-image: linear-gradient(to bottom, black, transparent 80%);
   }
 
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.1;
+    background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.38) 0 1px, transparent 1.5px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(to bottom, transparent 0, black 10rem, transparent 75%);
+  }
+
   html[lang="he"] body {
     font-family: var(--font-serif-he);
   }
@@ -295,6 +307,36 @@
 @keyframes glow-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); filter: hue-rotate(0deg); }
+  50% { transform: translate3d(-1.5rem, 1rem, 0) scale(1.04); filter: hue-rotate(-8deg); }
+}
+
+@keyframes orbit-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(-0.35deg); }
+}
+
+@utility hero-stage {
+  isolation: isolate;
+  background:
+    radial-gradient(1000px 520px at 72% 6%, rgba(215,189,120,0.12), transparent 58%),
+    radial-gradient(780px 460px at 12% 22%, rgba(131,183,162,0.09), transparent 58%);
+}
+
+@utility hero-aurora {
+  background:
+    radial-gradient(500px 260px at 72% 22%, rgba(240,220,171,0.16), transparent 62%),
+    radial-gradient(460px 320px at 28% 18%, rgba(131,183,162,0.12), transparent 58%),
+    conic-gradient(from 180deg at 50% 20%, transparent 0 20%, rgba(215,189,120,0.08), transparent 46% 100%);
+  animation: aurora-drift 14s ease-in-out infinite;
+  opacity: 0.95;
+}
+
+@utility hero-orbit-card {
+  animation: orbit-float 7s ease-in-out infinite;
 }
 
 @utility animate-glow-pulse {
