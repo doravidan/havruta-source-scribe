@@ -232,6 +232,15 @@ export const askHavruta = createServerFn({ method: "POST" })
       attempt++;
     }
     if (isUnsupportedScript(answer)) {
+      const { logSecurityEvent } = await import("./security-events.server");
+      await logSecurityEvent({
+        kind: "unsupported_script_output",
+        severity: "warn",
+        source: "ask.askHavruta",
+        sample: answer,
+        context: { lang: data.lang },
+        user_id: context.userId,
+      });
       answer = data.lang === "he"
         ? "לא הצלחתי להפיק תשובה בעברית. נסה שוב בבקשה."
         : "I couldn't produce an English answer. Please try again.";
