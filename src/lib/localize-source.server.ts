@@ -56,7 +56,7 @@ export async function localizeSourceForStudy<T extends LocalizableSource>(
       translateText(source.title ?? "", target, "Title"),
       translateText(source.tree ?? "", target, "Breadcrumb"),
       Promise.all(
-        (source.tree_parts ?? []).map((part) => translateText(part, target, "Breadcrumb part")),
+        ((source.tree_parts as string[] | null | undefined) ?? []).map((part) => translateText(part, target, "Breadcrumb part")),
       ),
       ...splitText(source.text ?? "").map((part, index) =>
         translateText(part, target, `Source text part ${index + 1}`),
