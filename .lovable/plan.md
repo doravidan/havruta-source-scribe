@@ -19,20 +19,36 @@
 
 ## ארכיטקטורה
 
-### צד שרת — AI SDK + Lovable AI Gateway
+### צד שרת — AI SDK + OpenRouter בלבד
 
-החלפת `askHavruta` (one-shot generateText) ב-**streaming chat agent** עם tools.
+> **החלטה מחייבת**: כל קריאות ה-AI במוצר (chat, סיכומים, ask, כל קוד עתידי) עוברות **אך ורק** דרך OpenRouter עם `OPENROUTER_API_KEY` המוגדר ב-secrets/`.env`. **אסור** להשתמש ב-Lovable AI Gateway (`ai.gateway.lovable.dev`), ב-`LOVABLE_API_KEY`, או ב-helper `createLovableAiGatewayProvider`. אין fallback ל-Lovable AI. embeddings ממשיכים דרך Gemini ישיר (`GEMINI_API_KEY`) או fallback מילולי — לא דרך Lovable.
+
+החלפת `askHavruta` (one-shot) ב-**streaming chat agent** עם tools.
 
 - **Route חדש**: `src/routes/api/mashpia.ts` — POST handler עם `streamText` + `toUIMessageStreamResponse({ originalMessages, onFinish })`.
-- **מודל**: `google/gemini-3-flash-preview` דרך helper חדש `src/lib/ai-gateway.server.ts` (`createLovableAiGatewayProvider`). שומרים על OpenRouter כ-fallback בלבד אם המפתח חסר.
-- **System prompt**: זהות "משפיע חב"די" — חם, מכבד, מבוסס מקורות, חוזר בעברית בלבד (או אנגלית לפי `lang`), מסיים בשאלת המשך אחת.
-- **Tools** (כולם `tool({ inputSchema: z..., execute })`):
-  - `search_corpus({ query, top_k })` — vector search על `source_chunks` (RPC `match_chunks` הקיים) + fallback מילולי. מחזיר עד 6 קטעים מסוכמים עם `source_id`.
-  - `open_source({ source_id })` — מחזיר טקסט מלא של מקור מטבלת `sources` (חתוך ל-8K תווים) כדי שהמודל יוכל לצטט מדויק.
-  - `record_learning_event({ kind, source_id?, topic?, note? })` — `kind` ∈ `'studied' | 'struggled' | 'asked_followup' | 'insight'`. כותב ל-`learning_events`.
-  - `recommend_next({ context })` — בוחר המלצה ע"פ היסטוריית `study_progress` + `learning_events`: המשך הפרק, מאמר קשור, או חזרה למה שלא הובן.
+- **Provider**: helper יחיד `src/lib/ai-openrouter.server.ts` שמייצא `createOpenRouterProvider()` המבוסס על `@ai-sdk/openai-compatible`:
+  ```ts
+  createOpenAICompatible({
+    name: "openrouter",
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+    headers: {
+      "HTTP-Referer": process.env.APP_PUBLIC_URL ?? "https://chassiduta.lovable.app",
+      "X-Title": "Chassiduta Mashpia",
+    },
+  })
+  ```
+  ה-helper הקיים `src/lib/ai-gateway.server.ts` יוחלף/יוסר; כל קוד שמשתמש בו (`ask.functions.ts`, `summarize-source.functions.ts`, וכו') יעודכן לייבא מ-`ai-openrouter.server.ts`.
+- **מודל ברירת מחדל**: `process.env.OPENROUTER_CHAT_MODEL ?? "openrouter/auto"`. המשתמש יכול להחליף מ-`.env` (למשל `anthropic/claude-3.5-sonnet`, `meta-llama/llama-3.3-70b-instruct:free`) ללא שינוי קוד.
+- **System prompt**: זהות "משפיע חב"די" — חם, מבוסס מקורות, מסיים בשאלת המשך אחת. עברית/אנגלית לפי `lang`.
+- **Tools** (`tool({ inputSchema: z..., execute })`):
+  - `search_corpus({ query, top_k })` — RPC `match_chunks` הקיים + fallback מילולי, עד 6 קטעים עם `source_id`.
+  - `open_source({ source_id })` — טקסט מלא חתוך ל-8K תווים.
+  - `record_learning_event({ kind, source_id?, topic?, note? })` — `'studied' | 'struggled' | 'asked_followup' | 'insight'`.
+  - `recommend_next({ context })` — לפי `study_progress` + `learning_events`.
 - **Loop control**: `stopWhen: stepCountIs(50)`.
-- **Auth**: ה-handler קורא ל-Supabase דרך publishable client + bearer token של המשתמש (כמו דפוס `_authenticated`). מ-onFinish שומר הודעות לטבלת `mashpia_messages`.
+- **Auth**: ה-handler קורא Bearer מ-`request.headers`, בונה supabase client לכל בקשה. ב-`onFinish` שומר הודעות ל-`mashpia_messages`.
+- **טיפול שגיאות OpenRouter**: `401` (מפתח חסר/שגוי), `402` (קרדיטים), `429` (rate) — toast ברור למשתמש; הודעת המשתמש המקורית נשמרת ב-composer.
 
 ### צד שרת — Server functions תומכות
 
@@ -97,18 +113,19 @@ GRANTs: `authenticated` SELECT/INSERT/UPDATE/DELETE על שלוש הטבלאות
 
 ## שלבים (לפי סדר ביצוע)
 
-1. **מיגרציה**: enums (אם צריך), `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
-2. **AI Gateway helper**: `src/lib/ai-gateway.server.ts` עם `createLovableAiGatewayProvider`. (החלפת ה-OpenRouter wrapper אחורה, או כשכבת ברירת מחדל.)
-3. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
-4. **התקנת AI SDK חבילות**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible`, `zod` (כבר קיים).
-5. **Route `/api/mashpia`**: streamText + tools + onFinish persist.
-6. **Server functions** ל-conversations + learning context.
-7. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
-8. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
-9. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
-10. **תרגומים** ב-`i18n.ts`: כל המחרוזות החדשות (he/en).
-11. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה, רענון = ההודעות חוזרות, יצירת שיחה שנייה לא דולפת ל-`/mashpia/<id1>`, לחיצה על מקור פותחת קורא.
-12. **שמירה במגירה לעתיד**: לימוד יומי מותאם, חברותא חכמה, פיד "התוועדות" — אלה לא בסבב הזה.
+1. **מיגרציה**: `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
+2. **OpenRouter provider helper**: יצירת `src/lib/ai-openrouter.server.ts` (`createOpenRouterProvider`, `defaultChatModel`). מחיקת `src/lib/ai-gateway.server.ts` אחרי שכל הצרכנים הוסבו. ודא ש-`OPENROUTER_API_KEY` קיים ב-secrets (אם חסר — להוסיף דרך `add_secret`, **לא** ליצור LOVABLE_API_KEY).
+3. **המרת קריאות AI קיימות ל-OpenRouter**: `ask.functions.ts`, `summarize-source.functions.ts`, וכל מקום אחר שמייבא מ-`ai-gateway.server.ts` — להעביר ל-helper החדש. וידוא שאין יותר ייבוא של `LOVABLE_API_KEY`, `ai.gateway.lovable.dev`, או `createLovableAiGatewayProvider`.
+4. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
+5. **התקנת חבילות AI SDK**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible` (`zod` כבר קיים).
+6. **Route `/api/mashpia`**: `streamText` עם provider של OpenRouter + tools + `onFinish` שכותב ל-DB.
+7. **Server functions** ל-conversations + learning context.
+8. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
+9. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
+10. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
+11. **תרגומים** ב-`i18n.ts` (he/en).
+12. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה (וידוא קריאה חיצונית ל-`openrouter.ai`), רענון = ההודעות חוזרות, אין דליפה בין שיחות, לחיצה על מקור פותחת קורא.
+13. **בדיקת ניקיון**: `rg -n "lovable.*gateway|LOVABLE_API_KEY|createLovableAiGatewayProvider"` חייב להחזיר 0 התאמות בקוד המוצר (חוץ ממסמכי הידע).
 
 ---
 
