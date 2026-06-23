@@ -30,13 +30,19 @@ type MatchRow = {
 export const Route = createFileRoute("/beit-midrash")({
   head: () => ({
     meta: [
-      { title: "בית המדרש שלי — חסידותא" },
+      { title: "בית המדרש שלי — חסידותא · Chassiduta" },
       {
         name: "description",
         content: "לוח לימוד אישי: לימוד יומי, התקדמות, שאלות אחרונות וחברותות פעילות.",
       },
+      { property: "og:title", content: "בית המדרש שלי — חסידותא · Chassiduta" },
+      { property: "og:description", content: "לוח לימוד אישי: לימוד יומי, התקדמות, שאלות אחרונות וחברותות פעילות." },
+      { property: "og:url", content: "https://chassiduta.lovable.app/beit-midrash" },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/beit-midrash" }],
   }),
+
   component: BeitMidrashPage,
 });
 

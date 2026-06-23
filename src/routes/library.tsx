@@ -11,29 +11,32 @@ import { ChevronLeft, ChevronRight, FileText, FolderOpen, Home, Library as Libra
 export const Route = createFileRoute("/library")({
   head: () => ({
     meta: [
-      { title: "Library — Havruta Chabad" },
+      { title: "Library — חסידותא · Chassiduta" },
       { name: "description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
-      { property: "og:title", content: "Library — Havruta Chabad" },
+      { property: "og:title", content: "Library — חסידותא · Chassiduta" },
       { property: "og:description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
-      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/library" },
+      { property: "og:url", content: "https://chassiduta.lovable.app/library" },
+      { name: "twitter:title", content: "Library — חסידותא · Chassiduta" },
+      { name: "twitter:description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
     ],
-    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/library" }],
+    links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/library" }],
     scripts: [
       {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: "Havruta Chabad Source Library",
+          name: "Chassiduta Source Library",
           description: "A browsable collection of the Chabad Chassidus corpus, organized by section: Tanya, Maamarim, Sichos, Igrot Kodesh, and more.",
-          url: "https://havruta-source-scribe.lovable.app/library",
+          url: "https://chassiduta.lovable.app/library",
           inLanguage: ["he", "yi", "en"],
           about: { "@type": "Thing", name: "Chabad Chassidus" },
-          isPartOf: { "@type": "WebSite", name: "Havruta Chabad", url: "https://havruta-source-scribe.lovable.app" },
+          isPartOf: { "@type": "WebSite", name: "Chassiduta", url: "https://chassiduta.lovable.app" },
         }),
       },
     ],
   }),
+
   component: LibraryPage,
 });
 

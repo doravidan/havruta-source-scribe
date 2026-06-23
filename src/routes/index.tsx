@@ -9,22 +9,55 @@ import { DailyStudyPanel } from "@/components/daily-study";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
 
+const HOME_TITLE = "חסידותא · Chassiduta — חברותא לחסידות חב״ד";
+const HOME_DESC =
+  "חסידותא — חברותא לחסידות, בכל זמן ובכל מקום. לימוד מקורות חסידות חב״ד, חיפוש, שאלות ותשובות מבוססות מקור.";
+const HOME_IMAGE =
+  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8cf675d8-f93d-4815-a2d4-50bacefc2c97/id-preview-058f936a--ed713669-c7b4-4cdb-be4f-8878effb64ff.lovable.app-1782162151012.png";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "חסידותא · Chassiduta — חברותא לחסידות" },
-      {
-        name: "description",
-        content: "חסידותא — לימוד, חיפוש ושאלות מבוססות מקור על מקורות חסידות חב״ד.",
-      },
-      { property: "og:title", content: "חסידותא · Chassiduta — חברותא לחסידות" },
-      { property: "og:description", content: "חסידות עם מקורות. לימוד בלי רעש." },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
       { property: "og:url", content: "https://chassiduta.lovable.app/" },
+      { property: "og:image", content: HOME_IMAGE },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESC },
+      { name: "twitter:image", content: HOME_IMAGE },
     ],
     links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              name: "חסידותא · Chassiduta",
+              alternateName: "Chassiduta",
+              url: "https://chassiduta.lovable.app/",
+              inLanguage: ["he", "yi", "en"],
+              description: HOME_DESC,
+            },
+            {
+              "@type": "Organization",
+              name: "חסידותא · Chassiduta",
+              url: "https://chassiduta.lovable.app/",
+              description:
+                "Digital beit midrash for Chabad Chassidus — sourced Q&A, library, daily study and chavruta matching.",
+            },
+          ],
+        }),
+      },
+    ],
   }),
   component: Index,
 });
+
 
 const tile = {
   hidden: { opacity: 0, y: 16 },
