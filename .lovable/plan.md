@@ -113,18 +113,19 @@ GRANTs: `authenticated` SELECT/INSERT/UPDATE/DELETE על שלוש הטבלאות
 
 ## שלבים (לפי סדר ביצוע)
 
-1. **מיגרציה**: enums (אם צריך), `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
-2. **AI Gateway helper**: `src/lib/ai-gateway.server.ts` עם `createLovableAiGatewayProvider`. (החלפת ה-OpenRouter wrapper אחורה, או כשכבת ברירת מחדל.)
-3. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
-4. **התקנת AI SDK חבילות**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible`, `zod` (כבר קיים).
-5. **Route `/api/mashpia`**: streamText + tools + onFinish persist.
-6. **Server functions** ל-conversations + learning context.
-7. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
-8. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
-9. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
-10. **תרגומים** ב-`i18n.ts`: כל המחרוזות החדשות (he/en).
-11. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה, רענון = ההודעות חוזרות, יצירת שיחה שנייה לא דולפת ל-`/mashpia/<id1>`, לחיצה על מקור פותחת קורא.
-12. **שמירה במגירה לעתיד**: לימוד יומי מותאם, חברותא חכמה, פיד "התוועדות" — אלה לא בסבב הזה.
+1. **מיגרציה**: `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
+2. **OpenRouter provider helper**: יצירת `src/lib/ai-openrouter.server.ts` (`createOpenRouterProvider`, `defaultChatModel`). מחיקת `src/lib/ai-gateway.server.ts` אחרי שכל הצרכנים הוסבו. ודא ש-`OPENROUTER_API_KEY` קיים ב-secrets (אם חסר — להוסיף דרך `add_secret`, **לא** ליצור LOVABLE_API_KEY).
+3. **המרת קריאות AI קיימות ל-OpenRouter**: `ask.functions.ts`, `summarize-source.functions.ts`, וכל מקום אחר שמייבא מ-`ai-gateway.server.ts` — להעביר ל-helper החדש. וידוא שאין יותר ייבוא של `LOVABLE_API_KEY`, `ai.gateway.lovable.dev`, או `createLovableAiGatewayProvider`.
+4. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
+5. **התקנת חבילות AI SDK**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible` (`zod` כבר קיים).
+6. **Route `/api/mashpia`**: `streamText` עם provider של OpenRouter + tools + `onFinish` שכותב ל-DB.
+7. **Server functions** ל-conversations + learning context.
+8. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
+9. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
+10. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
+11. **תרגומים** ב-`i18n.ts` (he/en).
+12. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה (וידוא קריאה חיצונית ל-`openrouter.ai`), רענון = ההודעות חוזרות, אין דליפה בין שיחות, לחיצה על מקור פותחת קורא.
+13. **בדיקת ניקיון**: `rg -n "lovable.*gateway|LOVABLE_API_KEY|createLovableAiGatewayProvider"` חייב להחזיר 0 התאמות בקוד המוצר (חוץ ממסמכי הידע).
 
 ---
 
