@@ -6,7 +6,7 @@ import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
 import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   X,
   Copy,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
+import { createAiStudySession } from "@/lib/chavruta-study.functions";
 
 export type DateNav = {
   label: string;
@@ -50,11 +51,13 @@ type Props = {
 export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Props) {
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const fn = useServerFn(getSource);
   const studiedFn = useServerFn(isSourceStudied);
   const toggleFn = useServerFn(toggleSourceStudied);
   const summarizeFn = useServerFn(summarizeSource);
+  const createAiStudyFn = useServerFn(createAiStudySession);
   const open = !!sourceId;
   const { data, isLoading } = useQuery({
     queryKey: ["source", sourceId],
@@ -73,6 +76,14 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
     onSuccess: (res) => {
       qc.setQueryData(["studied", sourceId, session?.user?.id], res);
       qc.invalidateQueries({ queryKey: ["study-summary"] });
+    },
+  });
+
+  const openAiStudy = useMutation({
+    mutationFn: () => createAiStudyFn({ data: { sourceId: sourceId! } }),
+    onSuccess: (room) => {
+      onClose();
+      navigate({ to: "/study/$sessionId", params: { sessionId: room.id } });
     },
   });
 
@@ -295,6 +306,33 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               {summary.isPending ? t.readerSummarizing : t.readerSummary}
             </span>
           </button>
+          {session && data ? (
+            <button
+              onClick={() => openAiStudy.mutate()}
+              disabled={openAiStudy.isPending || !data}
+              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-foreground border border-primary hover:opacity-95 transition-colors disabled:opacity-60"
+              title={
+                lang === "he" ? "פתח חדר לימוד עם חברותא AI" : "Open a study room with AI chavruta"
+              }
+              aria-label={lang === "he" ? "פתח חדר לימוד עם חברותא AI" : "Open AI study room"}
+            >
+              {openAiStudy.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              <span>{lang === "he" ? "לימוד עם AI" : "Study with AI"}</span>
+            </button>
+          ) : data ? (
+            <Link
+              to="/auth"
+              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-foreground border border-primary hover:opacity-95 transition-colors"
+              title={lang === "he" ? "התחבר כדי לפתוח חדר לימוד עם AI" : "Sign in to study with AI"}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>{lang === "he" ? "לימוד עם AI" : "Study with AI"}</span>
+            </Link>
+          ) : null}
           {session && data && (
             <Link
               to="/chavruta"
