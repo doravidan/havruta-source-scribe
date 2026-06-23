@@ -184,7 +184,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
             {data?.tree && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {((data.tree_parts as string[] | null) ?? data.tree.split(" > ")).map(
-                  (p, i, arr) => (
+                  (p: string, i: number, arr: string[]) => (
                     <span
                       key={i}
                       className={`text-[11px] px-2 py-1 rounded-full border ${i === arr.length - 1 ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
