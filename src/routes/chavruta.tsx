@@ -29,6 +29,7 @@ type Profile = {
   preferred_lang: "he" | "en" | "both";
   topics: string[] | null;
   is_active: boolean;
+  time_zone: string | null;
 };
 
 type Availability = {
