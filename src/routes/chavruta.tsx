@@ -1138,15 +1138,28 @@ function ChavrutaPage() {
                               {lang === "he" ? "מאשר התאמה" : "Accept"}
                             </button>
                           )}
-                          {sourceIntentQ.data && (
+                          {sourceIntentQ.data ? (
                             <button
                               onClick={() => openStudyRoom.mutate(m.id)}
                               disabled={openStudyRoom.isPending}
-                              className="h-10 rounded-xl border border-primary/40 px-4 text-primary inline-flex items-center gap-2"
+                              className="h-10 rounded-xl border border-primary/40 px-4 text-primary inline-flex items-center gap-2 disabled:opacity-50"
                             >
                               <Users className="h-4 w-4" />
                               {lang === "he" ? "פתח לימוד + אודיו" : "Study + audio"}
                             </button>
+                          ) : (
+                            <Link
+                              to="/library"
+                              title={
+                                lang === "he"
+                                  ? "בחר מקור כדי לפתוח חדר לימוד"
+                                  : "Pick a source to open a study room"
+                              }
+                              className="h-10 rounded-xl border border-border px-4 text-muted-foreground inline-flex items-center gap-2"
+                            >
+                              <Users className="h-4 w-4" />
+                              {lang === "he" ? "בחר מקור לחדר לימוד" : "Pick a source for study"}
+                            </Link>
                           )}
                         </div>
                         {m.status === "accepted" && (

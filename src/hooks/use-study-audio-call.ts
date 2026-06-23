@@ -10,7 +10,13 @@ type SignalPayload = {
 };
 
 export function useStudyAudioCall(sessionId: string, userId: string | undefined) {
-  const peerId = useMemo(() => `${userId ?? "anon"}:${crypto.randomUUID()}`, [userId]);
+  const peerId = useMemo(() => {
+    const rand =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    return `${userId ?? "anon"}:${rand}`;
+  }, [userId]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -49,6 +55,9 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
         setState("error");
     };
 
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error("mic_unavailable");
+    }
     const local = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     localStreamRef.current = local;
     for (const track of local.getAudioTracks()) pc.addTrack(track, local);

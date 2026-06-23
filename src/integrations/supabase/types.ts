@@ -253,6 +253,136 @@ export type Database = {
         }
         Relationships: []
       }
+      chavruta_study_progress: {
+        Row: {
+          id: string
+          note: string | null
+          segment_index: number
+          session_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          note?: string | null
+          segment_index: number
+          session_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          note?: string | null
+          segment_index?: number
+          session_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chavruta_study_progress_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chavruta_study_questions: {
+        Row: {
+          answer: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          question: string
+          segment_index: number
+          session_id: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          question: string
+          segment_index: number
+          session_id: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          question?: string
+          segment_index?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chavruta_study_questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chavruta_study_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_segment_index: number
+          id: string
+          match_id: string
+          source_id: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_segment_index?: number
+          id?: string
+          match_id: string
+          source_id: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_segment_index?: number
+          id?: string
+          match_id?: string
+          source_id?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chavruta_study_sessions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chavruta_study_sessions_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
