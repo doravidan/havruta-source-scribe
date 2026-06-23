@@ -1,122 +1,143 @@
+# חסידותה — תכנית בנייה: "משפיע AI אישי"
 
-# Havruta Chabad — Build Plan
+## חזון מוצרי
 
-A bilingual (Hebrew RTL / English LTR) source-reader and AI chavruta for Chabad/Chassidus. Every answer is grounded in sources stored in Lovable Cloud — no external read-on-site flow.
+חסידותה אינה ספרייה דיגיטלית — היא **משפיע חב"די דיגיטלי** שמלווה את היהודי בלימוד חסידות ובעבודת ה' מדי יום. המערכת זוכרת מי המשתמש, מה הוא למד, במה הוא מתקשה, ומכוונת אותו הלאה.
 
-## Stack
+הצעד הראשון: שדרוג ה-Ask הקיים ל**צ'אט שיחתי עם זיכרון אישי**, מבוסס על המאגר הקיים (Tanya, מאמרים, שיחות, היום יום), עם פרופיל לימודי מתפתח.
 
-- TanStack Start (current template) + Tailwind v4 + shadcn/ui
-- Lovable Cloud (Supabase) — Postgres + pgvector + Auth
-- Lovable AI Gateway — `google/gemini-3-flash-preview` for answers, `google/gemini-embedding-001` (3072-dim) for retrieval
-- Server functions (`createServerFn`) for ingestion, search, get-source, and ask-havruta. No Supabase Edge Functions.
+---
 
-## Database (one migration, with GRANTs)
+## עקרונות
 
-Extensions: `vector`, `pg_trgm`, `unaccent`.
+1. **שיחה, לא שאילתות.** כל שאלה ממשיכה את ההקשר הקודם. המשפיע שואל בחזרה ובודק הבנה.
+2. **זיכרון אישי.** מה המשתמש לומד עכשיו (פרק בתניא, מאמר), נושאים שחזרו, שאלות פתוחות, רמת הבנה משוערת.
+3. **גרונדינג בקורפוס.** כל תשובה מסתמכת על מקורות שהמשתמש יכול לפתוח. הסברים מקושרים לציטוטים.
+4. **כיוון לפעולה.** סוף כל שיחה: הצעת המשך — מקור לקרוא, שאלה למחשבה, או חזרה לחומר קודם.
 
-Tables (public schema):
+---
 
-- `sources` — id, source_provider, source_id, title, tree, tree_parts jsonb, content_type, language, text, excerpt, char_count, raw_payload, source_url, sha256, fetched_at, timestamps. Unique `(source_provider, source_id)`. Indexes: GIN tsvector (`hebrew`/`simple` config), trigram on title/tree, btree on char_count.
-- `source_chunks` — id, source_id (fk cascade), chunk_index, text, token_count, embedding `vector(3072)`, created_at. Indexes: btree source_id, HNSW vector_cosine_ops, GIN tsvector on text.
-- `ask_sessions` — id, user_id (nullable), lang, question, answer, source_ids uuid[], mode, latency_ms, created_at.
-- `profiles` — id (fk auth.users), display_name, preferred_lang ('he'|'en'), timestamps. Auto-created via `handle_new_user` trigger.
-- `app_role` enum (`admin`, `user`) + `user_roles` table + `has_role(uuid, app_role)` SECURITY DEFINER function.
+## ארכיטקטורה
 
-Bootstrap admin: trigger on `auth.users` insert checks `NEW.email = 'avidandor@gmail.com'` and inserts an `admin` row into `user_roles`; otherwise inserts `user`. Profile row created in same trigger.
+### צד שרת — AI SDK + Lovable AI Gateway
 
-RLS + GRANTs for every table:
-- `sources`, `source_chunks`: SELECT to anon + authenticated (public reading), INSERT/UPDATE/DELETE only when `has_role(auth.uid(),'admin')`.
-- `ask_sessions`: anyone can INSERT; SELECT only own rows or admin.
-- `profiles`: own row read/update; admins read all.
-- `user_roles`: SELECT authenticated; writes admin-only.
+החלפת `askHavruta` (one-shot generateText) ב-**streaming chat agent** עם tools.
 
-DB RPC: `match_chunks(query_embedding vector(3072), match_count int, min_similarity float)` returning chunk + source metadata + cosine similarity for hybrid retrieval.
+- **Route חדש**: `src/routes/api/mashpia.ts` — POST handler עם `streamText` + `toUIMessageStreamResponse({ originalMessages, onFinish })`.
+- **מודל**: `google/gemini-3-flash-preview` דרך helper חדש `src/lib/ai-gateway.server.ts` (`createLovableAiGatewayProvider`). שומרים על OpenRouter כ-fallback בלבד אם המפתח חסר.
+- **System prompt**: זהות "משפיע חב"די" — חם, מכבד, מבוסס מקורות, חוזר בעברית בלבד (או אנגלית לפי `lang`), מסיים בשאלת המשך אחת.
+- **Tools** (כולם `tool({ inputSchema: z..., execute })`):
+  - `search_corpus({ query, top_k })` — vector search על `source_chunks` (RPC `match_chunks` הקיים) + fallback מילולי. מחזיר עד 6 קטעים מסוכמים עם `source_id`.
+  - `open_source({ source_id })` — מחזיר טקסט מלא של מקור מטבלת `sources` (חתוך ל-8K תווים) כדי שהמודל יוכל לצטט מדויק.
+  - `record_learning_event({ kind, source_id?, topic?, note? })` — `kind` ∈ `'studied' | 'struggled' | 'asked_followup' | 'insight'`. כותב ל-`learning_events`.
+  - `recommend_next({ context })` — בוחר המלצה ע"פ היסטוריית `study_progress` + `learning_events`: המשך הפרק, מאמר קשור, או חזרה למה שלא הובן.
+- **Loop control**: `stopWhen: stepCountIs(50)`.
+- **Auth**: ה-handler קורא ל-Supabase דרך publishable client + bearer token של המשתמש (כמו דפוס `_authenticated`). מ-onFinish שומר הודעות לטבלת `mashpia_messages`.
 
-## Server functions (`src/lib/*.functions.ts`)
+### צד שרת — Server functions תומכות
 
-All read `LOVABLE_API_KEY` / `SUPABASE_*` inside handlers. Admin-only fns use `requireSupabaseAuth` middleware + `has_role` check, then dynamically import `@/integrations/supabase/client.server` for service-role writes.
+- `src/lib/mashpia.functions.ts` (`createServerFn` עם `requireSupabaseAuth`):
+  - `listConversations` — שיחות של המשתמש (id, title, updated_at, last_message_preview).
+  - `createConversation` — שיחה חדשה, מחזירה `id`.
+  - `getConversation({ id })` — מטה-דאטה + `UIMessage[]` משוחזרים מ-`mashpia_messages`.
+  - `deleteConversation({ id })`.
+  - `getLearningContext` — סיכום קצר של הפרופיל הלימודי לזריקה ל-system prompt בכל שיחה חדשה (מה לומד עכשיו, נושאים חוזרים, אחרון שנעצר).
 
-- `ingest-source` (admin) — accepts one source or batch; normalizes whitespace, computes sha256, upserts `sources`, splits text into ~800-char paragraph-aware chunks with 100-char overlap, embeds each chunk via Lovable AI Gateway `/v1/embeddings`, upserts `source_chunks`. Returns `{inserted, updated, chunks, embedded}`.
-- `seed-corpus` (admin) — ingests ~10 bundled public-domain Hebrew Chassidus excerpts (Tanya Likutei Amarim 1–5, Kuntres Acharon snippets, Iggeret HaKodesh excerpt, Iggeret HaTeshuvah excerpt, Sha'ar HaYichud opening). Bundled JSON in `src/data/seed-sources.json`.
-- `search-sources` (public) — hybrid: Postgres FTS (`websearch_to_tsquery`) on title/tree/text + trigram fallback. Filters `char_count > 200`. Returns top N with excerpt + score.
-- `get-source` (public) — returns full source row from `sources` table; no external fetch.
-- `ask-havruta` (public, optional auth) — embeds question, calls `match_chunks` (top 8), packs into prompt, calls Gemini with strict system prompt: answer only in requested lang (he/en), only from provided sources, refuse if weak. Post-validates output language (reject CJK/Cyrillic/Arabic chars not in Hebrew block); on reject, retries once with stricter instruction, else returns a safe fallback. Persists to `ask_sessions`. Returns `{answer, sources:[{id,title,tree,excerpt}], mode, latency_ms, lang}`.
-- `corpus-stats` (public) — counts sources, chunks, total chars; cached 60s.
+### Database — מיגרציה חדשה
 
-## Frontend routes
+טבלאות (public, עם GRANTs ו-RLS):
 
-- `/` — landing app shell: top bar (brand, lang toggle, corpus stats), hero, ask panel, recent answers, search panel below.
-- `/auth` — email/password sign-in/up + Google OAuth via Lovable broker.
-- `/_authenticated/admin` — admin-only ingestion screen. Non-admins redirected.
-- Root route owns `html lang` / `dir` via `head()` based on lang context.
+- `mashpia_conversations`
+  - `id uuid pk`, `user_id uuid` (FK `auth.users`, on delete cascade)
+  - `title text` (נוצר אוטומטית מהשאלה הראשונה אחרי 1-2 turns)
+  - `created_at`, `updated_at` (trigger)
+  - RLS: own rows only.
+- `mashpia_messages`
+  - `id uuid pk`, `conversation_id uuid` (FK cascade), `user_id uuid`
+  - `role text check in ('user','assistant','system')`
+  - `parts jsonb` — full AI SDK `UIMessage.parts` (text + tool calls/results)
+  - `created_at`
+  - אינדקס על `(conversation_id, created_at)`
+  - RLS: own rows only (via `user_id`).
+- `learning_events`
+  - `id uuid pk`, `user_id uuid`, `kind text`, `source_id uuid null` (FK `sources`), `topic text null`, `note text null`, `created_at`
+  - אינדקס על `(user_id, created_at desc)`
+  - RLS: own rows only; writes גם דרך service-role מתוך handler ה-tool.
+- שדרוג `profiles`: עמודות `learning_level text default 'beginner'`, `interests text[] default '{}'`, `daily_minutes int default 15`.
 
-## UI components
+GRANTs: `authenticated` SELECT/INSERT/UPDATE/DELETE על שלוש הטבלאות; `service_role ALL`. אין `anon`.
 
-- `LanguageProvider` (context + localStorage) — exposes `lang`, `t(key)`, `dir`. Updates `documentElement.lang/dir` on change.
-- `i18n.ts` — flat dictionary covering every UI string, placeholder, example chip, loading/error state, reader label.
-- `TopBar`, `Hero`, `AskPanel` (textarea + example chips + submit), `AnswerCard` (markdown-safe render of answer + source cards), `SourceCard`, `SearchPanel`, `SearchResultCard`.
-- `SourceReader` (shadcn Dialog/Drawer responsive) — title, breadcrumb chips, metadata row, font-size +/- (3 steps stored in localStorage), in-source search with highlighted matches, copy-all button, paragraph-preserving render (`white-space: pre-wrap`, `max-w-prose`, RTL-aware). No external link CTA.
-- `YiddishHelper` + `RashiHelper` — deterministic client-side cards with a small built-in dictionary and Rashi-script letter chart (SVG/SVG-font fallback).
-- `AdminIngestion` — JSON paste/upload, preview count, run ingest button, progress + result toast, "Seed sample corpus" button.
+### Frontend — UI חדש
 
-## Design system
+**ניתוב לפי `chat-agent-ui-contract`**: threads + database persistence (המשתמש בחר "משפיע AI" כמשמעותי, ופרופיל לימודי דורש DB). מבנה:
 
-Dark premium scholarly. Tokens in `src/styles.css`:
-- background `oklch(0.14 0.01 60)` (near-black warm)
-- foreground `oklch(0.95 0.02 80)`
-- primary (gold) `oklch(0.78 0.13 80)`
-- accent (restrained indigo glow) `oklch(0.55 0.12 280)` used only for subtle ring/glow
-- card with thin border + soft inner shadow; gradient utility `--gradient-scholar`
-- Fonts via `@fontsource`: `@fontsource/frank-ruhl-libre` (Hebrew serif, headings + Hebrew body), `@fontsource/inter` (English body), `@fontsource/noto-serif-hebrew` fallback. Imported in `src/main.tsx` and registered in styles.css `@theme` font-family vars.
-- Mobile: no horizontal overflow (`overflow-x-hidden` on body, `max-w-full` everywhere), reader toolbar wraps, 44px min touch targets, focus rings visible, `prefers-reduced-motion` respected.
+- `src/routes/_authenticated/mashpia.tsx` — דף ראשי: בוחר/יוצר שיחה ומנווט ל-`/mashpia/$conversationId`.
+- `src/routes/_authenticated/mashpia.$conversationId.tsx` — דף שיחה. Layout עם sidebar רשימת שיחות + אזור הצ'אט.
+- `MashpiaChatWindow` (keyed by `conversationId`):
+  - שימוש ב-AI Elements: `Conversation`, `Message`/`MessageContent`/`MessageResponse`, `PromptInput`/`PromptInputTextarea`/`PromptInputFooter`/`PromptInputSubmit`, `Shimmer`, `Tool`/`ToolHeader`/`ToolContent` (כל אלה דרך `bun x ai-elements@latest add ...` לפני כתיבת UI).
+  - `useChat({ id: conversationId, messages: loaded, transport: new DefaultChatTransport({ api: '/api/mashpia' }) })`.
+  - Optimistic user message + Shimmer "המשפיע חושב…" כשה-status הוא `submitted`.
+  - רינדור `message.parts`: טקסט עם markdown (`react-markdown`), tool calls כקלפסות סגורות (`<Tool defaultOpen={false}>`).
+  - כשmsg מכיל קריאה ל-`search_corpus` או `open_source`, מציגים מתחת לטקסט "מקורות בשיחה" — לחיצה פותחת את `SourceReader` הקיים.
+- `MashpiaSidebar`: רשימת שיחות, כפתור "שיחה חדשה" (יוצר, מנווט), מחיקה בכפתור נפרד (לא nested button), היילייט פעיל.
+- Composer textarea ממקד עצמו: ב-mount, אחרי שליחה, אחרי גמר stream, ובמעבר שיחה.
 
-## Language behavior
+### זהות חזותית
 
-`useLang()` drives:
-- `<html dir lang>` via TanStack `head()` + a small effect
-- Every text via `t(key)` — no hardcoded English in components
-- AI `lang` field on `ask-havruta`
-- Example chip set (Hebrew vs English)
-- Tailwind logical properties (`ps-*`, `pe-*`, `text-start`) for RTL safety
+- לוגו זעיר חדש למשפיע (תמונה מיוצרת — נר/אות אלף סטיילז, לא `Sparkles`). מיובא מ-`src/assets/mashpia-logo.png`.
+- צבעי הצ'אט: assistant ללא רקע (טקסט על הקנבס הראשי), user bubble ב-`bg-primary text-primary-foreground` כמו טוקני המערכת הקיימים.
+- שומר על שפת העיצוב הקיימת (scholar-card, פונט עברי `Frank Ruhl Libre`).
 
-## Auth
+### עדכון `start.ts`
 
-- Email/password + Google (broker `lovable.auth.signInWithOAuth("google", ...)`); call `supabase--configure_social_auth` for google.
-- `profiles` + `user_roles` auto-populated by trigger; first signup with `avidandor@gmail.com` becomes admin.
-- Anonymous use allowed for search/ask/read. Ingestion requires admin.
+- ודא ש-`attachSupabaseAuth` כבר ב-`functionMiddleware` (קיים) — אין שינוי.
+- אם ה-route `/api/mashpia` קורא ל-Supabase מתוך ה-handler עם ה-bearer של המשתמש, קוראים ידנית ל-`Authorization` מ-`request.headers` ובונים supabase client לכל בקשה (לא middleware של server-fn).
 
-## Acceptance verification (run before declaring done)
+---
 
-1. Migration applies cleanly; tables + GRANTs + RLS + trigger + RPC exist.
-2. Seed corpus inserts ≥10 sources + chunks + embeddings.
-3. Search returns DB rows.
-4. Clicking a result opens reader with formatted text.
-5. Ask flow returns grounded answer + source cards; non-He/En output is filtered.
-6. He mode: RTL, Hebrew copy, Hebrew examples. En mode: LTR, English copy.
-7. Mobile (375px viewport via Playwright): no horizontal scroll on home, reader, admin.
-8. Admin route gated; non-admin redirected.
-9. Build passes.
+## שלבים (לפי סדר ביצוע)
 
-## Technical notes
+1. **מיגרציה**: enums (אם צריך), `mashpia_conversations`, `mashpia_messages`, `learning_events`, עדכון `profiles`. GRANTs + RLS + indexes + triggers.
+2. **AI Gateway helper**: `src/lib/ai-gateway.server.ts` עם `createLovableAiGatewayProvider`. (החלפת ה-OpenRouter wrapper אחורה, או כשכבת ברירת מחדל.)
+3. **התקנת AI Elements**: `bun x ai-elements@latest add conversation message prompt-input shimmer tool`.
+4. **התקנת AI SDK חבילות**: `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible`, `zod` (כבר קיים).
+5. **Route `/api/mashpia`**: streamText + tools + onFinish persist.
+6. **Server functions** ל-conversations + learning context.
+7. **דפי route** `/mashpia` + `/mashpia/$conversationId` תחת `_authenticated`.
+8. **קומפוננטות**: `MashpiaChatWindow`, `MashpiaSidebar`, `MashpiaSourceChip`.
+9. **לוגו** מיוצר + עדכון `TopBar` עם קישור "משפיע".
+10. **תרגומים** ב-`i18n.ts`: כל המחרוזות החדשות (he/en).
+11. **בדיקות Playwright**: יצירת שיחה, שליחת הודעה, רענון = ההודעות חוזרות, יצירת שיחה שנייה לא דולפת ל-`/mashpia/<id1>`, לחיצה על מקור פותחת קורא.
+12. **שמירה במגירה לעתיד**: לימוד יומי מותאם, חברותא חכמה, פיד "התוועדות" — אלה לא בסבב הזה.
 
-- pgvector column sized `vector(3072)` to match `gemini-embedding-001` default; HNSW index `vector_cosine_ops`.
-- Embedding calls batched (≤16 inputs/request) inside `ingest-source` handler with retry on 429.
-- Chunking: paragraph-first split, then sentence split if chunk > 1500 chars, 100-char overlap, store `chunk_index`.
-- `ask-havruta` prompt is fixed server-side; user input only flows in as the question + retrieved context.
-- Language guard regex: reject if response contains chars in U+0400–U+04FF, U+0600–U+06FF (Arabic, when lang=he allow Hebrew U+0590–U+05FF only; when lang=en reject any non-Latin/Hebrew script in citations).
-- All server fn modules live in `src/lib/`, never `src/server/`. `client.server.ts` imported only inside handlers via `await import(...)`.
-- Public routes (`/`) do NOT call protected fns in their loader — ask/search are invoked from components via `useServerFn` + react-query.
+---
 
-## Implementation order
+## הערות טכניות
 
-1. Enable Lovable Cloud + provision `LOVABLE_API_KEY`.
-2. Migration: extensions, enum, tables, GRANTs, RLS, trigger, RPC.
-3. Configure Google social auth.
-4. `i18n.ts` + `LanguageProvider` + design tokens + fonts.
-5. Server fns: corpus-stats, search-sources, get-source.
-6. Ingestion server fn + seed JSON + seed fn.
-7. ask-havruta server fn with language guard.
-8. UI: TopBar, Hero, AskPanel, SearchPanel, SourceReader, AnswerCard, helpers.
-9. Auth pages + `_authenticated/admin` ingestion screen.
-10. Auto-trigger seed on first admin visit if corpus empty.
-11. Mobile/RTL polish + Playwright verification of acceptance criteria.
+- שיחה חדשה: ה-frontend קורא `createConversation` → מקבל `id` → `navigate({ to: '/mashpia/$conversationId', params: { conversationId: id }})`. אין `useEffect` שיוצר שיחה אוטומטית בעמוד / (StrictMode).
+- ID של הודעות AI SDK הם `msg_...` strings — לא מכניסים אותם לעמודת `uuid`. ה-`id` של `mashpia_messages` הוא UUID נוצר ב-DB; ה-`UIMessage.id` של ה-SDK נשמר רק אם נדרש לעמודה `text` נפרדת (כרגע לא נדרש).
+- `onFinish` שומר את הודעת המשתמש + הודעת ה-assistant המלאה (כולל tool parts) בטרנזקציה הגיונית — אם insert נכשל, מחזירים שגיאה ל-stream לוג ולא מסתירים.
+- שגיאות gateway: `402` (credits) ו-`429` (rate) מוצגות למשתמש ב-toast עם הודעה ברורה.
+- Tool `search_corpus` משתמש ב-RPC `match_chunks` הקיים — אין שינוי במאגר העובדות.
+- ה-system prompt מוזרק עם `getLearningContext` בתחילת כל שיחה חדשה; בשיחה קיימת לא חוזרים על זה אלא משתמשים בהיסטוריית ה-messages.
+- מובייל: sidebar הופך ל-Drawer מתחת ל-`md`.
+
+---
+
+## תוצרים (Definition of Done)
+
+- משתמש מחובר יכול להיכנס ל-`/mashpia`, ליצור שיחה, לכתוב "תסביר לי דירה בתחתונים", לקבל תשובה זורמת עם 2-3 מקורות שלחיצה עליהם פותחת את ה-Reader.
+- שיחה שנייה היא URL נפרד; רענון משחזר את ההודעות.
+- כשמשתמש כותב "לא הבנתי", ה-tool `record_learning_event({ kind: 'struggled' })` נקרא וניתן לראות את הרשומה ב-`learning_events`.
+- המשפיע מסיים תמיד בשאלת המשך או בהצעת מקור.
+- אין דליפה של הודעות בין שיחות. אין כפילויות שיחה ב-StrictMode.
+- Build + typecheck ירוקים.
+
+---
+
+## פיצ'רים עתידיים (לא בסבב הזה — לתיעוד בלבד)
+
+- **לימוד יומי מותאם** (חת"ת/רמב"ם/היום יום/מאמר) — דורש cron + מנוע המלצה מבוסס `learning_events`.
+- **חברותא חכמה** ("מצא לי חברותא עכשיו") — דורש WebRTC + matchmaking + נוכחות חיה. בנפרד, אחרי שהמשפיע יציב.
+- **פיד "התוועדות"** — תובנות שמשתמשים מפרסמים. דורש moderation.
+- **מסע חסידי** — visualization של ההתקדמות (טיימליין, לא ניקוד).
