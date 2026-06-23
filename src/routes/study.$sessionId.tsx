@@ -69,6 +69,7 @@ function StudyRoomPage() {
     [activeIndex, bundle?.questions],
   );
   const messages = bundle?.messages ?? [];
+  const isAiCompanion = bundle?.session.companion_type === "ai";
 
   const myProgress = useMemo(
     () =>
@@ -131,7 +132,7 @@ function StudyRoomPage() {
   }, [qc, sessionId, user]);
 
   useEffect(() => {
-    if (!bundle?.session.match_id || !user) return;
+    if (!bundle?.session.match_id || !user || isAiCompanion) return;
     const channel = supabase
       .channel(`chavruta-study-chat:${bundle.session.match_id}`)
       .on(
@@ -148,7 +149,7 @@ function StudyRoomPage() {
     return () => {
       channel.unsubscribe();
     };
-  }, [bundle?.session.match_id, qc, sessionId, user]);
+  }, [bundle?.session.match_id, isAiCompanion, qc, sessionId, user]);
 
   const statusMutation = useMutation({
     mutationFn: (status: "reading" | "confused" | "understood" | "answered") =>
@@ -178,6 +179,13 @@ function StudyRoomPage() {
   const sendMessage = useMutation({
     mutationFn: async () => {
       if (!bundle || !user || !draft.trim()) return;
+      if (isAiCompanion) {
+        await askFn({
+          data: { sessionId, segmentIndex: activeIndex, question: draft.trim(), lang },
+        });
+        return;
+      }
+      if (!bundle.session.match_id) throw new Error("missing_match_for_chat");
       const { error } = await supabase.from("chavruta_messages").insert({
         match_id: bundle.session.match_id,
         sender_id: user.id,
@@ -230,17 +238,21 @@ function StudyRoomPage() {
             </h1>
             <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <span
-                className={`inline-block h-2.5 w-2.5 rounded-full ${presence.partnerOnline ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" : "bg-muted-foreground/40"}`}
+                className={`inline-block h-2.5 w-2.5 rounded-full ${isAiCompanion || presence.partnerOnline ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" : "bg-muted-foreground/40"}`}
                 aria-hidden
               />
               <span>
-                {presence.partnerOnline
+                {isAiCompanion
                   ? lang === "he"
-                    ? "החברותא מחובר"
-                    : "Partner online"
-                  : lang === "he"
-                    ? "החברותא לא מחובר"
-                    : "Partner offline"}
+                    ? "חברותא AI זמין עכשיו"
+                    : "AI chavruta is ready"
+                  : presence.partnerOnline
+                    ? lang === "he"
+                      ? "החברותא מחובר"
+                      : "Partner online"
+                    : lang === "he"
+                      ? "החברותא לא מחובר"
+                      : "Partner offline"}
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -249,7 +261,13 @@ function StudyRoomPage() {
                 : ""}
             </p>
           </div>
-          <AudioControls audio={audio} lang={lang} />
+          {isAiCompanion ? (
+            <div className="rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+              {lang === "he" ? "מצב AI" : "AI mode"}
+            </div>
+          ) : (
+            <AudioControls audio={audio} lang={lang} />
+          )}
         </header>
 
         {studyQ.isLoading ? (
@@ -352,6 +370,8 @@ function StudyRoomPage() {
                   lang={lang}
                   userId={user.id}
                   messages={messages}
+                  aiQuestions={questions}
+                  isAiCompanion={isAiCompanion}
                   draft={draft}
                   setDraft={setDraft}
                   onSend={() => sendMessage.mutate()}
@@ -369,6 +389,8 @@ function StudyRoomPage() {
                   lang={lang}
                   userId={user.id}
                   messages={messages}
+                  aiQuestions={questions}
+                  isAiCompanion={isAiCompanion}
                   draft={draft}
                   setDraft={setDraft}
                   onSend={() => sendMessage.mutate()}
@@ -555,6 +577,8 @@ function ChatPanel({
   lang,
   userId,
   messages,
+  aiQuestions,
+  isAiCompanion,
   draft,
   setDraft,
   onSend,
@@ -567,6 +591,8 @@ function ChatPanel({
   lang: "he" | "en";
   userId: string;
   messages: MessageRow[];
+  aiQuestions: QuestionRow[];
+  isAiCompanion: boolean;
   draft: string;
   setDraft: (value: string) => void;
   onSend: () => void;
@@ -577,29 +603,61 @@ function ChatPanel({
   onTyping?: () => void;
   onTypingStop?: () => void;
 }) {
+  const aiConversation = aiQuestions.filter((q) => q.kind === "human");
   return (
     <section className="scholar-card p-4">
       <h2 className="eyebrow mb-3 flex items-center justify-between gap-2">
         <span className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-primary" />
-          {lang === "he" ? "שיחה" : "Chat"}
+          {isAiCompanion
+            ? lang === "he"
+              ? "חברותא AI"
+              : "AI chavruta"
+            : lang === "he"
+              ? "שיחה"
+              : "Chat"}
         </span>
         <span className="flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
           <span
-            className={`inline-block h-2 w-2 rounded-full ${partnerOnline ? "bg-emerald-500" : "bg-muted-foreground/40"}`}
+            className={`inline-block h-2 w-2 rounded-full ${isAiCompanion || partnerOnline ? "bg-emerald-500" : "bg-muted-foreground/40"}`}
             aria-hidden
           />
-          {partnerOnline
+          {isAiCompanion
             ? lang === "he"
-              ? "מחובר"
-              : "online"
-            : lang === "he"
-              ? "לא מחובר"
-              : "offline"}
+              ? "זמין"
+              : "ready"
+            : partnerOnline
+              ? lang === "he"
+                ? "מחובר"
+                : "online"
+              : lang === "he"
+                ? "לא מחובר"
+                : "offline"}
         </span>
       </h2>
       <div className="max-h-72 space-y-2 overflow-auto rounded-2xl border border-border bg-background/30 p-3">
-        {messages.length === 0 ? (
+        {isAiCompanion ? (
+          aiConversation.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {lang === "he"
+                ? "שאל את החברותא AI על הקטע הנוכחי, או לחץ ‘שאל אותנו על הקטע’ כדי לקבל שאלות הבנה."
+                : "Ask the AI chavruta about the current segment, or generate comprehension questions."}
+            </p>
+          ) : (
+            aiConversation.map((q) => (
+              <div key={q.id} className="space-y-2">
+                <div className="rounded-2xl bg-primary/10 px-3 py-2 text-sm text-primary">
+                  {q.question}
+                </div>
+                {q.answer && (
+                  <div className="rounded-2xl bg-card/70 px-3 py-2 text-sm leading-6 text-foreground">
+                    {q.answer}
+                  </div>
+                )}
+              </div>
+            ))
+          )
+        ) : messages.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {lang === "he" ? "עדיין אין הודעות." : "No messages yet."}
           </p>
@@ -613,7 +671,7 @@ function ChatPanel({
             </div>
           ))
         )}
-        {partnerTyping && (
+        {!isAiCompanion && partnerTyping && (
           <div className="flex items-center gap-1.5 px-1 pt-1 text-xs text-muted-foreground">
             <span className="flex gap-0.5">
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
@@ -629,8 +687,10 @@ function ChatPanel({
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
-            if (e.target.value.trim()) onTyping?.();
-            else onTypingStop?.();
+            if (!isAiCompanion) {
+              if (e.target.value.trim()) onTyping?.();
+              else onTypingStop?.();
+            }
           }}
           onBlur={() => onTypingStop?.()}
           onKeyDown={(e) => {
@@ -639,7 +699,15 @@ function ChatPanel({
               onSend();
             }
           }}
-          placeholder={lang === "he" ? "כתוב לחברותא..." : "Message your chavruta..."}
+          placeholder={
+            isAiCompanion
+              ? lang === "he"
+                ? "שאל את החברותא AI על הקטע..."
+                : "Ask the AI chavruta about this segment..."
+              : lang === "he"
+                ? "כתוב לחברותא..."
+                : "Message your chavruta..."
+          }
           className="h-10 min-w-0 flex-1 rounded-full border border-border bg-background/45 px-3 text-sm outline-none"
         />
         <button
@@ -650,7 +718,7 @@ function ChatPanel({
           }}
           className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {lang === "he" ? "שלח" : "Send"}
+          {isAiCompanion ? (lang === "he" ? "שאל" : "Ask") : lang === "he" ? "שלח" : "Send"}
         </button>
       </div>
     </section>

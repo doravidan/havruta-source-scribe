@@ -6,8 +6,18 @@ import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
-import { createStudySession } from "@/lib/chavruta-study.functions";
-import { CalendarClock, Check, Clock, MessageCircle, Phone, Plus, Users, X } from "lucide-react";
+import { createAiStudySession, createStudySession } from "@/lib/chavruta-study.functions";
+import {
+  CalendarClock,
+  Check,
+  Clock,
+  MessageCircle,
+  Phone,
+  Plus,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
 
 export const Route = createFileRoute("/chavruta")({
   head: () => ({
@@ -267,6 +277,7 @@ function ChavrutaPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const createStudyFn = useServerFn(createStudySession);
+  const createAiStudyFn = useServerFn(createAiStudySession);
   const days = lang === "he" ? dayHe : dayEn;
   const [newSlot, setNewSlot] = useState({ day: 0, start: "20:00", end: "21:00" });
   const [topicInput, setTopicInput] = useState(defaultTopics.join(", "));
@@ -557,6 +568,16 @@ function ChavrutaPage() {
     },
   });
 
+  const openAiStudyRoom = useMutation({
+    mutationFn: async () => {
+      if (!sourceIntentQ.data?.id) throw new Error("source_required");
+      return createAiStudyFn({ data: { sourceId: sourceIntentQ.data.id } });
+    },
+    onSuccess: (room) => {
+      navigate({ to: "/study/$sessionId", params: { sessionId: room.id } });
+    },
+  });
+
   const accept = useMutation({
     mutationFn: async (matchId: string) => {
       const { error } = await db.rpc("accept_chavruta_match", { _match_id: matchId });
@@ -713,6 +734,20 @@ function ChavrutaPage() {
                   </div>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => openAiStudyRoom.mutate()}
+                disabled={openAiStudyRoom.isPending}
+                className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                <Sparkles className="h-4 w-4" />
+                {lang === "he" ? "למד עכשיו עם חברותא AI" : "Study now with AI chavruta"}
+              </button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {lang === "he"
+                  ? "אם עוד לא מצאת חברותא אמיתי, האייג׳נט יתקדם איתך קטע-קטע וישאל שאלות הבנה."
+                  : "If you have not found a real partner yet, the agent studies segment-by-segment and asks comprehension questions."}
+              </p>
             </div>
           )}
         </section>

@@ -6,6 +6,7 @@ import { segmentSourceText } from "./source-segments";
 
 const Uuid = z.string().uuid();
 const CreateInput = z.object({ matchId: Uuid, sourceId: Uuid });
+const CreateAiInput = z.object({ sourceId: Uuid });
 const SessionInput = z.object({ sessionId: Uuid });
 const StatusInput = z.object({
   sessionId: Uuid,
@@ -37,6 +38,22 @@ async function loadSessionBundle(sb: AnySb, sessionId: string) {
   if (sessionError) throw new Error(sessionError.message);
   if (!session) throw new Error("study_session_not_found");
 
+  const sourcePromise = sb
+    .from("sources")
+    .select("id, title, tree, tree_parts, language, text, excerpt, char_count")
+    .eq("id", session.source_id)
+    .maybeSingle();
+  const matchPromise = session.match_id
+    ? sb.from("chavruta_matches").select("*").eq("id", session.match_id).maybeSingle()
+    : Promise.resolve({ data: null });
+  const messagesPromise = session.match_id
+    ? sb
+        .from("chavruta_messages")
+        .select("*")
+        .eq("match_id", session.match_id)
+        .order("created_at", { ascending: true })
+    : Promise.resolve({ data: [] });
+
   const [
     { data: source, error: sourceError },
     { data: match },
@@ -44,12 +61,8 @@ async function loadSessionBundle(sb: AnySb, sessionId: string) {
     { data: questions },
     { data: messages },
   ] = await Promise.all([
-    sb
-      .from("sources")
-      .select("id, title, tree, tree_parts, language, text, excerpt, char_count")
-      .eq("id", session.source_id)
-      .maybeSingle(),
-    sb.from("chavruta_matches").select("*").eq("id", session.match_id).maybeSingle(),
+    sourcePromise,
+    matchPromise,
     sb
       .from("chavruta_study_progress")
       .select("*")
@@ -60,11 +73,7 @@ async function loadSessionBundle(sb: AnySb, sessionId: string) {
       .select("*")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true }),
-    sb
-      .from("chavruta_messages")
-      .select("*")
-      .eq("match_id", session.match_id)
-      .order("created_at", { ascending: true }),
+    messagesPromise,
   ]);
 
   if (sourceError) throw new Error(sourceError.message);
@@ -99,6 +108,7 @@ export const createStudySession = createServerFn({ method: "POST" })
           match_id: data.matchId,
           source_id: data.sourceId,
           created_by: context.userId,
+          companion_type: "human",
           title: source?.title ?? null,
         },
         { onConflict: "match_id,source_id" },
@@ -108,6 +118,44 @@ export const createStudySession = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!session) throw new Error("could_not_create_study_session");
+    return session;
+  });
+
+export const createAiStudySession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CreateAiInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const { data: source } = await sb
+      .from("sources")
+      .select("title")
+      .eq("id", data.sourceId)
+      .maybeSingle();
+
+    const { data: existing, error: existingError } = await sb
+      .from("chavruta_study_sessions")
+      .select("*")
+      .eq("created_by", context.userId)
+      .eq("source_id", data.sourceId)
+      .eq("companion_type", "ai")
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    if (existing) return existing;
+
+    const { data: session, error } = await sb
+      .from("chavruta_study_sessions")
+      .insert({
+        match_id: null,
+        source_id: data.sourceId,
+        created_by: context.userId,
+        companion_type: "ai",
+        title: source?.title ? `AI חברותא · ${source.title}` : "AI חברותא",
+      })
+      .select("*")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!session) throw new Error("could_not_create_ai_study_session");
     return session;
   });
 
