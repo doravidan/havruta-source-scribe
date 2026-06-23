@@ -58,7 +58,9 @@ export function useStudyPresence(sessionId: string, userId: string | undefined) 
     const now = Date.now();
     if (now - lastSentRef.current < 800) return;
     lastSentRef.current = now;
-    channel.send({ type: "broadcast", event: "typing", payload: { userId } }).catch(() => undefined);
+    channel
+      .send({ type: "broadcast", event: "typing", payload: { userId } })
+      .catch(() => undefined);
   }, [userId]);
 
   const notifyTypingStop = useCallback(() => {
