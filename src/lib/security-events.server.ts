@@ -21,7 +21,7 @@ export async function logSecurityEvent(evt: SecurityEventInput): Promise<void> {
       source: evt.source ?? null,
       matched_patterns: evt.matched_patterns ?? [],
       sample: evt.sample ? evt.sample.slice(0, 500) : null,
-      context: evt.context ?? {},
+      context: (evt.context ?? {}) as never,
       user_id: evt.user_id ?? null,
     });
   } catch (e) {
