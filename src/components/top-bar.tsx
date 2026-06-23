@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, ShieldCheck, LogOut, Library, LogIn, Users, BookOpen } from "lucide-react";
+import { Languages, ShieldCheck, LogOut, Library, LogIn, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
@@ -75,14 +75,6 @@ export function TopBar() {
           >
             <Library className="h-4 w-4" />
             <span className="hidden sm:inline">{lang === "he" ? "ספרייה" : "Library"}</span>
-          </Link>
-          <Link
-            to="/guides/how-to-learn-chassidus"
-            aria-label={lang === "he" ? "מדריך" : "Guide"}
-            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
-          >
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">{lang === "he" ? "מדריך" : "Guide"}</span>
           </Link>
           <Link
             to="/chavruta"
