@@ -228,6 +228,21 @@ function StudyRoomPage() {
             <h1 className="truncate text-2xl sm:text-4xl">
               {bundle?.source.title ?? (lang === "he" ? "חדר לימוד" : "Study room")}
             </h1>
+            <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <span
+                className={`inline-block h-2.5 w-2.5 rounded-full ${presence.partnerOnline ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" : "bg-muted-foreground/40"}`}
+                aria-hidden
+              />
+              <span>
+                {presence.partnerOnline
+                  ? lang === "he"
+                    ? "החברותא מחובר"
+                    : "Partner online"
+                  : lang === "he"
+                    ? "החברותא לא מחובר"
+                    : "Partner offline"}
+              </span>
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {bundle
                 ? `${activeIndex + 1}/${Math.max(1, bundle.segments.length)} · ${understoodCount} ${lang === "he" ? "סימנו הבנתי" : "marked understood"}`
