@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { normalizeQuery } from "./normalize-query";
+
 
 const SearchInput = z.object({
   query: z.string().min(1).max(500),
