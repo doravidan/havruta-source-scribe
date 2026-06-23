@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, ShieldCheck, LogOut, Library, LogIn, Users, BookOpen } from "lucide-react";
+import { Languages, ShieldCheck, LogOut, Library, LogIn, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
