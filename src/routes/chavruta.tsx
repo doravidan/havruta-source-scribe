@@ -370,6 +370,83 @@ function ChavrutaPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
   });
 
+  const viewerTz = myProfile?.time_zone ?? detectTz();
+
+  const finderMatches = useMemo(() => {
+    if (!user || !socialQ.data || !myProfile || mySlots.length === 0) return [];
+    const myTz = myProfile.time_zone ?? detectTz();
+    const myTopics = new Set(myProfile.topics ?? []);
+    const existing = new Set(
+      (socialQ.data.matches ?? []).map((m) =>
+        [m.requester_id, m.suggested_user_id].sort().join(":"),
+      ),
+    );
+    const myIntervals = mySlots.flatMap((s) => slotToUtcIntervals(s, myTz));
+    type FinderResult = {
+      profile: Profile;
+      utc: UtcInterval;
+      mine: { day: number; startHHMM: string; endHHMM: string };
+      theirs: { day: number; startHHMM: string; endHHMM: string };
+      score: number;
+      reasons: { lang: boolean; level: number; topics: number; minutes: number };
+    };
+    const out: FinderResult[] = [];
+    for (const p of socialQ.data.profiles) {
+      if (p.user_id === user.id || !p.is_active) continue;
+      if (existing.has([p.user_id, user.id].sort().join(":"))) continue;
+      if (!languagesCompatible(myProfile.preferred_lang, p.preferred_lang)) continue;
+      const ldist = levelDistance(myProfile.learning_level, p.learning_level);
+      if (ldist > 1) continue;
+      const theirTz = p.time_zone ?? "Asia/Jerusalem";
+      const theirSlots = socialQ.data.slots.filter((s) => s.user_id === p.user_id);
+      const theirIntervals = theirSlots.flatMap((s) => slotToUtcIntervals(s, theirTz));
+      let best: UtcInterval | null = null;
+      for (const a of myIntervals)
+        for (const b of theirIntervals) {
+          const o = intersectIntervals(a, b);
+          if (o && (!best || o.end - o.start > best.end - best.start)) best = o;
+        }
+      if (!best) continue;
+      const minutes = best.end - best.start;
+      if (minutes < 15) continue;
+      const topicOverlap = (p.topics ?? []).filter((t) => myTopics.has(t)).length;
+      const langExact = myProfile.preferred_lang === p.preferred_lang;
+      const score =
+        (langExact ? 3 : 1) * 3 +
+        (2 - ldist) * 3 +
+        topicOverlap * 2 +
+        Math.min(minutes, 180) / 30;
+      const mineLocal = utcMinOfWeekToLocal(best.start, myTz);
+      const mineLocalEnd = utcMinOfWeekToLocal(best.end % WEEK_MIN, myTz);
+      const theirLocal = utcMinOfWeekToLocal(best.start, theirTz);
+      const theirLocalEnd = utcMinOfWeekToLocal(best.end % WEEK_MIN, theirTz);
+      out.push({
+        profile: p,
+        utc: best,
+        mine: { day: mineLocal.day, startHHMM: mineLocal.hhmm, endHHMM: mineLocalEnd.hhmm },
+        theirs: { day: theirLocal.day, startHHMM: theirLocal.hhmm, endHHMM: theirLocalEnd.hhmm },
+        score,
+        reasons: { lang: langExact, level: ldist, topics: topicOverlap, minutes },
+      });
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, 10);
+  }, [user, socialQ.data, myProfile, mySlots]);
+
+  const proposeFinder = useMutation({
+    mutationFn: async (r: { profile: Profile; mine: { day: number; startHHMM: string; endHHMM: string } }) => {
+      const { error } = await db.rpc("propose_chavruta_match", {
+        _target_user_id: r.profile.user_id,
+        _day: r.mine.day,
+        _start: r.mine.startHHMM,
+        _end: r.mine.endHHMM,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+  });
+
+
+
   const sendMessage = useMutation({
     mutationFn: async (matchId: string) => {
       const body = (messageDraft[matchId] ?? "").trim();
