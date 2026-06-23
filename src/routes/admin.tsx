@@ -59,6 +59,13 @@ function AdminPage() {
     queryFn: () => queueStatsFn(),
     refetchInterval: 10000,
   });
+  const securityEventsFn = useServerFn(listSecurityEvents);
+  const { data: securityEvents, refetch: refetchSecurity, isFetching: secLoading } = useQuery({
+    queryKey: ["security-events"],
+    queryFn: () => securityEventsFn({ data: { limit: 50 } }),
+    refetchInterval: 30000,
+    enabled: false,
+  });
   const [coverageDepth, setCoverageDepth] = useState(2);
   const coverageM = useMutation({
     mutationFn: (depth: number) => coverageFn({ data: { depth, maxFetchesPerRoot: 60 } }),
