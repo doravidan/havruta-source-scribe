@@ -274,7 +274,11 @@ export const generateSegmentQuestions = createServerFn({ method: "POST" })
       console.warn("generateSegmentQuestions fallback", e);
     }
 
-    const rows = questionTexts.map((question) => ({
+    const sanitized = questionTexts
+      .map((q) => (q ?? "").trim().slice(0, 1200))
+      .filter((q) => q.length >= 3);
+    const finalTexts = sanitized.length ? sanitized : fallbackQuestions(data.lang);
+    const rows = finalTexts.map((question) => ({
       session_id: data.sessionId,
       segment_index: data.segmentIndex,
       created_by: context.userId,
