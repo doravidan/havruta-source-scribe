@@ -602,6 +602,59 @@ function AdminPage() {
           </div>
         </div>
 
+        <div className="scholar-card p-5 mt-6">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="font-medium flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              {lang === "he" ? "אירועי אבטחה" : "Security events"}
+            </h2>
+            <button
+              onClick={() => refetchSecurity()}
+              disabled={secLoading}
+              className="px-3 h-9 rounded-md border border-border bg-background/40 text-sm inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {secLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {lang === "he" ? "טען" : "Load"}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            {lang === "he"
+              ? "קלט שעבר סינון או פלט שנחסם בשרת. 50 האחרונים."
+              : "Inputs that were sanitized or outputs that were blocked on the server. Last 50."}
+          </p>
+          {securityEvents && securityEvents.events.length === 0 && (
+            <p className="text-sm text-muted-foreground">{lang === "he" ? "אין אירועים." : "No events."}</p>
+          )}
+          {securityEvents && securityEvents.events.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-muted-foreground">
+                  <tr className="text-start">
+                    <th className="text-start py-1 pe-3">{lang === "he" ? "זמן" : "When"}</th>
+                    <th className="text-start py-1 pe-3">{lang === "he" ? "סוג" : "Kind"}</th>
+                    <th className="text-start py-1 pe-3">{lang === "he" ? "חומרה" : "Severity"}</th>
+                    <th className="text-start py-1 pe-3">{lang === "he" ? "מקור" : "Source"}</th>
+                    <th className="text-start py-1 pe-3">{lang === "he" ? "תבניות" : "Patterns"}</th>
+                    <th className="text-start py-1">{lang === "he" ? "דוגמה" : "Sample"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {securityEvents.events.map((e: any) => (
+                    <tr key={e.id} className="border-t border-border/40 align-top">
+                      <td className="py-1 pe-3 tabular-nums whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</td>
+                      <td className="py-1 pe-3 font-mono">{e.kind}</td>
+                      <td className="py-1 pe-3">{e.severity}</td>
+                      <td className="py-1 pe-3 font-mono">{e.source ?? "—"}</td>
+                      <td className="py-1 pe-3 font-mono">{(e.matched_patterns ?? []).join(", ") || "—"}</td>
+                      <td className="py-1 max-w-[28rem]"><span className="block truncate" title={e.sample ?? ""}>{e.sample ?? "—"}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         {resultMsg && (
           <div className="mt-5 p-4 rounded-md border border-primary/40 bg-primary/5 text-sm">{resultMsg}</div>
         )}
