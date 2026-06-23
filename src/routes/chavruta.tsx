@@ -682,6 +682,117 @@ function ChavrutaPage() {
           </aside>
 
           <section className="space-y-6 min-w-0">
+            <div className="scholar-card p-5 sm:p-6 border border-primary/40">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="eyebrow flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    {lang === "he" ? "מצא לי חברותא" : "Find me a chavruta"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lang === "he"
+                      ? `התאמה לפי אזור זמן (${viewerTz}), שפה, רמה ונושאים`
+                      : `Matched by time zone (${viewerTz}), language, level, and topics`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] })}
+                  className="h-9 rounded-xl border border-primary/40 px-3 text-sm text-primary"
+                >
+                  {lang === "he" ? "רענן" : "Refresh"}
+                </button>
+              </div>
+              {!myProfile ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "שמור פרופיל כדי לקבל התאמות."
+                    : "Save your profile to get matches."}
+                </p>
+              ) : mySlots.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "הוסף לפחות זמן זמינות אחד כדי שנמצא חברותא."
+                    : "Add at least one availability slot so we can match you."}
+                </p>
+              ) : finderMatches.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {lang === "he"
+                    ? "אין כרגע התאמות חדשות. נסה להרחיב זמנים או נושאים."
+                    : "No new matches yet. Try broadening your availability or topics."}
+                </p>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-3">
+                  {finderMatches.map((r) => (
+                    <article
+                      key={`${r.profile.user_id}-${r.utc.start}`}
+                      className="rounded-2xl border border-border/80 bg-background/30 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-medium truncate">{r.profile.display_name}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {(lang === "he"
+                              ? { beginner: "מתחיל", intermediate: "בינוני", advanced: "מתקדם" }
+                              : { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }
+                            )[r.profile.learning_level]}
+                            {" · "}
+                            {r.profile.preferred_lang === "he"
+                              ? "עברית"
+                              : r.profile.preferred_lang === "en"
+                                ? "English"
+                                : lang === "he" ? "עברית/אנגלית" : "Hebrew/English"}
+                            {" · "}
+                            {r.profile.time_zone ?? "—"}
+                          </p>
+                        </div>
+                        <Clock className="h-4 w-4 text-primary shrink-0" />
+                      </div>
+                      <div className="mt-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">
+                            {lang === "he" ? "אצלך: " : "Your time: "}
+                          </span>
+                          {days[r.mine.day]} · {r.mine.startHHMM}–{r.mine.endHHMM}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {lang === "he" ? "אצלם: " : "Their time: "}
+                          {days[r.theirs.day]} · {r.theirs.startHHMM}–{r.theirs.endHHMM}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {(r.profile.topics ?? []).slice(0, 4).map((x) => (
+                          <span
+                            key={x}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                              (myProfile?.topics ?? []).includes(x)
+                                ? "border-primary/60 text-primary"
+                                : "border-border/70 text-muted-foreground"
+                            }`}
+                          >
+                            {x}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {lang === "he"
+                            ? `${r.reasons.minutes} דק׳ חפיפה · ${r.reasons.topics} נושאים משותפים`
+                            : `${r.reasons.minutes} min overlap · ${r.reasons.topics} shared topics`}
+                        </span>
+                        <button
+                          onClick={() => proposeFinder.mutate(r)}
+                          disabled={proposeFinder.isPending}
+                          className="h-9 rounded-xl bg-primary px-3 text-sm font-medium text-primary-foreground"
+                        >
+                          {lang === "he" ? "פתח שיחה" : "Start chat"}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="scholar-card p-5 sm:p-6">
               <h2 className="eyebrow mb-4">
                 {lang === "he" ? "הצעות התאמה" : "Suggested matches"}
