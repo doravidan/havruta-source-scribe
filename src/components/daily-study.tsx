@@ -60,6 +60,34 @@ function hebrewToday(lang: "he" | "en") {
   }
 }
 
+function isoFor(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftIso(iso: string, deltaDays: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return isoFor(d);
+}
+
+function formatDateLabel(iso: string, lang: "he" | "en"): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  try {
+    const greg = new Intl.DateTimeFormat(lang === "he" ? "he" : "en", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(d);
+    const heb = new Intl.DateTimeFormat(
+      lang === "he" ? "he-u-ca-hebrew" : "en-u-ca-hebrew",
+      { day: "numeric", month: "long", year: "numeric" },
+    ).format(d);
+    return `${heb} · ${greg}`;
+  } catch {
+    return iso;
+  }
+}
+
 export function DailyStudyPanel() {
   const { lang } = useLang();
   const [hebDate, setHebDate] = useState<string>("");
@@ -69,22 +97,47 @@ export function DailyStudyPanel() {
 
   const fetchFn = useServerFn(getDailyStudySource);
   const [activeKey, setActiveKey] = useState<FeatureKey | null>(null);
+  const [activeDate, setActiveDate] = useState<string>(() => isoFor(new Date()));
   const [openId, setOpenId] = useState<string | null>(null);
   const [errKey, setErrKey] = useState<FeatureKey | null>(null);
 
-
   const open = useMutation({
-    mutationFn: (feature: FeatureKey) => fetchFn({ data: { feature, lang } }),
+    mutationFn: (vars: { feature: FeatureKey; date: string }) =>
+      fetchFn({ data: { feature: vars.feature, lang, date: vars.date } }),
   });
 
   const handleOpen = (key: FeatureKey) => {
+    const today = isoFor(new Date());
     setErrKey(null);
     setActiveKey(key);
-    open.mutate(key, {
-      onSuccess: (r) => setOpenId(r.id),
-      onError: () => setErrKey(key),
-    });
+    setActiveDate(today);
+    open.mutate(
+      { feature: key, date: today },
+      {
+        onSuccess: (r) => setOpenId(r.id),
+        onError: () => setErrKey(key),
+      },
+    );
   };
+
+  const goToDate = (iso: string) => {
+    if (!activeKey) return;
+    setActiveDate(iso);
+    setErrKey(null);
+    // Clear the current source so the reader shows its loading state
+    // while we resolve the new date.
+    setOpenId(null);
+    open.mutate(
+      { feature: activeKey, date: iso },
+      {
+        onSuccess: (r) => setOpenId(r.id),
+        onError: () => setErrKey(activeKey),
+      },
+    );
+  };
+
+  const todayIso = isoFor(new Date());
+  const canGoNext = activeDate < todayIso;
 
   return (
     <section className="scholar-card p-5 sm:p-6">
@@ -119,7 +172,7 @@ export function DailyStudyPanel() {
           items={CHITAS}
           lang={lang}
           onOpen={handleOpen}
-          loadingKey={open.isPending ? activeKey : null}
+          loadingKey={open.isPending && !openId ? activeKey : null}
           errorKey={errKey}
         />
         <Group
@@ -127,7 +180,7 @@ export function DailyStudyPanel() {
           items={RAMBAM}
           lang={lang}
           onOpen={handleOpen}
-          loadingKey={open.isPending ? activeKey : null}
+          loadingKey={open.isPending && !openId ? activeKey : null}
           errorKey={errKey}
         />
       </div>
@@ -138,7 +191,26 @@ export function DailyStudyPanel() {
           : "Texts are imported into the app and read here — no external sites."}
       </p>
 
-      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} />
+      <SourceReader
+        sourceId={openId}
+        onClose={() => {
+          setOpenId(null);
+          setActiveKey(null);
+        }}
+        dateNav={
+          activeKey
+            ? {
+                label: formatDateLabel(activeDate, lang),
+                onPrev: () => goToDate(shiftIso(activeDate, -1)),
+                onNext: () => goToDate(shiftIso(activeDate, 1)),
+                canNext: canGoNext,
+                onToday: activeDate !== todayIso ? () => goToDate(todayIso) : undefined,
+                todayLabel: lang === "he" ? "חזרה להיום" : "Jump to today",
+                loading: open.isPending,
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

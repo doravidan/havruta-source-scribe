@@ -58,6 +58,10 @@ const TEHILLIM_META = {
 const Input = z.object({
   feature: z.enum(["chumash", "tehillim", "tanya", "rambam3", "rambam1"]),
   lang: z.enum(["he", "en"]).optional().default("he"),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 function todayIso(): string {
@@ -147,10 +151,14 @@ type CalendarItem = {
 
 async function getCalendarRef(
   calendarTitleEn: string,
+  iso?: string,
 ): Promise<{ ref: string; heRef: string; displayHe: string; displayEn: string }> {
-  const res = await fetch("https://www.sefaria.org/api/calendars", {
-    headers: { accept: "application/json" },
-  });
+  let url = "https://www.sefaria.org/api/calendars";
+  if (iso) {
+    const [y, m, d] = iso.split("-");
+    url += `?year=${y}&month=${parseInt(m, 10)}&day=${parseInt(d, 10)}`;
+  }
+  const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`calendars fetch ${res.status}`);
   const json = (await res.json()) as { calendar_items: CalendarItem[] };
   const item = json.calendar_items.find((c) => c.title?.en === calendarTitleEn);
@@ -329,7 +337,8 @@ function formatStructured(
 export const getDailyStudySource = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
-    const day = todayIso();
+    const day = data.date ?? todayIso();
+    const dateObj = new Date(`${day}T12:00:00Z`);
     // bump cache version when the formatter changes
     const cacheKey = `v2:${data.feature}:${data.lang}:${day}`;
 
@@ -356,7 +365,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
     let verseLabel: "verse" | "halakhah" | "paragraph" | "psalm" | null = "verse";
 
     if (data.feature === "tehillim") {
-      const hDay = hebrewDayOfMonth(new Date());
+      const hDay = hebrewDayOfMonth(dateObj);
       ref = tehillimRefForHebrewDay(hDay);
       displayHe = ref.replace(/^Psalms\s+/, "תהלים ");
       displayEn = ref;
@@ -366,7 +375,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
       verseLabel = "verse";
     } else {
       const meta = SEFARIA_CAL[data.feature];
-      const cal = await getCalendarRef(meta.calendarTitleEn);
+      const cal = await getCalendarRef(meta.calendarTitleEn, day);
       ref = cal.ref;
       displayHe = cal.displayHe;
       displayEn = cal.displayEn;
@@ -426,7 +435,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
     const dateLabel = new Intl.DateTimeFormat(
       data.lang === "he" ? "he-u-ca-hebrew" : "en-u-ca-hebrew",
       { day: "numeric", month: "long", year: "numeric" },
-    ).format(new Date());
+    ).format(dateObj);
 
     const baseTitle = data.lang === "he" ? baseTitleHe : baseTitleEn;
     const refLabel = data.lang === "he" ? labelHe : labelEn;
