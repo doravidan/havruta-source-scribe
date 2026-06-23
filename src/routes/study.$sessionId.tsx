@@ -559,6 +559,10 @@ function ChatPanel({
   setDraft,
   onSend,
   sending,
+  partnerTyping,
+  partnerOnline,
+  onTyping,
+  onTypingStop,
 }: {
   lang: "he" | "en";
   userId: string;
@@ -568,12 +572,31 @@ function ChatPanel({
   onSend: () => void;
   sending: boolean;
   mobileVisible?: boolean;
+  partnerTyping?: boolean;
+  partnerOnline?: boolean;
+  onTyping?: () => void;
+  onTypingStop?: () => void;
 }) {
   return (
     <section className="scholar-card p-4">
-      <h2 className="eyebrow mb-3 flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-primary" />
-        {lang === "he" ? "שיחה" : "Chat"}
+      <h2 className="eyebrow mb-3 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-primary" />
+          {lang === "he" ? "שיחה" : "Chat"}
+        </span>
+        <span className="flex items-center gap-1.5 text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+          <span
+            className={`inline-block h-2 w-2 rounded-full ${partnerOnline ? "bg-emerald-500" : "bg-muted-foreground/40"}`}
+            aria-hidden
+          />
+          {partnerOnline
+            ? lang === "he"
+              ? "מחובר"
+              : "online"
+            : lang === "he"
+              ? "לא מחובר"
+              : "offline"}
+        </span>
       </h2>
       <div className="max-h-72 space-y-2 overflow-auto rounded-2xl border border-border bg-background/30 p-3">
         {messages.length === 0 ? (
@@ -590,20 +613,41 @@ function ChatPanel({
             </div>
           ))
         )}
+        {partnerTyping && (
+          <div className="flex items-center gap-1.5 px-1 pt-1 text-xs text-muted-foreground">
+            <span className="flex gap-0.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+            </span>
+            {lang === "he" ? "החברותא מקליד..." : "Partner is typing..."}
+          </div>
+        )}
       </div>
       <div className="mt-3 flex gap-2">
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (e.target.value.trim()) onTyping?.();
+            else onTypingStop?.();
+          }}
+          onBlur={() => onTypingStop?.()}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && draft.trim()) onSend();
+            if (e.key === "Enter" && draft.trim()) {
+              onTypingStop?.();
+              onSend();
+            }
           }}
           placeholder={lang === "he" ? "כתוב לחברותא..." : "Message your chavruta..."}
           className="h-10 min-w-0 flex-1 rounded-full border border-border bg-background/45 px-3 text-sm outline-none"
         />
         <button
           disabled={!draft.trim() || sending}
-          onClick={onSend}
+          onClick={() => {
+            onTypingStop?.();
+            onSend();
+          }}
           className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
           {lang === "he" ? "שלח" : "Send"}
