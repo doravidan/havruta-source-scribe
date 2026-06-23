@@ -345,7 +345,8 @@ function formatStructured(
 export const getDailyStudySource = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
-    const day = todayIso();
+    const day = data.date ?? todayIso();
+    const dateObj = new Date(`${day}T12:00:00Z`);
     // bump cache version when the formatter changes
     const cacheKey = `v2:${data.feature}:${data.lang}:${day}`;
 
@@ -372,7 +373,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
     let verseLabel: "verse" | "halakhah" | "paragraph" | "psalm" | null = "verse";
 
     if (data.feature === "tehillim") {
-      const hDay = hebrewDayOfMonth(new Date());
+      const hDay = hebrewDayOfMonthFor(dateObj);
       ref = tehillimRefForHebrewDay(hDay);
       displayHe = ref.replace(/^Psalms\s+/, "תהלים ");
       displayEn = ref;
@@ -382,7 +383,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
       verseLabel = "verse";
     } else {
       const meta = SEFARIA_CAL[data.feature];
-      const cal = await getCalendarRef(meta.calendarTitleEn);
+      const cal = await getCalendarRef(meta.calendarTitleEn, day);
       ref = cal.ref;
       displayHe = cal.displayHe;
       displayEn = cal.displayEn;
