@@ -4,7 +4,7 @@ import { Hero } from "@/components/hero";
 import { AskPanel } from "@/components/ask-panel";
 import { SearchPanel } from "@/components/search-panel";
 import { YiddishHelper } from "@/components/helpers";
-import { StudySidebar } from "@/components/study-sidebar";
+
 import { DailyStudyPanel } from "@/components/daily-study";
 import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
@@ -99,7 +99,7 @@ function Index() {
               variants={tile}
               className="space-y-6 lg:sticky lg:top-24 min-w-0"
             >
-              <StudySidebar />
+              
               <YiddishHelper />
             </motion.aside>
           </div>
