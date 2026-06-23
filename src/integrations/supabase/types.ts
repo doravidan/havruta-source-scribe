@@ -334,36 +334,33 @@ export type Database = {
       }
       chavruta_study_sessions: {
         Row: {
-          companion_type: string
           created_at: string
           created_by: string
           current_segment_index: number
           id: string
-          match_id: string | null
+          match_id: string
           source_id: string
           status: string
           title: string | null
           updated_at: string
         }
         Insert: {
-          companion_type?: string
           created_at?: string
           created_by: string
           current_segment_index?: number
           id?: string
-          match_id?: string | null
+          match_id: string
           source_id: string
           status?: string
           title?: string | null
           updated_at?: string
         }
         Update: {
-          companion_type?: string
           created_at?: string
           created_by?: string
           current_segment_index?: number
           id?: string
-          match_id?: string | null
+          match_id?: string
           source_id?: string
           status?: string
           title?: string | null
