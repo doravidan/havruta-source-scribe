@@ -25,6 +25,7 @@ import {
   setSegmentStatus,
 } from "@/lib/chavruta-study.functions";
 import { useStudyAudioCall } from "@/hooks/use-study-audio-call";
+import { useStudyPresence } from "@/hooks/use-study-presence";
 
 export const Route = createFileRoute("/study/$sessionId")({
   head: () => ({ meta: [{ title: "לימוד משותף — חסידותא" }] }),
