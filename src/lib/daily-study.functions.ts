@@ -365,7 +365,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
     let verseLabel: "verse" | "halakhah" | "paragraph" | "psalm" | null = "verse";
 
     if (data.feature === "tehillim") {
-      const hDay = hebrewDayOfMonthFor(dateObj);
+      const hDay = hebrewDayOfMonth(dateObj);
       ref = tehillimRefForHebrewDay(hDay);
       displayHe = ref.replace(/^Psalms\s+/, "תהלים ");
       displayEn = ref;
