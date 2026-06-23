@@ -23,7 +23,7 @@ const SYS_EN = `You summarize Chabad Chassidus sources.
 export const summarizeSource = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const t0 = Date.now();
     const { getPublicServerClient } = await import("./supabase-public.server");
     const { chatCompletion } = await import("./ai-gateway.server");
