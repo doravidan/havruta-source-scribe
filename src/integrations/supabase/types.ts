@@ -222,6 +222,7 @@ export type Database = {
           is_active: boolean
           learning_level: string
           preferred_lang: string
+          time_zone: string
           topics: string[]
           updated_at: string
           user_id: string
@@ -233,6 +234,7 @@ export type Database = {
           is_active?: boolean
           learning_level?: string
           preferred_lang?: string
+          time_zone?: string
           topics?: string[]
           updated_at?: string
           user_id: string
@@ -244,6 +246,7 @@ export type Database = {
           is_active?: boolean
           learning_level?: string
           preferred_lang?: string
+          time_zone?: string
           topics?: string[]
           updated_at?: string
           user_id?: string
