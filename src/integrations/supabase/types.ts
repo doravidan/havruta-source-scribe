@@ -364,6 +364,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          context: Json
+          created_at: string
+          id: string
+          kind: string
+          matched_patterns: string[]
+          sample: string | null
+          severity: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          id?: string
+          kind: string
+          matched_patterns?: string[]
+          sample?: string | null
+          severity?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          id?: string
+          kind?: string
+          matched_patterns?: string[]
+          sample?: string | null
+          severity?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       source_chunks: {
         Row: {
           chunk_index: number
