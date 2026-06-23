@@ -68,12 +68,8 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function hebrewDayOfMonthFor(date: Date): number {
-  const s = new Intl.DateTimeFormat("en-u-ca-hebrew-nu-latn", {
-    day: "numeric",
-  }).format(date);
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? n : 1;
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function stripHtml(s: string): string {
