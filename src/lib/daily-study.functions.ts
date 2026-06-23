@@ -443,7 +443,7 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
     const dateLabel = new Intl.DateTimeFormat(
       data.lang === "he" ? "he-u-ca-hebrew" : "en-u-ca-hebrew",
       { day: "numeric", month: "long", year: "numeric" },
-    ).format(new Date());
+    ).format(dateObj);
 
     const baseTitle = data.lang === "he" ? baseTitleHe : baseTitleEn;
     const refLabel = data.lang === "he" ? labelHe : labelEn;
