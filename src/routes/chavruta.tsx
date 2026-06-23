@@ -512,6 +512,18 @@ function ChavrutaPage() {
                   <option value="both">{lang === "he" ? "שתיהן" : "Both"}</option>
                 </select>
               </div>
+              <select
+                name="time_zone"
+                defaultValue={profileQ.data?.profile?.time_zone ?? detectTz()}
+                className="w-full h-11 rounded-xl border border-border bg-background/45 px-3"
+                aria-label={lang === "he" ? "אזור זמן" : "Time zone"}
+              >
+                {listTimeZones().map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
               <input
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
