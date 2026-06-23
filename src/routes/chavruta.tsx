@@ -310,6 +310,7 @@ function ChavrutaPage() {
         bio: String(form.get("bio") || ""),
         learning_level: String(form.get("learning_level") || "beginner"),
         preferred_lang: String(form.get("preferred_lang") || "he"),
+        time_zone: String(form.get("time_zone") || detectTz()),
         topics: topicInput
           .split(",")
           .map((x) => x.trim())
