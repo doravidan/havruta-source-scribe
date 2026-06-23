@@ -10,17 +10,20 @@ import { CalendarClock, Check, Clock, MessageCircle, Phone, Plus, Users, X } fro
 export const Route = createFileRoute("/chavruta")({
   head: () => ({
     meta: [
-      { title: "חברותות — חסידותא" },
+      { title: "חברותות — חסידותא · Chassiduta" },
       { name: "description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
-      { property: "og:title", content: "חברותות — חסידותא" },
+      { property: "og:title", content: "חברותות — חסידותא · Chassiduta" },
       {
         property: "og:description",
         content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית.",
       },
-      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/chavruta" },
+      { property: "og:url", content: "https://chassiduta.lovable.app/chavruta" },
+      { name: "twitter:title", content: "חברותות — חסידותא · Chassiduta" },
+      { name: "twitter:description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
     ],
-    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/chavruta" }],
+    links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/chavruta" }],
   }),
+
   component: ChavrutaPage,
 });
 
