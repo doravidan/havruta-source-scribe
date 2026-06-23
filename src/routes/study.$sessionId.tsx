@@ -1,0 +1,589 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  ArrowRight,
+  Check,
+  HelpCircle,
+  Loader2,
+  MessageCircle,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Sparkles,
+} from "lucide-react";
+import { TopBar } from "@/components/top-bar";
+import { useAuth } from "@/hooks/use-auth";
+import { useLang } from "@/lib/lang-context";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  advanceStudySegment,
+  askStudySegmentQuestion,
+  generateSegmentQuestions,
+  getStudySession,
+  setSegmentStatus,
+} from "@/lib/chavruta-study.functions";
+import { useStudyAudioCall } from "@/hooks/use-study-audio-call";
+
+export const Route = createFileRoute("/study/$sessionId")({
+  head: () => ({ meta: [{ title: "לימוד משותף — חסידותא" }] }),
+  component: StudyRoomPage,
+});
+
+type Bundle = Awaited<ReturnType<typeof getStudySession>>;
+type ProgressRow = Bundle["progress"][number];
+type QuestionRow = Bundle["questions"][number];
+type MessageRow = Bundle["messages"][number];
+
+function StudyRoomPage() {
+  const { sessionId } = Route.useParams();
+  const { user, loading } = useAuth();
+  const { lang, dir } = useLang();
+  const qc = useQueryClient();
+  const getStudy = useServerFn(getStudySession);
+  const setStatusFn = useServerFn(setSegmentStatus);
+  const advanceFn = useServerFn(advanceStudySegment);
+  const generateFn = useServerFn(generateSegmentQuestions);
+  const askFn = useServerFn(askStudySegmentQuestion);
+  const [draft, setDraft] = useState("");
+  const [questionDraft, setQuestionDraft] = useState("");
+  const [tab, setTab] = useState<"text" | "guide" | "chat">("text");
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audio = useStudyAudioCall(sessionId, user?.id);
+
+  const studyQ = useQuery({
+    queryKey: ["study-session", sessionId],
+    enabled: !!user,
+    queryFn: () => getStudy({ data: { sessionId } }),
+  });
+
+  const bundle = studyQ.data;
+  const activeIndex = bundle?.session.current_segment_index ?? 0;
+  const activeSegment = bundle?.segments[activeIndex];
+  const progress = useMemo(() => bundle?.progress ?? [], [bundle?.progress]);
+  const questions = useMemo(
+    () => (bundle?.questions ?? []).filter((q: QuestionRow) => q.segment_index === activeIndex),
+    [activeIndex, bundle?.questions],
+  );
+  const messages = bundle?.messages ?? [];
+
+  const myProgress = useMemo(
+    () =>
+      progress.find((p: ProgressRow) => p.user_id === user?.id && p.segment_index === activeIndex),
+    [activeIndex, progress, user?.id],
+  );
+  const understoodCount = useMemo(
+    () =>
+      new Set(
+        progress
+          .filter((p: ProgressRow) => p.segment_index === activeIndex && p.status === "understood")
+          .map((p: ProgressRow) => p.user_id),
+      ).size,
+    [activeIndex, progress],
+  );
+
+  useEffect(() => {
+    if (!audio.remoteStream || !remoteAudioRef.current) return;
+    remoteAudioRef.current.srcObject = audio.remoteStream;
+  }, [audio.remoteStream]);
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`chavruta-study-db:${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chavruta_study_sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chavruta_study_progress",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chavruta_study_questions",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+      )
+      .subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [qc, sessionId, user]);
+
+  useEffect(() => {
+    if (!bundle?.session.match_id || !user) return;
+    const channel = supabase
+      .channel(`chavruta-study-chat:${bundle.session.match_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chavruta_messages",
+          filter: `match_id=eq.${bundle.session.match_id}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+      )
+      .subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [bundle?.session.match_id, qc, sessionId, user]);
+
+  const statusMutation = useMutation({
+    mutationFn: (status: "reading" | "confused" | "understood" | "answered") =>
+      setStatusFn({ data: { sessionId, segmentIndex: activeIndex, status } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+  });
+
+  const advanceMutation = useMutation({
+    mutationFn: (next: number) => advanceFn({ data: { sessionId, segmentIndex: next } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: () => generateFn({ data: { sessionId, segmentIndex: activeIndex, lang } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+  });
+
+  const askMutation = useMutation({
+    mutationFn: () =>
+      askFn({ data: { sessionId, segmentIndex: activeIndex, question: questionDraft, lang } }),
+    onSuccess: () => {
+      setQuestionDraft("");
+      qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+    },
+  });
+
+  const sendMessage = useMutation({
+    mutationFn: async () => {
+      if (!bundle || !user || !draft.trim()) return;
+      const { error } = await supabase.from("chavruta_messages").insert({
+        match_id: bundle.session.match_id,
+        sender_id: user.id,
+        body: draft.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setDraft("");
+      qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+    },
+  });
+
+  if (loading) return <div className="min-h-screen" />;
+  if (!user) {
+    return (
+      <div className="min-h-screen" dir={dir}>
+        <TopBar />
+        <main className="mx-auto max-w-2xl px-4 py-12 text-center">
+          <section className="scholar-card p-7">
+            <h1 className="text-3xl">{lang === "he" ? "צריך להתחבר" : "Sign in required"}</h1>
+            <Link
+              to="/auth"
+              className="mt-5 inline-flex h-11 items-center rounded-full bg-primary px-5 text-primary-foreground"
+            >
+              {lang === "he" ? "התחברות" : "Sign in"}
+            </Link>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" dir={dir}>
+      <TopBar />
+      <audio ref={remoteAudioRef} autoPlay playsInline />
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
+        <header className="mb-5 flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <Link
+              to="/chavruta"
+              className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+            >
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              {lang === "he" ? "חזרה לחברותות" : "Back to chavrutot"}
+            </Link>
+            <h1 className="truncate text-2xl sm:text-4xl">
+              {bundle?.source.title ?? (lang === "he" ? "חדר לימוד" : "Study room")}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {bundle
+                ? `${activeIndex + 1}/${Math.max(1, bundle.segments.length)} · ${understoodCount} ${lang === "he" ? "סימנו הבנתי" : "marked understood"}`
+                : ""}
+            </p>
+          </div>
+          <AudioControls audio={audio} lang={lang} />
+        </header>
+
+        {studyQ.isLoading ? (
+          <div className="scholar-card grid min-h-80 place-items-center p-8">
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+          </div>
+        ) : studyQ.error || !bundle || !activeSegment ? (
+          <div className="scholar-card p-8 text-center text-muted-foreground">
+            {lang === "he" ? "לא הצלחתי לטעון את חדר הלימוד." : "Could not load this study room."}
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 grid grid-cols-3 gap-2 lg:hidden">
+              {(["text", "guide", "chat"] as const).map((x) => (
+                <button
+                  key={x}
+                  onClick={() => setTab(x)}
+                  className={`h-10 rounded-full border text-sm ${tab === x ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card/60"}`}
+                >
+                  {x === "text"
+                    ? lang === "he"
+                      ? "טקסט"
+                      : "Text"
+                    : x === "guide"
+                      ? lang === "he"
+                        ? "שאלות"
+                        : "Guide"
+                      : lang === "he"
+                        ? "שיחה"
+                        : "Chat"}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)_360px]">
+              <aside className={`${tab === "text" ? "block" : "hidden"} lg:block`}>
+                <SegmentOutline
+                  bundle={bundle}
+                  activeIndex={activeIndex}
+                  onJump={(i) => advanceMutation.mutate(i)}
+                />
+              </aside>
+
+              <section
+                className={`${tab === "text" ? "block" : "hidden"} lg:block scholar-card p-5 sm:p-7`}
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="eyebrow">{lang === "he" ? "קטע נוכחי" : "Current segment"}</div>
+                  <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    {myProgress?.status ?? "reading"}
+                  </span>
+                </div>
+                <article className="rounded-3xl border border-border bg-[rgba(255,250,239,0.7)] p-5 text-xl leading-9 sm:p-8 sm:text-2xl sm:leading-[2.35]">
+                  {activeSegment.text}
+                </article>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => statusMutation.mutate("understood")}
+                    className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                  >
+                    <Check className="h-4 w-4" />
+                    {lang === "he" ? "הבנתי" : "Understood"}
+                  </button>
+                  <button
+                    onClick={() => statusMutation.mutate("confused")}
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-5 text-sm font-semibold"
+                  >
+                    <HelpCircle className="h-4 w-4 text-primary" />
+                    {lang === "he" ? "צריך הסבר" : "Need explanation"}
+                  </button>
+                  <button
+                    onClick={() => generateMutation.mutate()}
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-primary/35 px-5 text-sm font-semibold text-primary"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {lang === "he" ? "שאל אותנו על הקטע" : "Ask us about this"}
+                  </button>
+                  <button
+                    disabled={activeIndex >= bundle.segments.length - 1}
+                    onClick={() => advanceMutation.mutate(activeIndex + 1)}
+                    className="ms-auto inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-40"
+                  >
+                    {lang === "he" ? "הבא" : "Next"}
+                  </button>
+                </div>
+              </section>
+
+              <aside className={`${tab === "guide" ? "block" : "hidden"} space-y-5 lg:block`}>
+                <GuidePanel
+                  lang={lang}
+                  questions={questions}
+                  questionDraft={questionDraft}
+                  setQuestionDraft={setQuestionDraft}
+                  askPending={askMutation.isPending}
+                  generatePending={generateMutation.isPending}
+                  onAsk={() => askMutation.mutate()}
+                  onGenerate={() => generateMutation.mutate()}
+                />
+                <ChatPanel
+                  lang={lang}
+                  userId={user.id}
+                  messages={messages}
+                  draft={draft}
+                  setDraft={setDraft}
+                  onSend={() => sendMessage.mutate()}
+                  sending={sendMessage.isPending}
+                  mobileVisible={tab === "chat"}
+                />
+              </aside>
+
+              <div className={`${tab === "chat" ? "block" : "hidden"} lg:hidden`}>
+                <ChatPanel
+                  lang={lang}
+                  userId={user.id}
+                  messages={messages}
+                  draft={draft}
+                  setDraft={setDraft}
+                  onSend={() => sendMessage.mutate()}
+                  sending={sendMessage.isPending}
+                  mobileVisible
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function AudioControls({
+  audio,
+  lang,
+}: {
+  audio: ReturnType<typeof useStudyAudioCall>;
+  lang: "he" | "en";
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="rounded-full border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+        {audio.state === "live"
+          ? lang === "he"
+            ? "קול פעיל"
+            : "Audio live"
+          : audio.state === "connecting"
+            ? lang === "he"
+              ? "מתחבר..."
+              : "Connecting..."
+            : audio.state === "muted"
+              ? lang === "he"
+                ? "מושתק"
+                : "Muted"
+              : audio.state === "error"
+                ? lang === "he"
+                  ? "שגיאת אודיו"
+                  : "Audio error"
+                : lang === "he"
+                  ? "אודיו כבוי"
+                  : "Audio off"}
+      </span>
+      {audio.state === "idle" || audio.state === "error" ? (
+        <button
+          onClick={audio.startCall}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground"
+        >
+          <Mic className="h-4 w-4" />
+          {lang === "he" ? "התחל אודיו" : "Start audio"}
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={audio.toggleMute}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
+          >
+            {audio.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {audio.muted
+              ? lang === "he"
+                ? "בטל השתקה"
+                : "Unmute"
+              : lang === "he"
+                ? "השתק"
+                : "Mute"}
+          </button>
+          <button
+            onClick={audio.hangUp}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold text-primary"
+          >
+            <PhoneOff className="h-4 w-4" />
+            {lang === "he" ? "נתק" : "Hang up"}
+          </button>
+        </>
+      )}
+      {audio.error && <span className="text-xs text-destructive">{audio.error}</span>}
+    </div>
+  );
+}
+
+function SegmentOutline({
+  bundle,
+  activeIndex,
+  onJump,
+}: {
+  bundle: Bundle;
+  activeIndex: number;
+  onJump: (index: number) => void;
+}) {
+  return (
+    <div className="scholar-card p-4">
+      <div className="eyebrow mb-3">קטעים</div>
+      <div className="max-h-[70vh] space-y-2 overflow-auto pe-1">
+        {bundle.segments.map((segment) => (
+          <button
+            key={segment.index}
+            onClick={() => onJump(segment.index)}
+            className={`block w-full rounded-2xl border p-3 text-start text-sm ${segment.index === activeIndex ? "border-primary bg-primary/10 text-primary" : "border-border bg-background/30 text-muted-foreground"}`}
+          >
+            <div className="font-medium">קטע {segment.index + 1}</div>
+            <div className="mt-1 line-clamp-2 text-xs">{segment.text}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuidePanel({
+  lang,
+  questions,
+  questionDraft,
+  setQuestionDraft,
+  askPending,
+  generatePending,
+  onAsk,
+  onGenerate,
+}: {
+  lang: "he" | "en";
+  questions: QuestionRow[];
+  questionDraft: string;
+  setQuestionDraft: (value: string) => void;
+  askPending: boolean;
+  generatePending: boolean;
+  onAsk: () => void;
+  onGenerate: () => void;
+}) {
+  return (
+    <section className="scholar-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="eyebrow">{lang === "he" ? "שאלות והנחיה" : "Questions & guide"}</h2>
+        <button
+          onClick={onGenerate}
+          className="rounded-full border border-primary/35 px-3 py-1.5 text-xs font-semibold text-primary"
+        >
+          {generatePending ? "..." : lang === "he" ? "צור שאלות" : "Generate"}
+        </button>
+      </div>
+      <div className="space-y-2">
+        {questions.length === 0 ? (
+          <p className="rounded-2xl border border-border bg-background/30 p-3 text-sm text-muted-foreground">
+            {lang === "he"
+              ? "לחץ צור שאלות אחרי שסיימתם לקרוא את הקטע."
+              : "Generate questions after you read the segment."}
+          </p>
+        ) : (
+          questions.map((q) => (
+            <div
+              key={q.id}
+              className="rounded-2xl border border-border bg-background/30 p-3 text-sm"
+            >
+              <div className="font-medium text-foreground">{q.question}</div>
+              {q.answer && <p className="mt-2 leading-6 text-muted-foreground">{q.answer}</p>}
+            </div>
+          ))
+        )}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <input
+          value={questionDraft}
+          onChange={(e) => setQuestionDraft(e.target.value)}
+          placeholder={lang === "he" ? "שאלה על הקטע..." : "Question about the segment..."}
+          className="h-10 min-w-0 flex-1 rounded-full border border-border bg-background/45 px-3 text-sm outline-none"
+        />
+        <button
+          disabled={!questionDraft.trim() || askPending}
+          onClick={onAsk}
+          className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          {lang === "he" ? "שאל" : "Ask"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ChatPanel({
+  lang,
+  userId,
+  messages,
+  draft,
+  setDraft,
+  onSend,
+  sending,
+}: {
+  lang: "he" | "en";
+  userId: string;
+  messages: MessageRow[];
+  draft: string;
+  setDraft: (value: string) => void;
+  onSend: () => void;
+  sending: boolean;
+  mobileVisible?: boolean;
+}) {
+  return (
+    <section className="scholar-card p-4">
+      <h2 className="eyebrow mb-3 flex items-center gap-2">
+        <MessageCircle className="h-4 w-4 text-primary" />
+        {lang === "he" ? "שיחה" : "Chat"}
+      </h2>
+      <div className="max-h-72 space-y-2 overflow-auto rounded-2xl border border-border bg-background/30 p-3">
+        {messages.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {lang === "he" ? "עדיין אין הודעות." : "No messages yet."}
+          </p>
+        ) : (
+          messages.map((m) => (
+            <div
+              key={m.id}
+              className={`rounded-2xl px-3 py-2 text-sm ${m.sender_id === userId ? "bg-primary/10 text-primary" : "bg-card/60"}`}
+            >
+              {m.body}
+            </div>
+          ))
+        )}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && draft.trim()) onSend();
+          }}
+          placeholder={lang === "he" ? "כתוב לחברותא..." : "Message your chavruta..."}
+          className="h-10 min-w-0 flex-1 rounded-full border border-border bg-background/45 px-3 text-sm outline-none"
+        />
+        <button
+          disabled={!draft.trim() || sending}
+          onClick={onSend}
+          className="h-10 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          {lang === "he" ? "שלח" : "Send"}
+        </button>
+      </div>
+    </section>
+  );
+}

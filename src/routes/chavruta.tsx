@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
+import { createStudySession } from "@/lib/chavruta-study.functions";
 import { CalendarClock, Check, Clock, MessageCircle, Phone, Plus, Users, X } from "lucide-react";
 
 export const Route = createFileRoute("/chavruta")({
@@ -19,7 +21,10 @@ export const Route = createFileRoute("/chavruta")({
       },
       { property: "og:url", content: "https://chassiduta.lovable.app/chavruta" },
       { name: "twitter:title", content: "חברותות — חסידותא · Chassiduta" },
-      { name: "twitter:description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
+      {
+        name: "twitter:description",
+        content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית.",
+      },
     ],
     links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/chavruta" }],
   }),
@@ -260,6 +265,8 @@ function ChavrutaPage() {
   const { user, loading } = useAuth();
   const { lang, dir } = useLang();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const createStudyFn = useServerFn(createStudySession);
   const days = lang === "he" ? dayHe : dayEn;
   const [newSlot, setNewSlot] = useState({ day: 0, start: "20:00", end: "21:00" });
   const [topicInput, setTopicInput] = useState(defaultTopics.join(", "));
@@ -538,6 +545,16 @@ function ChavrutaPage() {
       setMessageDraft((d) => ({ ...d, [matchId]: "" }));
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+  });
+
+  const openStudyRoom = useMutation({
+    mutationFn: async (matchId: string) => {
+      if (!sourceIntentQ.data?.id) throw new Error("source_required");
+      return createStudyFn({ data: { matchId, sourceId: sourceIntentQ.data.id } });
+    },
+    onSuccess: (room) => {
+      navigate({ to: "/study/$sessionId", params: { sessionId: room.id } });
+    },
   });
 
   const accept = useMutation({
@@ -1119,6 +1136,16 @@ function ChavrutaPage() {
                             >
                               <Check className="h-4 w-4" />
                               {lang === "he" ? "מאשר התאמה" : "Accept"}
+                            </button>
+                          )}
+                          {sourceIntentQ.data && (
+                            <button
+                              onClick={() => openStudyRoom.mutate(m.id)}
+                              disabled={openStudyRoom.isPending}
+                              className="h-10 rounded-xl border border-primary/40 px-4 text-primary inline-flex items-center gap-2"
+                            >
+                              <Users className="h-4 w-4" />
+                              {lang === "he" ? "פתח לימוד + אודיו" : "Study + audio"}
                             </button>
                           )}
                         </div>

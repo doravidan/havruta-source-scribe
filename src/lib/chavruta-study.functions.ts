@@ -1,0 +1,282 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { segmentSourceText } from "./source-segments";
+
+const Uuid = z.string().uuid();
+const CreateInput = z.object({ matchId: Uuid, sourceId: Uuid });
+const SessionInput = z.object({ sessionId: Uuid });
+const StatusInput = z.object({
+  sessionId: Uuid,
+  segmentIndex: z.number().int().min(0),
+  status: z.enum(["reading", "confused", "understood", "answered"]),
+  note: z.string().max(600).optional(),
+});
+const AdvanceInput = z.object({ sessionId: Uuid, segmentIndex: z.number().int().min(0) });
+const GenerateInput = z.object({
+  sessionId: Uuid,
+  segmentIndex: z.number().int().min(0),
+  lang: z.enum(["he", "en"]).default("he"),
+});
+const AskInput = z.object({
+  sessionId: Uuid,
+  segmentIndex: z.number().int().min(0),
+  question: z.string().min(2).max(1000),
+  lang: z.enum(["he", "en"]).default("he"),
+});
+
+type AnySb = any;
+
+async function loadSessionBundle(sb: AnySb, sessionId: string) {
+  const { data: session, error: sessionError } = await sb
+    .from("chavruta_study_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (sessionError) throw new Error(sessionError.message);
+  if (!session) throw new Error("study_session_not_found");
+
+  const [
+    { data: source, error: sourceError },
+    { data: match },
+    { data: progress },
+    { data: questions },
+    { data: messages },
+  ] = await Promise.all([
+    sb
+      .from("sources")
+      .select("id, title, tree, tree_parts, language, text, excerpt, char_count")
+      .eq("id", session.source_id)
+      .maybeSingle(),
+    sb.from("chavruta_matches").select("*").eq("id", session.match_id).maybeSingle(),
+    sb
+      .from("chavruta_study_progress")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("updated_at", { ascending: false }),
+    sb
+      .from("chavruta_study_questions")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true }),
+    sb
+      .from("chavruta_messages")
+      .select("*")
+      .eq("match_id", session.match_id)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  if (sourceError) throw new Error(sourceError.message);
+  if (!source) throw new Error("source_not_found");
+
+  return {
+    session,
+    source,
+    match,
+    progress: progress ?? [],
+    questions: questions ?? [],
+    messages: messages ?? [],
+    segments: segmentSourceText(source.text ?? "", source.title ?? "קטע"),
+  };
+}
+
+export const createStudySession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CreateInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const { data: source } = await sb
+      .from("sources")
+      .select("title")
+      .eq("id", data.sourceId)
+      .maybeSingle();
+
+    const { data: session, error } = await sb
+      .from("chavruta_study_sessions")
+      .upsert(
+        {
+          match_id: data.matchId,
+          source_id: data.sourceId,
+          created_by: context.userId,
+          title: source?.title ?? null,
+        },
+        { onConflict: "match_id,source_id" },
+      )
+      .select("*")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!session) throw new Error("could_not_create_study_session");
+    return session;
+  });
+
+export const getStudySession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SessionInput.parse(d))
+  .handler(async ({ data, context }) =>
+    loadSessionBundle(context.supabase as AnySb, data.sessionId),
+  );
+
+export const setSegmentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => StatusInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const { data: row, error } = await sb
+      .from("chavruta_study_progress")
+      .upsert(
+        {
+          session_id: data.sessionId,
+          user_id: context.userId,
+          segment_index: data.segmentIndex,
+          status: data.status,
+          note: data.note ?? null,
+        },
+        { onConflict: "session_id,user_id,segment_index" },
+      )
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const advanceStudySegment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AdvanceInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const { data: row, error } = await sb
+      .from("chavruta_study_sessions")
+      .update({ current_segment_index: data.segmentIndex })
+      .eq("id", data.sessionId)
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+function fallbackQuestions(lang: "he" | "en") {
+  return lang === "he"
+    ? [
+        "מה המהלך המרכזי בקטע הזה?",
+        "איזו מילה או ביטוי צריך לדייק כאן?",
+        "איך היית מסביר את הקטע לחברותא במילים שלך?",
+      ]
+    : [
+        "What is the main idea of this segment?",
+        "Which word or phrase needs careful reading here?",
+        "How would you explain this segment to your chavruta in your own words?",
+      ];
+}
+
+function parseQuestions(raw: string, lang: "he" | "en") {
+  try {
+    const parsed = JSON.parse(raw) as { questions?: Array<{ text?: string }> };
+    const qs = parsed.questions?.map((q) => q.text?.trim()).filter(Boolean) ?? [];
+    if (qs.length) return qs.slice(0, 3) as string[];
+  } catch {
+    // plain text fallback below
+  }
+  const lines = raw
+    .split("\n")
+    .map((x) => x.replace(/^[-*\d.)\s]+/, "").trim())
+    .filter((x) => x.length > 6);
+  return lines.length ? lines.slice(0, 3) : fallbackQuestions(lang);
+}
+
+export const generateSegmentQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => GenerateInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const bundle = await loadSessionBundle(sb, data.sessionId);
+    const existing = bundle.questions.filter(
+      (q: any) => q.segment_index === data.segmentIndex && q.kind === "agent",
+    );
+    if (existing.length > 0) return existing;
+
+    const segment = bundle.segments[data.segmentIndex];
+    if (!segment) throw new Error("segment_not_found");
+
+    let questionTexts = fallbackQuestions(data.lang);
+    try {
+      const { chatCompletion } = await import("./ai-gateway.server");
+      const system =
+        data.lang === "he"
+          ? 'אתה מנחה לימוד חסידות חב״ד בחברותא. כתוב בעברית בלבד, קצר, בלי המצאות מעבר לקטע. החזר JSON בלבד: {"questions":[{"text":"..."}]}'
+          : 'You guide a Chabad Chassidus chavruta. Reply in English only, concise, no claims beyond the segment. Return JSON only: {"questions":[{"text":"..."}]}';
+      const user =
+        data.lang === "he"
+          ? `צור 3 שאלות: הבנה, דיוק, והעמקה/יישום.\n\nכותרת: ${bundle.source.title}\nקטע:\n${segment.text}`
+          : `Create 3 questions: comprehension, precision, and reflection/application.\n\nTitle: ${bundle.source.title}\nSegment:\n${segment.text}`;
+      const raw = await chatCompletion({
+        system,
+        messages: [{ role: "user", content: user }],
+        temperature: 0.25,
+      });
+      questionTexts = parseQuestions(raw, data.lang);
+    } catch (e) {
+      console.warn("generateSegmentQuestions fallback", e);
+    }
+
+    const rows = questionTexts.map((question) => ({
+      session_id: data.sessionId,
+      segment_index: data.segmentIndex,
+      created_by: context.userId,
+      kind: "agent",
+      question,
+    }));
+    const { data: inserted, error } = await sb
+      .from("chavruta_study_questions")
+      .insert(rows)
+      .select("*");
+    if (error) throw new Error(error.message);
+    return inserted ?? [];
+  });
+
+export const askStudySegmentQuestion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AskInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const bundle = await loadSessionBundle(sb, data.sessionId);
+    const segment = bundle.segments[data.segmentIndex];
+    if (!segment) throw new Error("segment_not_found");
+
+    let answer = data.lang === "he" ? "לא הצלחתי לענות כרגע." : "I could not answer right now.";
+    try {
+      const { chatCompletion } = await import("./ai-gateway.server");
+      const system =
+        data.lang === "he"
+          ? "אתה חברותא ללימוד חסידות חב״ד. ענה בעברית בלבד, לפי הקטע שסופק בלבד. אם חסר הקשר, אמור זאת."
+          : "You are a Chabad Chassidus chavruta. Answer in English only, only from the provided segment. Say if context is missing.";
+      answer = await chatCompletion({
+        system,
+        messages: [
+          {
+            role: "user",
+            content: `Source: ${bundle.source.title}\n\nSegment:\n${segment.text}\n\nQuestion:\n${data.question}`,
+          },
+        ],
+        temperature: 0.25,
+      });
+    } catch (e) {
+      console.warn("askStudySegmentQuestion fallback", e);
+    }
+
+    const { data: row, error } = await sb
+      .from("chavruta_study_questions")
+      .insert({
+        session_id: data.sessionId,
+        segment_index: data.segmentIndex,
+        created_by: context.userId,
+        kind: "human",
+        question: data.question,
+        answer,
+      })
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });

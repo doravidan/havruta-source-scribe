@@ -16,6 +16,7 @@ import { Route as BeitMidrashRouteImport } from './routes/beit-midrash'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudySessionIdRouteImport } from './routes/study.$sessionId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -56,6 +57,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudySessionIdRoute = StudySessionIdRouteImport.update({
+  id: '/study/$sessionId',
+  path: '/study/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study/$sessionId': typeof StudySessionIdRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study/$sessionId': typeof StudySessionIdRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/study/$sessionId': typeof StudySessionIdRoute
   '/api/public/hooks/chabad-crawl-tick': typeof ApiPublicHooksChabadCrawlTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/study/$sessionId'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/study/$sessionId'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
+    | '/study/$sessionId'
     | '/api/public/hooks/chabad-crawl-tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   ChavrutaRoute: typeof ChavrutaRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StudySessionIdRoute: typeof StudySessionIdRoute
   ApiPublicHooksChabadCrawlTickRoute: typeof ApiPublicHooksChabadCrawlTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study/$sessionId': {
+      id: '/study/$sessionId'
+      path: '/study/$sessionId'
+      fullPath: '/study/$sessionId'
+      preLoaderRoute: typeof StudySessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -265,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChavrutaRoute: ChavrutaRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StudySessionIdRoute: StudySessionIdRoute,
   ApiPublicHooksChabadCrawlTickRoute: ApiPublicHooksChabadCrawlTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
