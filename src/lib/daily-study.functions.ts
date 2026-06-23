@@ -58,10 +58,22 @@ const TEHILLIM_META = {
 const Input = z.object({
   feature: z.enum(["chumash", "tehillim", "tanya", "rambam3", "rambam1"]),
   lang: z.enum(["he", "en"]).optional().default("he"),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function hebrewDayOfMonthFor(date: Date): number {
+  const s = new Intl.DateTimeFormat("en-u-ca-hebrew-nu-latn", {
+    day: "numeric",
+  }).format(date);
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : 1;
 }
 
 function stripHtml(s: string): string {
