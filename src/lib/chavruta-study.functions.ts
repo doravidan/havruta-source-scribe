@@ -7,7 +7,10 @@ import { segmentSourceText } from "./source-segments";
 const Uuid = z.string().uuid();
 const CreateInput = z.object({ matchId: Uuid, sourceId: Uuid });
 const CreateAiInput = z.object({ sourceId: Uuid });
-const SessionInput = z.object({ sessionId: Uuid });
+const SessionInput = z.object({
+  sessionId: Uuid,
+  lang: z.enum(["he", "en"]).default("he"),
+});
 const StatusInput = z.object({
   sessionId: Uuid,
   segmentIndex: z.number().int().min(0),
@@ -29,7 +32,7 @@ const AskInput = z.object({
 
 type AnySb = any;
 
-async function loadSessionBundle(sb: AnySb, sessionId: string) {
+async function loadSessionBundle(sb: AnySb, sessionId: string, lang: "he" | "en" = "he") {
   const { data: session, error: sessionError } = await sb
     .from("chavruta_study_sessions")
     .select("*")
@@ -79,14 +82,17 @@ async function loadSessionBundle(sb: AnySb, sessionId: string) {
   if (sourceError) throw new Error(sourceError.message);
   if (!source) throw new Error("source_not_found");
 
+  const { localizeSourceForStudy } = await import("./localize-source.server");
+  const localizedSource = await localizeSourceForStudy(source, lang);
+
   return {
     session,
-    source,
+    source: localizedSource,
     match,
     progress: progress ?? [],
     questions: questions ?? [],
     messages: messages ?? [],
-    segments: segmentSourceText(source.text ?? "", source.title ?? "קטע"),
+    segments: segmentSourceText(localizedSource.text ?? "", localizedSource.title ?? "קטע"),
   };
 }
 
@@ -163,7 +169,7 @@ export const getStudySession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SessionInput.parse(d))
   .handler(async ({ data, context }) =>
-    loadSessionBundle(context.supabase as AnySb, data.sessionId),
+    loadSessionBundle(context.supabase as AnySb, data.sessionId, data.lang),
   );
 
 export const setSegmentStatus = createServerFn({ method: "POST" })
@@ -238,7 +244,7 @@ export const generateSegmentQuestions = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
     const sb = context.supabase as AnySb;
-    const bundle = await loadSessionBundle(sb, data.sessionId);
+    const bundle = await loadSessionBundle(sb, data.sessionId, data.lang);
     const existing = bundle.questions.filter(
       (q: any) => q.segment_index === data.segmentIndex && q.kind === "agent",
     );
@@ -288,7 +294,7 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AskInput.parse(d))
   .handler(async ({ data, context }) => {
     const sb = context.supabase as AnySb;
-    const bundle = await loadSessionBundle(sb, data.sessionId);
+    const bundle = await loadSessionBundle(sb, data.sessionId, data.lang);
     const segment = bundle.segments[data.segmentIndex];
     if (!segment) throw new Error("segment_not_found");
 
@@ -299,14 +305,13 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
         data.lang === "he"
           ? "אתה חברותא ללימוד חסידות חב״ד. ענה בעברית בלבד, לפי הקטע שסופק בלבד. אם חסר הקשר, אמור זאת."
           : "You are a Chabad Chassidus chavruta. Answer in English only, only from the provided segment. Say if context is missing.";
+      const userPrompt =
+        data.lang === "he"
+          ? `מקור: ${bundle.source.title}\n\nקטע:\n${segment.text}\n\nשאלה:\n${data.question}`
+          : `Source: ${bundle.source.title}\n\nSegment:\n${segment.text}\n\nQuestion:\n${data.question}`;
       answer = await chatCompletion({
         system,
-        messages: [
-          {
-            role: "user",
-            content: `Source: ${bundle.source.title}\n\nSegment:\n${segment.text}\n\nQuestion:\n${data.question}`,
-          },
-        ],
+        messages: [{ role: "user", content: userPrompt }],
         temperature: 0.25,
       });
     } catch (e) {

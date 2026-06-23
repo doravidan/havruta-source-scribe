@@ -55,9 +55,9 @@ function StudyRoomPage() {
   const presence = useStudyPresence(sessionId, user?.id);
 
   const studyQ = useQuery({
-    queryKey: ["study-session", sessionId],
+    queryKey: ["study-session", sessionId, lang],
     enabled: !!user,
-    queryFn: () => getStudy({ data: { sessionId } }),
+    queryFn: () => getStudy({ data: { sessionId, lang } }),
   });
 
   const bundle = studyQ.data;

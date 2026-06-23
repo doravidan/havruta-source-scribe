@@ -24,7 +24,11 @@ export function TopBar() {
         <Link to="/" className="group hidden min-w-0 items-center gap-3 sm:flex">
           <img
             src={logo}
-            alt={`${t.brand} — Chassidus learning platform logo`}
+            alt={
+              lang === "he"
+                ? `${t.brand} — לוגו פלטפורמת לימוד חסידות`
+                : `${t.brand} — Chassidus learning platform logo`
+            }
             width={42}
             height={42}
             className="h-10 w-10 rounded-full border border-border bg-white/50 p-0.5 shadow-sm transition-transform group-hover:scale-[1.03]"
@@ -77,7 +81,7 @@ export function TopBar() {
           <button
             onClick={toggle}
             className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
-            aria-label="Toggle language"
+            aria-label={lang === "he" ? "החלפת שפה" : "Toggle language"}
           >
             <Languages className="h-4 w-4" />
             <span className="hidden sm:inline">{t.langToggle}</span>

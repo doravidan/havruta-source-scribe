@@ -2,6 +2,7 @@
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 import json
+import re
 
 BASE = 'http://127.0.0.1:4173'
 OUT = Path('artifacts/playwright-qa')
@@ -37,7 +38,7 @@ with sync_playwright() as p:
     record('search interaction runs', ok=('אין תוצאות' in body or 'תניא' in body or 'מקורות' in body), note='query submitted')
 
     # Language toggle should switch copy/dir without layout overflow.
-    page.get_by_label('Toggle language').click()
+    page.get_by_label(re.compile('Toggle language|החלפת שפה')).click()
     page.wait_for_timeout(500)
     lang = page.evaluate('document.documentElement.lang')
     direction = page.evaluate('document.documentElement.dir')

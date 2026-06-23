@@ -60,8 +60,8 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
   const createAiStudyFn = useServerFn(createAiStudySession);
   const open = !!sourceId;
   const { data, isLoading } = useQuery({
-    queryKey: ["source", sourceId],
-    queryFn: () => fn({ data: { id: sourceId! } }),
+    queryKey: ["source", sourceId, lang],
+    queryFn: () => fn({ data: { id: sourceId!, lang } }),
     enabled: open,
   });
 
