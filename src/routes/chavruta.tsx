@@ -99,6 +99,107 @@ function overlap(a: Availability, b: Availability) {
   return end > start ? { day: a.day_of_week, start: time(start), end: time(end) } : null;
 }
 
+// ---------- Time-zone aware matching ----------
+const WEEK_MIN = 7 * 24 * 60;
+// Sunday 2024-01-07 00:00:00 UTC — reference week start
+const REF_SUNDAY_UTC = new Date(Date.UTC(2024, 0, 7));
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
+function detectTz(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jerusalem";
+  } catch {
+    return "Asia/Jerusalem";
+  }
+}
+
+function listTimeZones(): string[] {
+  try {
+    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    if (typeof fn === "function") return fn("timeZone");
+  } catch { /* noop */ }
+  return [
+    "Asia/Jerusalem", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "America/Toronto", "America/Mexico_City", "America/Argentina/Buenos_Aires", "America/Sao_Paulo",
+    "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Singapore",
+    "Asia/Hong_Kong", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland", "UTC",
+  ];
+}
+
+// offset = (local time in tz) - UTC, in minutes, for the given instant
+function tzOffsetMinutes(instant: Date, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(instant);
+  const map: Record<string, string> = {};
+  for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+  const hour = map.hour === "24" ? 0 : Number(map.hour);
+  const asUtc = Date.UTC(
+    Number(map.year), Number(map.month) - 1, Number(map.day),
+    hour, Number(map.minute), Number(map.second),
+  );
+  return Math.round((asUtc - instant.getTime()) / 60000);
+}
+
+// Convert a (day, "HH:MM") wall-clock in tz to UTC minute-of-week relative to REF_SUNDAY_UTC.
+function localToUtcMinOfWeek(day: number, hhmm: string, tz: string): number {
+  const [h, m] = hhmm.slice(0, 5).split(":").map(Number);
+  const naive = new Date(REF_SUNDAY_UTC.getTime() + (day * 1440 + h * 60 + m) * 60000);
+  const offset = tzOffsetMinutes(naive, tz);
+  const utc = naive.getTime() - offset * 60000;
+  let mw = Math.round((utc - REF_SUNDAY_UTC.getTime()) / 60000);
+  mw = ((mw % WEEK_MIN) + WEEK_MIN) % WEEK_MIN;
+  return mw;
+}
+
+function utcMinOfWeekToLocal(mw: number, tz: string): { day: number; hhmm: string } {
+  const instant = new Date(REF_SUNDAY_UTC.getTime() + mw * 60000);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false, weekday: "short", hour: "2-digit", minute: "2-digit",
+  });
+  const parts = dtf.formatToParts(instant);
+  const map: Record<string, string> = {};
+  for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+  const hour = map.hour === "24" ? "00" : map.hour;
+  return { day: WEEKDAY_INDEX[map.weekday] ?? 0, hhmm: `${hour}:${map.minute}` };
+}
+
+type UtcInterval = { start: number; end: number };
+
+function slotToUtcIntervals(slot: Availability, tz: string): UtcInterval[] {
+  const s = localToUtcMinOfWeek(slot.day_of_week, slot.start_time, tz);
+  const eRaw = localToUtcMinOfWeek(slot.day_of_week, slot.end_time, tz);
+  // Local end > local start within a slot, so if eRaw <= s we crossed the UTC week boundary.
+  if (eRaw > s) return [{ start: s, end: eRaw }];
+  const e = eRaw === 0 ? WEEK_MIN : eRaw;
+  if (e > s) return [{ start: s, end: e }];
+  return [{ start: s, end: WEEK_MIN }, { start: 0, end: e }];
+}
+
+function intersectIntervals(a: UtcInterval, b: UtcInterval): UtcInterval | null {
+  const s = Math.max(a.start, b.start);
+  const e = Math.min(a.end, b.end);
+  return e > s ? { start: s, end: e } : null;
+}
+
+function languagesCompatible(a: Profile["preferred_lang"], b: Profile["preferred_lang"]): boolean {
+  if (a === "both" || b === "both") return true;
+  return a === b;
+}
+
+const LEVEL_ORDER: Record<Profile["learning_level"], number> = {
+  beginner: 0, intermediate: 1, advanced: 2,
+};
+function levelDistance(a: Profile["learning_level"], b: Profile["learning_level"]): number {
+  return Math.abs(LEVEL_ORDER[a] - LEVEL_ORDER[b]);
+}
+
 function ChavrutaPage() {
   const { user, loading } = useAuth();
   const { lang, dir } = useLang();
