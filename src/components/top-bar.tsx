@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { corpusStats } from "@/lib/corpus.functions";
-import { Languages, ShieldCheck, LogOut, Library, LogIn, Users } from "lucide-react";
+import { Languages, ShieldCheck, LogOut, Library, LogIn, Users, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
@@ -83,6 +83,14 @@ export function TopBar() {
           >
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">{lang === "he" ? "חברותות" : "Chavruta"}</span>
+          </Link>
+          <Link
+            to="/beit-midrash"
+            aria-label={lang === "he" ? "בית המדרש שלי" : "My Beit Midrash"}
+            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden lg:inline">{lang === "he" ? "בית מדרש" : "My room"}</span>
           </Link>
           <button
             onClick={toggle}

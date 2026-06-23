@@ -6,7 +6,23 @@ import { getSource } from "@/lib/get-source.functions";
 import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.functions";
 import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
-import { X, Copy, Check, Minus, Plus, Search, BookCheck, Loader2, ExternalLink, Sparkles, Play, Pause, Square } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import {
+  X,
+  Copy,
+  Check,
+  Minus,
+  Plus,
+  Search,
+  BookCheck,
+  Loader2,
+  ExternalLink,
+  Sparkles,
+  Play,
+  Pause,
+  Square,
+  Users,
+} from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
 
@@ -42,7 +58,8 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   });
 
   const [fontStep, setFontStep] = useState<number>(() => {
-    if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") return 1;
+    if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function")
+      return 1;
     return Number(window.localStorage.getItem("reader_font") ?? 1);
   });
   const [needle, setNeedle] = useState("");
@@ -62,7 +79,11 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
   }, [sourceId]);
 
   useEffect(() => {
-    try { window.localStorage.setItem("reader_font", String(fontStep)); } catch {}
+    try {
+      window.localStorage.setItem("reader_font", String(fontStep));
+    } catch {
+      // localStorage can be unavailable in private/embedded browsers.
+    }
   }, [fontStep]);
 
   // Reset / auto-trigger summary when switching sources
@@ -75,7 +96,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
@@ -91,7 +114,6 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
     return parseSefariaText(data.text ?? "", { highlight: needle });
   }, [data, needle]);
 
-
   if (!open) return null;
 
   const copyAll = async () => {
@@ -100,7 +122,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
       await navigator.clipboard.writeText(data.text ?? "");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
@@ -119,17 +143,21 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
           <div className="min-w-0 flex-1">
             {data?.tree && (
               <div className="flex flex-wrap gap-1.5 mb-2">
-                {(data.tree_parts as string[] | null ?? data.tree.split(" > ")).map((p, i, arr) => (
-                  <span
-                    key={i}
-                    className={`text-[11px] px-2 py-1 rounded-full border ${i === arr.length - 1 ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    {p}
-                  </span>
-                ))}
+                {((data.tree_parts as string[] | null) ?? data.tree.split(" > ")).map(
+                  (p, i, arr) => (
+                    <span
+                      key={i}
+                      className={`text-[11px] px-2 py-1 rounded-full border ${i === arr.length - 1 ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                    >
+                      {p}
+                    </span>
+                  ),
+                )}
               </div>
             )}
-            <h2 className="text-lg sm:text-2xl font-semibold leading-tight">{data?.title ?? "…"}</h2>
+            <h2 className="text-lg sm:text-2xl font-semibold leading-tight">
+              {data?.title ?? "…"}
+            </h2>
             {data && (
               <div className="mt-1 text-[11px] text-muted-foreground">
                 {data.char_count?.toLocaleString()} {t.charsLabel}
@@ -188,18 +216,50 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
             title={t.readerSummary}
             aria-label={t.readerSummary}
           >
-            {summary.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            <span className="hidden sm:inline">{summary.isPending ? t.readerSummarizing : t.readerSummary}</span>
+            {summary.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">
+              {summary.isPending ? t.readerSummarizing : t.readerSummary}
+            </span>
           </button>
+          {session && data && (
+            <Link
+              to="/chavruta"
+              search={{ source: data.id } as never}
+              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium border border-primary/35 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-colors"
+              title={lang === "he" ? "מצא חברותא למקור הזה" : "Find a chavruta for this source"}
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {lang === "he" ? "חברותא למקור" : "Chavruta"}
+              </span>
+            </Link>
+          )}
           {/* Read aloud */}
           {(() => {
             const playing = read.status === "playing";
             const paused = read.status === "paused";
             const loading = read.status === "loading";
             const active = playing || paused || loading;
-            const label = lang === "he"
-              ? loading ? "טוען…" : playing ? "השהה" : paused ? "המשך" : "הקרא בקול"
-              : loading ? "Loading…" : playing ? "Pause" : paused ? "Resume" : "Read aloud";
+            const label =
+              lang === "he"
+                ? loading
+                  ? "טוען…"
+                  : playing
+                    ? "השהה"
+                    : paused
+                      ? "המשך"
+                      : "הקרא בקול"
+                : loading
+                  ? "Loading…"
+                  : playing
+                    ? "Pause"
+                    : paused
+                      ? "Resume"
+                      : "Read aloud";
             const Icon = loading ? Loader2 : playing ? Pause : Play;
             return (
               <div className="inline-flex items-center gap-1">
@@ -279,8 +339,12 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
                 <BookCheck className="h-4 w-4" />
               )}
               {studiedQuery.data?.studied
-                ? lang === "he" ? "נלמד" : "Studied"
-                : lang === "he" ? "סמן כנלמד" : "Mark studied"}
+                ? lang === "he"
+                  ? "נלמד"
+                  : "Studied"
+                : lang === "he"
+                  ? "סמן כנלמד"
+                  : "Mark studied"}
             </button>
           )}
         </div>
@@ -310,7 +374,10 @@ export function SourceReader({ sourceId, onClose, autoSummarize }: Props) {
               ) : summary.data ? (
                 <div
                   className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
-                  style={{ fontFamily: data?.language === "he" ? "var(--font-serif-he)" : "var(--font-sans)" }}
+                  style={{
+                    fontFamily:
+                      data?.language === "he" ? "var(--font-serif-he)" : "var(--font-sans)",
+                  }}
                 >
                   {summary.data.summary}
                 </div>

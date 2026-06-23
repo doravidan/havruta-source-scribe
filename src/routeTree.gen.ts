@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ChavrutaRouteImport } from './routes/chavruta'
+import { Route as BeitMidrashRouteImport } from './routes/beit-midrash'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -33,6 +34,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ChavrutaRoute = ChavrutaRouteImport.update({
   id: '/chavruta',
   path: '/chavruta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BeitMidrashRoute = BeitMidrashRouteImport.update({
+  id: '/beit-midrash',
+  path: '/beit-midrash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/beit-midrash'
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/beit-midrash'
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/beit-midrash'
     | '/chavruta'
     | '/library'
     | '/sitemap.xml'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BeitMidrashRoute: typeof BeitMidrashRoute
   ChavrutaRoute: typeof ChavrutaRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -183,6 +196,13 @@ declare module '@tanstack/react-router' {
       path: '/chavruta'
       fullPath: '/chavruta'
       preLoaderRoute: typeof ChavrutaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beit-midrash': {
+      id: '/beit-midrash'
+      path: '/beit-midrash'
+      fullPath: '/beit-midrash'
+      preLoaderRoute: typeof BeitMidrashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BeitMidrashRoute: BeitMidrashRoute,
   ChavrutaRoute: ChavrutaRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

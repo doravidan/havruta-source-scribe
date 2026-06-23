@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TopBar } from "@/components/top-bar";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +13,10 @@ export const Route = createFileRoute("/chavruta")({
       { title: "חברותות — חסידותא" },
       { name: "description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
       { property: "og:title", content: "חברותות — חסידותא" },
-      { property: "og:description", content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית." },
+      {
+        property: "og:description",
+        content: "מצא חברותא ללימוד חסידות לפי זמני לימוד וזמינות שבועית.",
+      },
       { property: "og:url", content: "https://havruta-source-scribe.lovable.app/chavruta" },
     ],
     links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/chavruta" }],
@@ -63,6 +66,12 @@ type Message = {
   created_at: string;
 };
 
+type SourceIntent = {
+  id: string;
+  title: string;
+  tree: string | null;
+};
+
 type DbError = { message: string };
 type DbResult<T = unknown> = { data: T | null; error: DbError | null };
 type DbChain<T = unknown> = PromiseLike<DbResult<T>> & {
@@ -104,7 +113,13 @@ const WEEK_MIN = 7 * 24 * 60;
 // Sunday 2024-01-07 00:00:00 UTC — reference week start
 const REF_SUNDAY_UTC = new Date(Date.UTC(2024, 0, 7));
 const WEEKDAY_INDEX: Record<string, number> = {
-  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
 };
 
 function detectTz(): string {
@@ -117,32 +132,61 @@ function detectTz(): string {
 
 function listTimeZones(): string[] {
   try {
-    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+      .supportedValuesOf;
     if (typeof fn === "function") return fn("timeZone");
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
   return [
-    "Asia/Jerusalem", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
-    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
-    "America/Toronto", "America/Mexico_City", "America/Argentina/Buenos_Aires", "America/Sao_Paulo",
-    "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Singapore",
-    "Asia/Hong_Kong", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland", "UTC",
+    "Asia/Jerusalem",
+    "Europe/London",
+    "Europe/Paris",
+    "Europe/Berlin",
+    "Europe/Moscow",
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Toronto",
+    "America/Mexico_City",
+    "America/Argentina/Buenos_Aires",
+    "America/Sao_Paulo",
+    "Africa/Johannesburg",
+    "Asia/Dubai",
+    "Asia/Kolkata",
+    "Asia/Singapore",
+    "Asia/Hong_Kong",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+    "Pacific/Auckland",
+    "UTC",
   ];
 }
 
 // offset = (local time in tz) - UTC, in minutes, for the given instant
 function tzOffsetMinutes(instant: Date, tz: string): number {
   const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    timeZone: tz,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
   const parts = dtf.formatToParts(instant);
   const map: Record<string, string> = {};
   for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
   const hour = map.hour === "24" ? 0 : Number(map.hour);
   const asUtc = Date.UTC(
-    Number(map.year), Number(map.month) - 1, Number(map.day),
-    hour, Number(map.minute), Number(map.second),
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    hour,
+    Number(map.minute),
+    Number(map.second),
   );
   return Math.round((asUtc - instant.getTime()) / 60000);
 }
@@ -161,7 +205,11 @@ function localToUtcMinOfWeek(day: number, hhmm: string, tz: string): number {
 function utcMinOfWeekToLocal(mw: number, tz: string): { day: number; hhmm: string } {
   const instant = new Date(REF_SUNDAY_UTC.getTime() + mw * 60000);
   const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour12: false, weekday: "short", hour: "2-digit", minute: "2-digit",
+    timeZone: tz,
+    hour12: false,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   });
   const parts = dtf.formatToParts(instant);
   const map: Record<string, string> = {};
@@ -179,7 +227,10 @@ function slotToUtcIntervals(slot: Availability, tz: string): UtcInterval[] {
   if (eRaw > s) return [{ start: s, end: eRaw }];
   const e = eRaw === 0 ? WEEK_MIN : eRaw;
   if (e > s) return [{ start: s, end: e }];
-  return [{ start: s, end: WEEK_MIN }, { start: 0, end: e }];
+  return [
+    { start: s, end: WEEK_MIN },
+    { start: 0, end: e },
+  ];
 }
 
 function intersectIntervals(a: UtcInterval, b: UtcInterval): UtcInterval | null {
@@ -194,7 +245,9 @@ function languagesCompatible(a: Profile["preferred_lang"], b: Profile["preferred
 }
 
 const LEVEL_ORDER: Record<Profile["learning_level"], number> = {
-  beginner: 0, intermediate: 1, advanced: 2,
+  beginner: 0,
+  intermediate: 1,
+  advanced: 2,
 };
 function levelDistance(a: Profile["learning_level"], b: Profile["learning_level"]): number {
   return Math.abs(LEVEL_ORDER[a] - LEVEL_ORDER[b]);
@@ -208,6 +261,12 @@ function ChavrutaPage() {
   const [newSlot, setNewSlot] = useState({ day: 0, start: "20:00", end: "21:00" });
   const [topicInput, setTopicInput] = useState(defaultTopics.join(", "));
   const [messageDraft, setMessageDraft] = useState<Record<string, string>>({});
+  const [sourceIntentId, setSourceIntentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSourceIntentId(new URLSearchParams(window.location.search).get("source"));
+  }, []);
 
   const profileQ = useQuery({
     queryKey: ["chavruta-profile", user?.id],
@@ -226,7 +285,6 @@ function ChavrutaPage() {
       if (profile?.topics?.length) setTopicInput(profile.topics.join(", "));
       return { profile: profile as Profile | null, phone: contact?.phone ?? "" };
     },
-
   });
 
   const availabilityQ = useQuery({
@@ -261,6 +319,20 @@ function ChavrutaPage() {
         matches: (matches ?? []) as Match[],
         messages: (messages ?? []) as Message[],
       };
+    },
+  });
+
+  const sourceIntentQ = useQuery({
+    queryKey: ["chavruta-source-intent", sourceIntentId],
+    enabled: !!user && !!sourceIntentId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from<SourceIntent>("sources")
+        .select("id, title, tree")
+        .eq("id", sourceIntentId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -412,10 +484,7 @@ function ChavrutaPage() {
       const topicOverlap = (p.topics ?? []).filter((t) => myTopics.has(t)).length;
       const langExact = myProfile.preferred_lang === p.preferred_lang;
       const score =
-        (langExact ? 3 : 1) * 3 +
-        (2 - ldist) * 3 +
-        topicOverlap * 2 +
-        Math.min(minutes, 180) / 30;
+        (langExact ? 3 : 1) * 3 + (2 - ldist) * 3 + topicOverlap * 2 + Math.min(minutes, 180) / 30;
       const mineLocal = utcMinOfWeekToLocal(best.start, myTz);
       const mineLocalEnd = utcMinOfWeekToLocal(best.end % WEEK_MIN, myTz);
       const theirLocal = utcMinOfWeekToLocal(best.start, theirTz);
@@ -433,19 +502,27 @@ function ChavrutaPage() {
   }, [user, socialQ.data, myProfile, mySlots]);
 
   const proposeFinder = useMutation({
-    mutationFn: async (r: { profile: Profile; mine: { day: number; startHHMM: string; endHHMM: string } }) => {
-      const { error } = await db.rpc("propose_chavruta_match", {
+    mutationFn: async (r: {
+      profile: Profile;
+      mine: { day: number; startHHMM: string; endHHMM: string };
+    }) => {
+      const { data: matchId, error } = await db.rpc<string>("propose_chavruta_match", {
         _target_user_id: r.profile.user_id,
         _day: r.mine.day,
         _start: r.mine.startHHMM,
         _end: r.mine.endHHMM,
       });
       if (error) throw error;
+      if (matchId && sourceIntentQ.data) {
+        const body =
+          lang === "he"
+            ? `רוצה ללמוד יחד את ${sourceIntentQ.data.title}?${sourceIntentQ.data.tree ? ` (${sourceIntentQ.data.tree})` : ""}`
+            : `Want to learn ${sourceIntentQ.data.title} together?${sourceIntentQ.data.tree ? ` (${sourceIntentQ.data.tree})` : ""}`;
+        await db.from("chavruta_messages").insert({ match_id: matchId, sender_id: user!.id, body });
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
   });
-
-
 
   const sendMessage = useMutation({
     mutationFn: async (matchId: string) => {
@@ -474,9 +551,11 @@ function ChavrutaPage() {
     queryFn: async () => {
       const contacts: Record<string, { display_name: string; phone: string }> = {};
       for (const m of socialQ.data!.matches.filter((x) => x.status === "accepted")) {
-        const { data } = await db.rpc<{ display_name: string; phone: string }[]>("get_chavruta_match_contact", { _match_id: m.id });
+        const { data } = await db.rpc<{ display_name: string; phone: string }[]>(
+          "get_chavruta_match_contact",
+          { _match_id: m.id },
+        );
         if (data?.[0]) contacts[m.id] = data[0];
-
       }
       return contacts;
     },
@@ -513,6 +592,27 @@ function ChavrutaPage() {
   const nameById = new Map((socialQ.data?.profiles ?? []).map((p) => [p.user_id, p.display_name]));
   const matches = socialQ.data?.matches ?? [];
   const messages = socialQ.data?.messages ?? [];
+  const setupSteps = [
+    {
+      done: !!myProfile?.display_name && !!profileQ.data?.phone,
+      label: lang === "he" ? "שם וטלפון שמור" : "Name and phone saved",
+    },
+    {
+      done: (myProfile?.topics?.length ?? 0) > 0,
+      label: lang === "he" ? "נושאי לימוד" : "Learning topics",
+    },
+    {
+      done: mySlots.length > 0,
+      label: lang === "he" ? "זמינות שבועית" : "Weekly availability",
+    },
+    {
+      done: !!myProfile?.is_active,
+      label: lang === "he" ? "פעיל להצעות" : "Active for matches",
+    },
+  ];
+  const completion = Math.round(
+    (setupSteps.filter((s) => s.done).length / setupSteps.length) * 100,
+  );
 
   return (
     <div className="min-h-screen" dir={dir}>
@@ -534,6 +634,68 @@ function ChavrutaPage() {
             </p>
           </div>
         </header>
+
+        <section className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="scholar-card p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="eyebrow">
+                  {lang === "he" ? "הגדרת חברותא מודרכת" : "Guided chavruta setup"}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {lang === "he"
+                    ? "השלם את ארבעת השלבים כדי לקבל התאמות טובות יותר ולחשוף טלפון רק אחרי אישור הדדי."
+                    : "Complete these four steps for better matches, with phone reveal only after mutual acceptance."}
+                </p>
+              </div>
+              <div className="shrink-0 rounded-2xl border border-primary/35 bg-primary/10 px-4 py-3 text-center">
+                <div className="text-2xl font-semibold text-primary tabular-nums">
+                  {completion}%
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {lang === "he" ? "השלמה" : "complete"}
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 grid sm:grid-cols-4 gap-2">
+              {setupSteps.map((step, i) => (
+                <div
+                  key={step.label}
+                  className="rounded-xl border border-border/70 bg-background/30 p-3 text-sm"
+                >
+                  <div
+                    className={`mb-2 grid h-7 w-7 place-items-center rounded-full text-xs ${step.done ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+                  >
+                    {step.done ? "✓" : i + 1}
+                  </div>
+                  <div className={step.done ? "text-foreground" : "text-muted-foreground"}>
+                    {step.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {sourceIntentQ.data && (
+            <div className="scholar-card p-5 sm:p-6 border-primary/35">
+              <h2 className="eyebrow">
+                {lang === "he" ? "לימוד מקור עם חברותא" : "Source-to-chavruta"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {lang === "he"
+                  ? "נפתח ממקור בקורא. כשתפתח שיחה, נשלח הודעת פתיחה עם שם המקור."
+                  : "Opened from the reader. When you start a chat, we send a source-specific opener."}
+              </p>
+              <div className="mt-4 rounded-xl border border-border/70 bg-background/30 p-3">
+                <div className="font-medium text-foreground">{sourceIntentQ.data.title}</div>
+                {sourceIntentQ.data.tree && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {sourceIntentQ.data.tree}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="grid lg:grid-cols-[390px_minmax(0,1fr)] gap-6 items-start">
           <aside className="space-y-6 lg:sticky lg:top-24">
@@ -731,21 +893,35 @@ function ChavrutaPage() {
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{r.profile.display_name}</h3>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {(lang === "he"
-                              ? { beginner: "מתחיל", intermediate: "בינוני", advanced: "מתקדם" }
-                              : { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }
-                            )[r.profile.learning_level]}
+                            {
+                              (lang === "he"
+                                ? { beginner: "מתחיל", intermediate: "בינוני", advanced: "מתקדם" }
+                                : {
+                                    beginner: "Beginner",
+                                    intermediate: "Intermediate",
+                                    advanced: "Advanced",
+                                  })[r.profile.learning_level]
+                            }
                             {" · "}
                             {r.profile.preferred_lang === "he"
                               ? "עברית"
                               : r.profile.preferred_lang === "en"
                                 ? "English"
-                                : lang === "he" ? "עברית/אנגלית" : "Hebrew/English"}
+                                : lang === "he"
+                                  ? "עברית/אנגלית"
+                                  : "Hebrew/English"}
                             {" · "}
                             {r.profile.time_zone ?? "—"}
                           </p>
                         </div>
-                        <Clock className="h-4 w-4 text-primary shrink-0" />
+                        <div className="shrink-0 rounded-xl border border-primary/35 bg-primary/10 px-2.5 py-2 text-center">
+                          <div className="text-sm font-semibold text-primary tabular-nums">
+                            {Math.min(99, Math.round(r.score * 6))}%
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {lang === "he" ? "התאמה" : "fit"}
+                          </div>
+                        </div>
                       </div>
                       <div className="mt-3 text-sm">
                         <div>
