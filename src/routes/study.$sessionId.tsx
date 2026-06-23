@@ -357,6 +357,10 @@ function StudyRoomPage() {
                   onSend={() => sendMessage.mutate()}
                   sending={sendMessage.isPending}
                   mobileVisible={tab === "chat"}
+                  partnerTyping={presence.partnerTyping}
+                  partnerOnline={presence.partnerOnline}
+                  onTyping={presence.notifyTyping}
+                  onTypingStop={presence.notifyTypingStop}
                 />
               </aside>
 
@@ -370,6 +374,10 @@ function StudyRoomPage() {
                   onSend={() => sendMessage.mutate()}
                   sending={sendMessage.isPending}
                   mobileVisible
+                  partnerTyping={presence.partnerTyping}
+                  partnerOnline={presence.partnerOnline}
+                  onTyping={presence.notifyTyping}
+                  onTypingStop={presence.notifyTypingStop}
                 />
               </div>
             </div>
