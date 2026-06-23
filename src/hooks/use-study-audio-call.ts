@@ -55,6 +55,9 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
         setState("error");
     };
 
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error("mic_unavailable");
+    }
     const local = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     localStreamRef.current = local;
     for (const track of local.getAudioTracks()) pc.addTrack(track, local);
