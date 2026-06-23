@@ -52,6 +52,7 @@ function StudyRoomPage() {
   const [tab, setTab] = useState<"text" | "guide" | "chat">("text");
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audio = useStudyAudioCall(sessionId, user?.id);
+  const presence = useStudyPresence(sessionId, user?.id);
 
   const studyQ = useQuery({
     queryKey: ["study-session", sessionId],
