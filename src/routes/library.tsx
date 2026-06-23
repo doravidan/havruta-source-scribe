@@ -6,18 +6,38 @@ import { TopBar } from "@/components/top-bar";
 import { SourceReader } from "@/components/source-reader";
 import { useLang } from "@/lib/lang-context";
 import { browseLibrary } from "@/lib/library-browse.functions";
-import { ChevronLeft, ChevronRight, FileText, FolderOpen, Home, Library as LibraryIcon, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  FolderOpen,
+  Home,
+  Library as LibraryIcon,
+  Loader2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
     meta: [
       { title: "Library — חסידותא · Chassiduta" },
-      { name: "description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
+      {
+        name: "description",
+        content:
+          "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more.",
+      },
       { property: "og:title", content: "Library — חסידותא · Chassiduta" },
-      { property: "og:description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
+      {
+        property: "og:description",
+        content:
+          "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more.",
+      },
       { property: "og:url", content: "https://chassiduta.lovable.app/library" },
       { name: "twitter:title", content: "Library — חסידותא · Chassiduta" },
-      { name: "twitter:description", content: "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more." },
+      {
+        name: "twitter:description",
+        content:
+          "Browse the full Chassidus knowledge base by section: maamarim, sichos, igrot, and more.",
+      },
     ],
     links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/library" }],
     scripts: [
@@ -27,11 +47,16 @@ export const Route = createFileRoute("/library")({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: "Chassiduta Source Library",
-          description: "A browsable collection of the Chabad Chassidus corpus, organized by section: Tanya, Maamarim, Sichos, Igrot Kodesh, and more.",
+          description:
+            "A browsable collection of the Chabad Chassidus corpus, organized by section: Tanya, Maamarim, Sichos, Igrot Kodesh, and more.",
           url: "https://chassiduta.lovable.app/library",
           inLanguage: ["he", "yi", "en"],
           about: { "@type": "Thing", name: "Chabad Chassidus" },
-          isPartOf: { "@type": "WebSite", name: "Chassiduta", url: "https://chassiduta.lovable.app" },
+          isPartOf: {
+            "@type": "WebSite",
+            name: "Chassiduta",
+            url: "https://chassiduta.lovable.app",
+          },
         }),
       },
     ],
@@ -73,17 +98,19 @@ function LibraryPage() {
               {lang === "he" ? "עיון במאגר" : "browse corpus"}
             </div>
             <h1 className="text-4xl sm:text-5xl gold-text">
-              {lang === "he" ? "ספריית המקורות" : "Source library"}
+              {lang === "he" ? "ספריית לימוד" : "Study library"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-muted-foreground">
               {lang === "he"
-                ? "עיין במאגר לפי המבנה המקורי של ChabadLibrary. כל פריט נפתח כטקסט מלא בתוך האפליקציה."
-                : "Browse by the original ChabadLibrary structure. Every item opens as full text inside the app."}
+                ? "מצא ספר, כרך, שיחה או מאמר לפי המבנה הלימודי האמיתי. דפי עזר, שערים ומפתחות מוסתרים כדי שתגיע ישר לטקסט שלומדים."
+                : "Find a book, volume, sicha, maamar, or chapter in a learning-first structure. Utility pages, title pages, and indexes are hidden so you land on real study text."}
             </p>
           </div>
           <div className="rounded-2xl border border-border/80 bg-card/45 px-4 py-3 text-sm text-muted-foreground">
-            <span className="text-foreground font-medium tabular-nums">{data?.total?.toLocaleString() ?? "—"}</span>{" "}
-            {lang === "he" ? "פריטים בנתיב הנוכחי" : "items in this path"}
+            <span className="text-foreground font-medium tabular-nums">
+              {data?.total?.toLocaleString() ?? "—"}
+            </span>{" "}
+            {lang === "he" ? "יחידות לימוד בנתיב" : "study units in this path"}
           </div>
         </header>
 
@@ -125,7 +152,9 @@ function LibraryPage() {
           {data && data.children.length > 0 && (
             <section className="mb-7">
               <h2 className="eyebrow mb-3">
-                {lang === "he" ? `קטגוריות (${data.children.length})` : `Sections (${data.children.length})`}
+                {lang === "he"
+                  ? `ספרים / חלקים (${data.children.length})`
+                  : `Books / sections (${data.children.length})`}
               </h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {data.children.map((c) => (
@@ -140,7 +169,8 @@ function LibraryPage() {
                     <span className="flex-1 min-w-0">
                       <span className="block font-medium truncate">{c.label}</span>
                       <span className="block text-xs text-muted-foreground tabular-nums mt-0.5">
-                        {c.count.toLocaleString()} {lang === "he" ? "מקורות" : c.count === 1 ? "source" : "sources"}
+                        {c.count.toLocaleString()}{" "}
+                        {lang === "he" ? "מקורות" : c.count === 1 ? "source" : "sources"}
                       </span>
                     </span>
                     <Chevron className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
@@ -153,7 +183,9 @@ function LibraryPage() {
           {data && data.leaves.length > 0 && (
             <section>
               <h2 className="eyebrow mb-3">
-                {lang === "he" ? `מקורות (${data.leaves.length})` : `Sources (${data.leaves.length})`}
+                {lang === "he"
+                  ? `שיחות / מאמרים / פרקים (${data.leaves.length})`
+                  : `Sichot / maamarim / chapters (${data.leaves.length})`}
               </h2>
               <ul className="grid gap-2">
                 {data.leaves.map((leaf) => (
@@ -164,7 +196,16 @@ function LibraryPage() {
                     >
                       <FileText className="h-4 w-4 text-primary/80 shrink-0" />
                       <span className="flex-1 min-w-0">
-                        <span className="block font-medium truncate">{leaf.title ?? (lang === "he" ? "מקור ללא כותרת" : "Untitled source")}</span>
+                        <span className="block font-medium truncate">
+                          {leaf.learning_path?.at(-1) ??
+                            leaf.title ??
+                            (lang === "he" ? "יחידת לימוד ללא כותרת" : "Untitled study unit")}
+                        </span>
+                        {leaf.learning_path && leaf.learning_path.length > 1 && (
+                          <span className="block text-xs text-muted-foreground mt-0.5 truncate">
+                            {leaf.learning_path.slice(0, -1).join(" › ")}
+                          </span>
+                        )}
                         {leaf.char_count != null && (
                           <span className="block text-xs text-muted-foreground tabular-nums mt-0.5">
                             {leaf.char_count.toLocaleString()} {t.charsLabel}
