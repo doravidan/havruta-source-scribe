@@ -77,14 +77,6 @@ export function TopBar() {
             <span className="hidden sm:inline">{lang === "he" ? "ספרייה" : "Library"}</span>
           </Link>
           <Link
-            to="/guides/how-to-learn-chassidus"
-            aria-label={lang === "he" ? "מדריך" : "Guide"}
-            className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
-          >
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">{lang === "he" ? "מדריך" : "Guide"}</span>
-          </Link>
-          <Link
             to="/chavruta"
             aria-label={lang === "he" ? "חברותות" : "Chavruta"}
             className="inline-flex items-center gap-1.5 px-3 h-10 rounded-md border border-border bg-card/60 hover:bg-card text-sm transition-colors"
