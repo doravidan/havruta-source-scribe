@@ -105,7 +105,7 @@ export function AskPanel() {
 
           {m.data.sources.length > 0 ? (
             <div className="mt-6">
-              <h3 className="eyebrow mb-3">{t.sourcesUsed}</h3>
+              <h2 className="eyebrow mb-3">{t.sourcesUsed}</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {m.data.sources.map((raw) => {
                   const s = raw as SourceCard;

@@ -95,9 +95,9 @@ function BeitMidrashPage() {
         <main className="mx-auto max-w-3xl px-4 py-16 text-center">
           <div className="scholar-card p-8">
             <BookOpen className="mx-auto mb-4 h-10 w-10 text-primary" />
-            <h1 className="gold-text text-3xl">
+            <h2 className="gold-text text-3xl">
               {lang === "he" ? "בית המדרש שלי" : "My Beit Midrash"}
-            </h1>
+            </h2>
             <p className="mt-3 text-muted-foreground">
               {lang === "he"
                 ? "צריך להתחבר כדי לראות התקדמות, שאלות וחברותות."

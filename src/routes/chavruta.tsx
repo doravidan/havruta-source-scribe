@@ -791,6 +791,7 @@ function ChavrutaPage() {
                   name="learning_level"
                   defaultValue={profileQ.data?.profile?.learning_level ?? "beginner"}
                   className="h-11 rounded-xl border border-border bg-background/45 px-3"
+                  aria-label={lang === "he" ? "רמת לימוד" : "Learning level"}
                 >
                   <option value="beginner">{lang === "he" ? "מתחיל" : "Beginner"}</option>
                   <option value="intermediate">{lang === "he" ? "בינוני" : "Intermediate"}</option>
@@ -800,6 +801,7 @@ function ChavrutaPage() {
                   name="preferred_lang"
                   defaultValue={profileQ.data?.profile?.preferred_lang ?? "he"}
                   className="h-11 rounded-xl border border-border bg-background/45 px-3"
+                  aria-label={lang === "he" ? "שפת לימוד מועדפת" : "Preferred language"}
                 >
                   <option value="he">עברית</option>
                   <option value="en">English</option>

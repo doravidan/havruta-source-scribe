@@ -9,18 +9,18 @@ import { BookOpen, Loader2, ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Havruta Chabad" },
+      { title: "Sign in — חסידותא · Chassiduta" },
       {
         name: "description",
         content:
-          "Sign in or create an account on Havruta Chabad to track study progress, find a chavruta, and ask sourced Chassidus questions.",
+          "Sign in or create an account on חסידותא · Chassiduta to track study progress, find a chavruta, and ask sourced Chassidus questions.",
       },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Sign in — Havruta Chabad" },
-      { property: "og:description", content: "Sign in to your Havruta Chabad account." },
-      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/auth" },
+      { property: "og:title", content: "Sign in — חסידותא · Chassiduta" },
+      { property: "og:description", content: "Sign in to your חסידותא · Chassiduta account." },
+      { property: "og:url", content: "https://chassiduta.lovable.app/auth" },
     ],
-    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/auth" }],
+    links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/auth" }],
   }),
   component: AuthPage,
 });

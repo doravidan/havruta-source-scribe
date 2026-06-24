@@ -19,14 +19,14 @@ import { Loader2, Sprout, Upload, Library, BarChart3, Rocket, BookOpen, X } from
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — Havruta Chabad" },
+      { title: "Admin — חסידותא · Chassiduta" },
       { name: "description", content: "Internal admin console for corpus ingest, Chabad Library crawl orchestration, and Sefaria sync." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Admin — Havruta Chabad" },
+      { property: "og:title", content: "Admin — חסידותא · Chassiduta" },
       { property: "og:description", content: "Internal admin console." },
-      { property: "og:url", content: "https://havruta-source-scribe.lovable.app/admin" },
+      { property: "og:url", content: "https://chassiduta.lovable.app/admin" },
     ],
-    links: [{ rel: "canonical", href: "https://havruta-source-scribe.lovable.app/admin" }],
+    links: [{ rel: "canonical", href: "https://chassiduta.lovable.app/admin" }],
   }),
   component: AdminPage,
 });
