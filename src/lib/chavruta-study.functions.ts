@@ -298,8 +298,8 @@ export const generateSegmentQuestions = createServerFn({ method: "POST" })
     }
 
     const sanitized = questionTexts
-      .map((q) => (q ?? "").trim().slice(0, 1200))
-      .filter((q) => q.length >= 3);
+      .map((q) => sanitizeQuestionText(q))
+      .filter((q): q is string => q !== null);
     const finalTexts = sanitized.length ? sanitized : fallbackQuestions(data.lang);
     const rows = finalTexts.map((question) => ({
       session_id: data.sessionId,
