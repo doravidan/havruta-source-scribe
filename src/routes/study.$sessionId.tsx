@@ -26,6 +26,7 @@ import {
 } from "@/lib/chavruta-study.functions";
 import { useStudyAudioCall } from "@/hooks/use-study-audio-call";
 import { useStudyPresence } from "@/hooks/use-study-presence";
+import { useAiVoice } from "@/hooks/use-ai-voice";
 
 export const Route = createFileRoute("/study/$sessionId")({
   head: () => ({ meta: [{ title: "לימוד משותף — חסידותא" }] }),
@@ -262,9 +263,16 @@ function StudyRoomPage() {
             </p>
           </div>
           {isAiCompanion ? (
-            <div className="rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
-              {lang === "he" ? "מצב AI" : "AI mode"}
-            </div>
+            <AiVoiceControls
+              lang={lang}
+              onAsk={async (text) => {
+                const row = await askFn({
+                  data: { sessionId, segmentIndex: activeIndex, question: text, lang },
+                });
+                qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+                return (row as { answer?: string | null } | null)?.answer ?? null;
+              }}
+            />
           ) : (
             <AudioControls audio={audio} lang={lang} />
           )}
@@ -473,6 +481,68 @@ function AudioControls({
         </>
       )}
       {audio.error && <span className="text-xs text-destructive">{audio.error}</span>}
+    </div>
+  );
+}
+
+function AiVoiceControls({
+  lang,
+  onAsk,
+}: {
+  lang: "he" | "en";
+  onAsk: (text: string) => Promise<string | null | undefined>;
+}) {
+  const voice = useAiVoice({ lang, onTranscript: onAsk });
+  if (!voice.supported) {
+    return (
+      <div className="rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
+        {lang === "he" ? "מצב AI (אודיו לא נתמך בדפדפן)" : "AI mode (voice unsupported)"}
+      </div>
+    );
+  }
+  const label =
+    voice.status === "listening"
+      ? lang === "he"
+        ? "מקשיב..."
+        : "Listening..."
+      : voice.status === "thinking"
+        ? lang === "he"
+          ? "חושב..."
+          : "Thinking..."
+        : voice.status === "speaking"
+          ? lang === "he"
+            ? "מדבר..."
+            : "Speaking..."
+          : lang === "he"
+            ? "דבר עם AI"
+            : "Talk to AI";
+  const primaryClick =
+    voice.status === "listening"
+      ? voice.stop
+      : voice.status === "speaking"
+        ? voice.stopSpeaking
+        : voice.start;
+  const Icon = voice.status === "listening" ? MicOff : Mic;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        onClick={primaryClick}
+        disabled={voice.status === "thinking"}
+        className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+      >
+        {voice.status === "thinking" ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Icon className="h-4 w-4" />
+        )}
+        {label}
+      </button>
+      {voice.transcript && (
+        <span className="max-w-[12rem] truncate rounded-full border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+          {voice.transcript}
+        </span>
+      )}
+      {voice.error && <span className="text-xs text-destructive">{voice.error}</span>}
     </div>
   );
 }
