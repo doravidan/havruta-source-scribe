@@ -21,6 +21,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [state, setState] = useState<AudioState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
@@ -60,6 +61,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     }
     const local = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     localStreamRef.current = local;
+    setLocalStream(local);
     for (const track of local.getAudioTracks()) pc.addTrack(track, local);
     pcRef.current = pc;
     return pc;
@@ -85,6 +87,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
     localStreamRef.current = null;
+    setLocalStream(null);
     setRemoteStream(null);
     setState("idle");
     setMuted(false);
@@ -123,6 +126,9 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
         } else if (msg.type === "hangup") {
           pcRef.current?.close();
           pcRef.current = null;
+          localStreamRef.current?.getTracks().forEach((track) => track.stop());
+          localStreamRef.current = null;
+          setLocalStream(null);
           setRemoteStream(null);
           setState("idle");
         }
@@ -144,8 +150,10 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
       pcRef.current = null;
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
+      setLocalStream(null);
+      setRemoteStream(null);
     };
   }, [ensurePeer, peerId, sendSignal, sessionId, userId]);
 
-  return { state, error, muted, remoteStream, startCall, hangUp, toggleMute };
+  return { state, error, muted, localStream, remoteStream, startCall, hangUp, toggleMute };
 }

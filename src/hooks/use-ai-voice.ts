@@ -2,6 +2,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
 
+type SpeechRecognitionResultLike = {
+  readonly length: number;
+  [index: number]: { transcript: string };
+};
+
+type SpeechRecognitionEventLike = {
+  results: {
+    readonly length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type SpeechRecognitionErrorLike = {
+  error?: string;
+};
+
 interface SpeechRecognitionLike extends EventTarget {
   lang: string;
   continuous: boolean;
@@ -9,14 +25,19 @@ interface SpeechRecognitionLike extends EventTarget {
   start: () => void;
   stop: () => void;
   abort: () => void;
-  onresult: ((e: any) => void) | null;
-  onerror: ((e: any) => void) | null;
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorLike) => void) | null;
   onend: (() => void) | null;
 }
 
+type SpeechRecognitionWindow = typeof window & {
+  SpeechRecognition?: { new (): SpeechRecognitionLike };
+  webkitSpeechRecognition?: { new (): SpeechRecognitionLike };
+};
+
 function getRecognitionCtor(): { new (): SpeechRecognitionLike } | null {
   if (typeof window === "undefined") return null;
-  const w = window as any;
+  const w = window as SpeechRecognitionWindow;
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
@@ -28,8 +49,10 @@ export function useAiVoice(opts: {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
+  const [lastAnswer, setLastAnswer] = useState("");
   const recRef = useRef<SpeechRecognitionLike | null>(null);
-  const supported = !!getRecognitionCtor() && typeof window !== "undefined" && "speechSynthesis" in window;
+  const supported =
+    !!getRecognitionCtor() && typeof window !== "undefined" && "speechSynthesis" in window;
   const onTranscriptRef = useRef(onTranscript);
   onTranscriptRef.current = onTranscript;
 
@@ -58,6 +81,7 @@ export function useAiVoice(opts: {
   const start = useCallback(() => {
     setError(null);
     setTranscript("");
+    setLastAnswer("");
     const Ctor = getRecognitionCtor();
     if (!Ctor) {
       setError("speech_recognition_unsupported");
@@ -69,14 +93,14 @@ export function useAiVoice(opts: {
       rec.lang = lang === "he" ? "he-IL" : "en-US";
       rec.continuous = false;
       rec.interimResults = true;
-      rec.onresult = (e: any) => {
+      rec.onresult = (e) => {
         let text = "";
         for (let i = 0; i < e.results.length; i++) {
           text += e.results[i][0].transcript;
         }
         setTranscript(text);
       };
-      rec.onerror = (e: any) => {
+      rec.onerror = (e) => {
         setError(String(e?.error ?? "speech_error"));
         setStatus("error");
       };
@@ -90,8 +114,10 @@ export function useAiVoice(opts: {
         setStatus("thinking");
         try {
           const answer = await onTranscriptRef.current(final);
-          if (answer && answer.trim()) speak(answer);
-          else setStatus("idle");
+          if (answer && answer.trim()) {
+            setLastAnswer(answer.trim());
+            speak(answer);
+          } else setStatus("idle");
         } catch (err) {
           setError(err instanceof Error ? err.message : "ai_error");
           setStatus("error");
@@ -133,5 +159,5 @@ export function useAiVoice(opts: {
     };
   }, []);
 
-  return { status, error, transcript, supported, start, stop, speak, stopSpeaking };
+  return { status, error, transcript, lastAnswer, supported, start, stop, speak, stopSpeaking };
 }

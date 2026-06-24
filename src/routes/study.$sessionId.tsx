@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -54,11 +54,21 @@ function StudyRoomPage() {
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audio = useStudyAudioCall(sessionId, user?.id);
   const presence = useStudyPresence(sessionId, user?.id);
+  const studyQueryKey = useMemo(
+    () => ["study-session", sessionId, lang] as const,
+    [lang, sessionId],
+  );
+  const invalidateStudy = useCallback(
+    () => qc.invalidateQueries({ queryKey: studyQueryKey, exact: true }),
+    [qc, studyQueryKey],
+  );
 
   const studyQ = useQuery({
-    queryKey: ["study-session", sessionId, lang],
+    queryKey: studyQueryKey,
     enabled: !!user,
     queryFn: () => getStudy({ data: { sessionId, lang } }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 
   const bundle = studyQ.data;
@@ -69,7 +79,7 @@ function StudyRoomPage() {
     () => (bundle?.questions ?? []).filter((q: QuestionRow) => q.segment_index === activeIndex),
     [activeIndex, bundle?.questions],
   );
-  const messages = bundle?.messages ?? [];
+  const messages = useMemo(() => bundle?.messages ?? [], [bundle?.messages]);
   const isAiCompanion = bundle?.session.companion_type === "ai";
 
   const myProgress = useMemo(
@@ -104,7 +114,7 @@ function StudyRoomPage() {
           table: "chavruta_study_sessions",
           filter: `id=eq.${sessionId}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+        () => invalidateStudy(),
       )
       .on(
         "postgres_changes",
@@ -114,7 +124,7 @@ function StudyRoomPage() {
           table: "chavruta_study_progress",
           filter: `session_id=eq.${sessionId}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+        () => invalidateStudy(),
       )
       .on(
         "postgres_changes",
@@ -124,13 +134,13 @@ function StudyRoomPage() {
           table: "chavruta_study_questions",
           filter: `session_id=eq.${sessionId}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+        () => invalidateStudy(),
       )
       .subscribe();
     return () => {
       channel.unsubscribe();
     };
-  }, [qc, sessionId, user]);
+  }, [invalidateStudy, sessionId, user]);
 
   useEffect(() => {
     if (!bundle?.session.match_id || !user || isAiCompanion) return;
@@ -144,28 +154,28 @@ function StudyRoomPage() {
           table: "chavruta_messages",
           filter: `match_id=eq.${bundle.session.match_id}`,
         },
-        () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+        () => invalidateStudy(),
       )
       .subscribe();
     return () => {
       channel.unsubscribe();
     };
-  }, [bundle?.session.match_id, isAiCompanion, qc, sessionId, user]);
+  }, [bundle?.session.match_id, invalidateStudy, isAiCompanion, user]);
 
   const statusMutation = useMutation({
     mutationFn: (status: "reading" | "confused" | "understood" | "answered") =>
       setStatusFn({ data: { sessionId, segmentIndex: activeIndex, status } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+    onSuccess: () => invalidateStudy(),
   });
 
   const advanceMutation = useMutation({
     mutationFn: (next: number) => advanceFn({ data: { sessionId, segmentIndex: next } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+    onSuccess: () => invalidateStudy(),
   });
 
   const generateMutation = useMutation({
     mutationFn: () => generateFn({ data: { sessionId, segmentIndex: activeIndex, lang } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["study-session", sessionId] }),
+    onSuccess: () => invalidateStudy(),
   });
 
   const askMutation = useMutation({
@@ -173,7 +183,7 @@ function StudyRoomPage() {
       askFn({ data: { sessionId, segmentIndex: activeIndex, question: questionDraft, lang } }),
     onSuccess: () => {
       setQuestionDraft("");
-      qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+      invalidateStudy();
     },
   });
 
@@ -196,7 +206,7 @@ function StudyRoomPage() {
     },
     onSuccess: () => {
       setDraft("");
-      qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+      invalidateStudy();
     },
   });
 
@@ -269,7 +279,7 @@ function StudyRoomPage() {
                 const row = await askFn({
                   data: { sessionId, segmentIndex: activeIndex, question: text, lang },
                 });
-                qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+                invalidateStudy();
                 return (row as { answer?: string | null } | null)?.answer ?? null;
               }}
             />
@@ -418,6 +428,80 @@ function StudyRoomPage() {
   );
 }
 
+function useAudioLevel(stream: MediaStream | null | undefined, active: boolean) {
+  const [level, setLevel] = useState(0);
+
+  useEffect(() => {
+    if (!stream || !active || typeof window === "undefined") {
+      setLevel(0);
+      return;
+    }
+
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    const ctx = new AudioContextCtor();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    const source = ctx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let raf = 0;
+
+    const tick = () => {
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((sum, value) => sum + value, 0) / data.length;
+      setLevel(Math.min(1, avg / 90));
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      source.disconnect();
+      ctx.close().catch(() => undefined);
+    };
+  }, [active, stream]);
+
+  return level;
+}
+
+function VoiceWave({
+  level,
+  active,
+  label,
+  tone = "primary",
+}: {
+  level: number;
+  active: boolean;
+  label: string;
+  tone?: "primary" | "emerald";
+}) {
+  const bars = [0.18, 0.45, 0.78, 0.55, 0.95, 0.62, 0.35, 0.7, 0.5, 0.28];
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-border bg-background/35 px-3 py-2">
+      <span
+        className={`h-2.5 w-2.5 rounded-full ${active ? (tone === "emerald" ? "bg-emerald-500" : "bg-primary") : "bg-muted-foreground/40"}`}
+      />
+      <div className="flex h-7 items-center gap-0.5" aria-hidden>
+        {bars.map((bar, index) => (
+          <span
+            key={index}
+            className={`w-1 rounded-full transition-all duration-150 ${tone === "emerald" ? "bg-emerald-500/75" : "bg-primary/75"}`}
+            style={{
+              height: `${Math.max(18, (active ? bar * 42 + level * 36 : bar * 16) + 8)}%`,
+              opacity: active ? 0.95 : 0.35,
+            }}
+          />
+        ))}
+      </div>
+      <span className="max-w-28 truncate text-xs text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
 function AudioControls({
   audio,
   lang,
@@ -425,62 +509,96 @@ function AudioControls({
   audio: ReturnType<typeof useStudyAudioCall>;
   lang: "he" | "en";
 }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="rounded-full border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-        {audio.state === "live"
+  const live = audio.state === "live" || audio.state === "muted";
+  const localLevel = useAudioLevel(audio.localStream, live && !audio.muted);
+  const remoteLevel = useAudioLevel(audio.remoteStream, live);
+  const statusLabel =
+    audio.state === "live"
+      ? lang === "he"
+        ? "שיחה חיה"
+        : "Live conversation"
+      : audio.state === "connecting"
+        ? lang === "he"
+          ? "מחבר את החברותא..."
+          : "Connecting chavruta..."
+        : audio.state === "muted"
           ? lang === "he"
-            ? "קול פעיל"
-            : "Audio live"
-          : audio.state === "connecting"
+            ? "אתה מושתק"
+            : "You are muted"
+          : audio.state === "error"
             ? lang === "he"
-              ? "מתחבר..."
-              : "Connecting..."
-            : audio.state === "muted"
+              ? "שגיאת אודיו"
+              : "Audio error"
+            : lang === "he"
+              ? "שיחה קולית מוכנה"
+              : "Voice conversation ready";
+
+  return (
+    <div className="min-w-[18rem] rounded-3xl border border-border bg-background/35 p-2 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-2 px-2">
+        <div>
+          <div className="text-xs font-semibold text-foreground">{statusLabel}</div>
+          <div className="text-[11px] text-muted-foreground">
+            {lang === "he" ? "רואים מי מדבר בזמן אמת" : "See who is speaking in real time"}
+          </div>
+        </div>
+        {live && (
+          <button
+            onClick={audio.hangUp}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+            aria-label={lang === "he" ? "נתק שיחה" : "Hang up"}
+          >
+            <PhoneOff className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <VoiceWave
+          level={localLevel}
+          active={live && !audio.muted}
+          label={
+            audio.muted
               ? lang === "he"
-                ? "מושתק"
-                : "Muted"
-              : audio.state === "error"
-                ? lang === "he"
-                  ? "שגיאת אודיו"
-                  : "Audio error"
-                : lang === "he"
-                  ? "אודיו כבוי"
-                  : "Audio off"}
-      </span>
-      {audio.state === "idle" || audio.state === "error" ? (
-        <button
-          onClick={audio.startCall}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground"
-        >
-          <Mic className="h-4 w-4" />
-          {lang === "he" ? "התחל אודיו" : "Start audio"}
-        </button>
-      ) : (
-        <>
+                ? "אני · מושתק"
+                : "Me · muted"
+              : lang === "he"
+                ? "אני"
+                : "Me"
+          }
+        />
+        <VoiceWave
+          level={remoteLevel}
+          active={!!audio.remoteStream && live}
+          label={lang === "he" ? "החברותא" : "Chavruta"}
+          tone="emerald"
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {audio.state === "idle" || audio.state === "error" ? (
+          <button
+            onClick={audio.startCall}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          >
+            <Mic className="h-4 w-4" />
+            {lang === "he" ? "התחל שיחה" : "Start conversation"}
+          </button>
+        ) : (
           <button
             onClick={audio.toggleMute}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
           >
             {audio.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             {audio.muted
               ? lang === "he"
-                ? "בטל השתקה"
-                : "Unmute"
+                ? "פתח מיקרופון"
+                : "Open mic"
               : lang === "he"
-                ? "השתק"
-                : "Mute"}
+                ? "השתק אותי"
+                : "Mute me"}
           </button>
-          <button
-            onClick={audio.hangUp}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold text-primary"
-          >
-            <PhoneOff className="h-4 w-4" />
-            {lang === "he" ? "נתק" : "Hang up"}
-          </button>
-        </>
-      )}
-      {audio.error && <span className="text-xs text-destructive">{audio.error}</span>}
+        )}
+      </div>
+      {audio.error && <div className="mt-2 px-2 text-xs text-destructive">{audio.error}</div>}
     </div>
   );
 }
@@ -495,54 +613,116 @@ function AiVoiceControls({
   const voice = useAiVoice({ lang, onTranscript: onAsk });
   if (!voice.supported) {
     return (
-      <div className="rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
-        {lang === "he" ? "מצב AI (אודיו לא נתמך בדפדפן)" : "AI mode (voice unsupported)"}
+      <div className="rounded-3xl border border-primary/35 bg-primary/10 px-4 py-3 text-xs font-semibold text-primary">
+        {lang === "he"
+          ? "חברותא AI פעיל בטקסט. דיבור קולי לא נתמך בדפדפן הזה."
+          : "AI chavruta is available in text. Voice is unsupported in this browser."}
       </div>
     );
   }
+
+  const active =
+    voice.status === "listening" || voice.status === "thinking" || voice.status === "speaking";
+  const voiceLevel =
+    voice.status === "listening"
+      ? 0.65
+      : voice.status === "speaking"
+        ? 0.85
+        : voice.status === "thinking"
+          ? 0.35
+          : 0;
   const label =
     voice.status === "listening"
       ? lang === "he"
-        ? "מקשיב..."
-        : "Listening..."
+        ? "מקשיב לך"
+        : "Listening"
       : voice.status === "thinking"
         ? lang === "he"
-          ? "חושב..."
-          : "Thinking..."
+          ? "מעיין בקטע"
+          : "Reading the segment"
         : voice.status === "speaking"
           ? lang === "he"
-            ? "מדבר..."
-            : "Speaking..."
+            ? "עונה בקול"
+            : "Answering aloud"
           : lang === "he"
-            ? "דבר עם AI"
-            : "Talk to AI";
+            ? "שיחה קולית עם AI"
+            : "Voice AI chavruta";
   const primaryClick =
     voice.status === "listening"
       ? voice.stop
       : voice.status === "speaking"
         ? voice.stopSpeaking
         : voice.start;
-  const Icon = voice.status === "listening" ? MicOff : Mic;
+  const Icon = voice.status === "listening" || voice.status === "speaking" ? MicOff : Mic;
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="min-w-[19rem] rounded-3xl border border-primary/25 bg-primary/5 p-2 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-3 px-2">
+        <div>
+          <div className="text-xs font-semibold text-foreground">{label}</div>
+          <div className="text-[11px] text-muted-foreground">
+            {lang === "he"
+              ? "מדברים טבעי, השיחה נשמרת בצד"
+              : "Speak naturally; the chat stays visible"}
+          </div>
+        </div>
+        {voice.status === "thinking" && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+      </div>
+
+      <VoiceWave
+        level={voiceLevel}
+        active={active}
+        label={
+          voice.status === "speaking"
+            ? lang === "he"
+              ? "AI מדבר"
+              : "AI speaking"
+            : lang === "he"
+              ? "אני שואל"
+              : "My voice"
+        }
+      />
+
+      {(voice.transcript || voice.lastAnswer) && (
+        <div className="mt-2 grid gap-1.5 text-xs">
+          {voice.transcript && (
+            <div className="rounded-2xl bg-primary/10 px-3 py-2 text-primary">
+              <span className="font-semibold">{lang === "he" ? "אתה: " : "You: "}</span>
+              {voice.transcript}
+            </div>
+          )}
+          {voice.lastAnswer && (
+            <div className="line-clamp-2 rounded-2xl bg-card/80 px-3 py-2 text-foreground">
+              <span className="font-semibold">AI: </span>
+              {voice.lastAnswer}
+            </div>
+          )}
+        </div>
+      )}
+
       <button
         onClick={primaryClick}
         disabled={voice.status === "thinking"}
-        className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+        className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
         {voice.status === "thinking" ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <Icon className="h-4 w-4" />
         )}
-        {label}
+        {voice.status === "listening"
+          ? lang === "he"
+            ? "סיים שאלה"
+            : "Finish question"
+          : voice.status === "speaking"
+            ? lang === "he"
+              ? "עצור תשובה"
+              : "Stop answer"
+            : lang === "he"
+              ? "דבר עכשיו"
+              : "Speak now"}
       </button>
-      {voice.transcript && (
-        <span className="max-w-[12rem] truncate rounded-full border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-          {voice.transcript}
-        </span>
-      )}
-      {voice.error && <span className="text-xs text-destructive">{voice.error}</span>}
+      {voice.error && <div className="mt-2 px-2 text-xs text-destructive">{voice.error}</div>}
     </div>
   );
 }
@@ -556,11 +736,23 @@ function SegmentOutline({
   activeIndex: number;
   onJump: (index: number) => void;
 }) {
+  const visibleSegments = useMemo(() => {
+    if (bundle.segments.length <= 160) return bundle.segments;
+    const start = Math.max(0, activeIndex - 60);
+    const end = Math.min(bundle.segments.length, activeIndex + 100);
+    return bundle.segments.slice(start, end);
+  }, [activeIndex, bundle.segments]);
+
   return (
     <div className="scholar-card p-4">
       <div className="eyebrow mb-3">קטעים</div>
+      {visibleSegments.length < bundle.segments.length && (
+        <div className="mb-2 rounded-2xl border border-border bg-background/30 p-2 text-xs text-muted-foreground">
+          מציגים את הקטעים סביב המיקום הנוכחי כדי לשמור על ביצועים.
+        </div>
+      )}
       <div className="max-h-[70vh] space-y-2 overflow-auto pe-1">
-        {bundle.segments.map((segment) => (
+        {visibleSegments.map((segment) => (
           <button
             key={segment.index}
             onClick={() => onJump(segment.index)}
@@ -673,7 +865,14 @@ function ChatPanel({
   onTyping?: () => void;
   onTypingStop?: () => void;
 }) {
-  const aiConversation = aiQuestions.filter((q) => q.kind === "human");
+  const aiConversation = useMemo(
+    () => aiQuestions.filter((q) => q.kind === "human"),
+    [aiQuestions],
+  );
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [aiConversation.length, messages.length, sending]);
   return (
     <section className="scholar-card p-4">
       <h2 className="eyebrow mb-3 flex items-center justify-between gap-2">
@@ -705,7 +904,10 @@ function ChatPanel({
                 : "offline"}
         </span>
       </h2>
-      <div className="max-h-72 space-y-2 overflow-auto rounded-2xl border border-border bg-background/30 p-3">
+      <div
+        ref={scrollRef}
+        className="max-h-72 space-y-2 overflow-auto rounded-2xl border border-border bg-background/30 p-3"
+      >
         {isAiCompanion ? (
           aiConversation.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -716,11 +918,15 @@ function ChatPanel({
           ) : (
             aiConversation.map((q) => (
               <div key={q.id} className="space-y-2">
-                <div className="rounded-2xl bg-primary/10 px-3 py-2 text-sm text-primary">
+                <div className="ms-auto max-w-[86%] rounded-[1.35rem] rounded-se-sm bg-primary/10 px-3 py-2 text-sm text-primary shadow-sm">
                   {q.question}
                 </div>
                 {q.answer && (
-                  <div className="rounded-2xl bg-card/70 px-3 py-2 text-sm leading-6 text-foreground">
+                  <div className="max-w-[92%] rounded-[1.35rem] rounded-ss-sm border border-border bg-card/75 px-3 py-2 text-sm leading-6 text-foreground shadow-sm">
+                    <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      {lang === "he" ? "חברותא AI" : "AI chavruta"}
+                    </div>
                     {q.answer}
                   </div>
                 )}
@@ -732,14 +938,17 @@ function ChatPanel({
             {lang === "he" ? "עדיין אין הודעות." : "No messages yet."}
           </p>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`rounded-2xl px-3 py-2 text-sm ${m.sender_id === userId ? "bg-primary/10 text-primary" : "bg-card/60"}`}
-            >
-              {m.body}
-            </div>
-          ))
+          messages.map((m) => {
+            const mine = m.sender_id === userId;
+            return (
+              <div
+                key={m.id}
+                className={`max-w-[88%] rounded-[1.35rem] px-3 py-2 text-sm shadow-sm ${mine ? "ms-auto rounded-se-sm bg-primary/10 text-primary" : "rounded-ss-sm bg-card/70 text-foreground"}`}
+              >
+                {m.body}
+              </div>
+            );
+          })
         )}
         {!isAiCompanion && partnerTyping && (
           <div className="flex items-center gap-1.5 px-1 pt-1 text-xs text-muted-foreground">

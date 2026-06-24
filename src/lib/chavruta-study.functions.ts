@@ -31,8 +31,12 @@ const QUESTION_MAX = 1200;
 function sanitizeQuestionText(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   // Normalize whitespace and strip control chars that would slip past length checks.
-  const cleaned = raw
-    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+  const cleaned = [...raw]
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code > 31 && code !== 127;
+    })
+    .join("")
     .replace(/\s+/g, " ")
     .trim();
   if (cleaned.length < QUESTION_MIN) return null;
@@ -66,7 +70,7 @@ async function loadSessionBundle(sb: AnySb, sessionId: string, lang: "he" | "en"
 
   const sourcePromise = sb
     .from("sources")
-    .select("id, title, tree, tree_parts, language, text, excerpt, char_count")
+    .select("id, title, tree, tree_parts, language, text, excerpt, char_count, updated_at")
     .eq("id", session.source_id)
     .maybeSingle();
   const matchPromise = session.match_id

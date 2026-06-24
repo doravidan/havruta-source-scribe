@@ -14,7 +14,7 @@ export const getSource = createServerFn({ method: "POST" })
     const { data: row, error } = await sb
       .from("sources")
       .select(
-        "id, title, tree, tree_parts, language, text, excerpt, char_count, source_url, source_provider, source_id",
+        "id, title, tree, tree_parts, language, text, excerpt, char_count, source_url, source_provider, source_id, updated_at",
       )
       .eq("id", data.id)
       .maybeSingle();

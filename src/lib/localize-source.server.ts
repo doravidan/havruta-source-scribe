@@ -1,11 +1,16 @@
 type LocalizableSource = {
+  id?: string | null;
   title?: string | null;
   tree?: string | null;
   tree_parts?: unknown;
   text?: string | null;
   language?: string | null;
+  char_count?: number | null;
+  updated_at?: string | null;
 };
 
+const localizationCache = new Map<string, Promise<LocalizableSource & Record<string, unknown>>>();
+const MAX_LOCALIZATION_CACHE = 80;
 
 function normalizeLang(lang: string | null | undefined): "he" | "en" {
   return lang === "en" ? "en" : "he";
@@ -42,6 +47,32 @@ async function translateText(text: string, targetLang: "he" | "en", label: strin
   });
 }
 
+function localizationCacheKey(source: LocalizableSource, target: "he" | "en") {
+  return [
+    source.id ?? "manual",
+    source.language ?? "unknown",
+    target,
+    source.updated_at ?? "",
+    source.char_count ?? source.text?.length ?? 0,
+    source.title ?? "",
+  ].join("|");
+}
+
+function cacheLocalization<T extends LocalizableSource>(
+  key: string,
+  run: () => Promise<T & Record<string, unknown>>,
+) {
+  const existing = localizationCache.get(key);
+  if (existing) return existing as Promise<T & Record<string, unknown>>;
+  if (localizationCache.size >= MAX_LOCALIZATION_CACHE) {
+    const oldest = localizationCache.keys().next().value;
+    if (oldest) localizationCache.delete(oldest);
+  }
+  const promise = run();
+  localizationCache.set(key, promise);
+  return promise;
+}
+
 export async function localizeSourceForStudy<T extends LocalizableSource>(
   source: T,
   target: "he" | "en",
@@ -51,30 +82,35 @@ export async function localizeSourceForStudy<T extends LocalizableSource>(
     return { ...source, original_language: sourceLang, localized_language: target };
   }
 
-  try {
-    const [title, tree, treeParts, ...textParts] = await Promise.all([
-      translateText(source.title ?? "", target, "Title"),
-      translateText(source.tree ?? "", target, "Breadcrumb"),
-      Promise.all(
-        ((source.tree_parts as string[] | null | undefined) ?? []).map((part) => translateText(part, target, "Breadcrumb part")),
-      ),
-      ...splitText(source.text ?? "").map((part, index) =>
-        translateText(part, target, `Source text part ${index + 1}`),
-      ),
-    ]);
+  const key = localizationCacheKey(source, target);
+  return cacheLocalization(key, async () => {
+    try {
+      const [title, tree, treeParts, ...textParts] = await Promise.all([
+        translateText(source.title ?? "", target, "Title"),
+        translateText(source.tree ?? "", target, "Breadcrumb"),
+        Promise.all(
+          ((source.tree_parts as string[] | null | undefined) ?? []).map((part) =>
+            translateText(part, target, "Breadcrumb part"),
+          ),
+        ),
+        ...splitText(source.text ?? "").map((part, index) =>
+          translateText(part, target, `Source text part ${index + 1}`),
+        ),
+      ]);
 
-    return {
-      ...source,
-      title: title || source.title,
-      tree: tree || source.tree,
-      tree_parts: treeParts.length ? treeParts : source.tree_parts,
-      text: textParts.join("\n\n") || source.text,
-      language: target,
-      original_language: sourceLang,
-      localized_language: target,
-    };
-  } catch (error) {
-    console.warn("localizeSourceForStudy fallback", error);
-    return { ...source, original_language: sourceLang, localized_language: sourceLang };
-  }
+      return {
+        ...source,
+        title: title || source.title,
+        tree: tree || source.tree,
+        tree_parts: treeParts.length ? treeParts : source.tree_parts,
+        text: textParts.join("\n\n") || source.text,
+        language: target,
+        original_language: sourceLang,
+        localized_language: target,
+      };
+    } catch (error) {
+      console.warn("localizeSourceForStudy fallback", error);
+      return { ...source, original_language: sourceLang, localized_language: sourceLang };
+    }
+  });
 }
