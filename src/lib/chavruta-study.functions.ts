@@ -23,10 +23,33 @@ const GenerateInput = z.object({
   segmentIndex: z.number().int().min(0),
   lang: z.enum(["he", "en"]).default("he"),
 });
+// Mirrors the DB CHECK constraint chavruta_study_questions_question_check:
+//   char_length(question) BETWEEN 3 AND 1200
+const QUESTION_MIN = 3;
+const QUESTION_MAX = 1200;
+
+function sanitizeQuestionText(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  // Normalize whitespace and strip control chars that would slip past length checks.
+  const cleaned = raw
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length < QUESTION_MIN) return null;
+  return cleaned.slice(0, QUESTION_MAX);
+}
+
+const QuestionText = z
+  .string()
+  .transform((v) => sanitizeQuestionText(v) ?? "")
+  .refine((v) => v.length >= QUESTION_MIN && v.length <= QUESTION_MAX, {
+    message: `question must be ${QUESTION_MIN}-${QUESTION_MAX} characters`,
+  });
+
 const AskInput = z.object({
   sessionId: Uuid,
   segmentIndex: z.number().int().min(0),
-  question: z.string().min(2).max(1000),
+  question: QuestionText,
   lang: z.enum(["he", "en"]).default("he"),
 });
 
