@@ -50,6 +50,7 @@ function StudyRoomPage() {
   const askFn = useServerFn(askStudySegmentQuestion);
   const [draft, setDraft] = useState("");
   const [questionDraft, setQuestionDraft] = useState("");
+  const [selectedText, setSelectedText] = useState("");
   const [tab, setTab] = useState<"text" | "guide" | "chat">("text");
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audio = useStudyAudioCall(sessionId, user?.id);
@@ -183,6 +184,21 @@ function StudyRoomPage() {
       askFn({ data: { sessionId, segmentIndex: activeIndex, question: questionDraft, lang } }),
     onSuccess: () => {
       setQuestionDraft("");
+      invalidateStudy();
+    },
+  });
+
+  const askSelectedMutation = useMutation({
+    mutationFn: () => {
+      const quote = selectedText.trim().slice(0, 700);
+      const question =
+        lang === "he"
+          ? `מה פירוש הקטע המסומן הזה בתוך המקור?\n\n${quote}`
+          : `What does this selected passage mean in the source?\n\n${quote}`;
+      return askFn({ data: { sessionId, segmentIndex: activeIndex, question, lang } });
+    },
+    onSuccess: () => {
+      setTab("guide");
       invalidateStudy();
     },
   });
@@ -343,18 +359,21 @@ function StudyRoomPage() {
               </aside>
 
               <section
-                className={`${tab === "text" ? "block" : "hidden"} lg:block scholar-card p-5 sm:p-7`}
+                className={`${tab === "text" ? "block" : "hidden"} lg:block scholar-card overflow-hidden p-0`}
               >
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="eyebrow">{lang === "he" ? "קטע נוכחי" : "Current segment"}</div>
-                  <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-                    {myProgress?.status ?? "reading"}
-                  </span>
-                </div>
-                <article className="rounded-3xl border border-border bg-[rgba(255,250,239,0.7)] p-5 text-xl leading-9 sm:p-8 sm:text-2xl sm:leading-[2.35]">
-                  {activeSegment.text}
-                </article>
-                <div className="mt-5 flex flex-wrap gap-2">
+                <StudyTextStage
+                  lang={lang}
+                  activeSegmentText={activeSegment.text}
+                  status={myProgress?.status ?? "reading"}
+                  isAiCompanion={isAiCompanion}
+                  partnerOnline={presence.partnerOnline}
+                  audio={audio}
+                  selectedText={selectedText}
+                  selectedAskPending={askSelectedMutation.isPending}
+                  onSelectedText={setSelectedText}
+                  onAskSelected={() => askSelectedMutation.mutate()}
+                />
+                <div className="flex flex-wrap gap-2 border-t border-border bg-background/30 p-4 sm:p-5">
                   <button
                     onClick={() => statusMutation.mutate("understood")}
                     className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
@@ -374,7 +393,7 @@ function StudyRoomPage() {
                     className="inline-flex h-11 items-center gap-2 rounded-full border border-primary/35 px-5 text-sm font-semibold text-primary"
                   >
                     <Sparkles className="h-4 w-4" />
-                    {lang === "he" ? "שאל אותנו על הקטע" : "Ask us about this"}
+                    {lang === "he" ? "שאלות על הקטע" : "Questions on this"}
                   </button>
                   <button
                     disabled={activeIndex >= bundle.segments.length - 1}
@@ -437,6 +456,195 @@ function StudyRoomPage() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function ParticipantTile({
+  name,
+  role,
+  online,
+  muted,
+  level,
+  tone = "primary",
+}: {
+  name: string;
+  role: string;
+  online: boolean;
+  muted?: boolean;
+  level?: number;
+  tone?: "primary" | "emerald";
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <div className="rounded-3xl border border-border bg-[rgba(255,250,239,0.72)] p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div
+          className={`grid h-12 w-12 place-items-center rounded-2xl text-sm font-bold text-white shadow-inner ${tone === "emerald" ? "bg-emerald-700" : "bg-primary"}`}
+        >
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-foreground">{name}</div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span
+              className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-muted-foreground/40"}`}
+            />
+            {role}
+          </div>
+        </div>
+        <div className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background/50">
+          {muted ? (
+            <MicOff className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <Mic className="h-3.5 w-3.5 text-primary" />
+          )}
+        </div>
+      </div>
+      <VoiceWave
+        level={level ?? 0}
+        active={online && !muted}
+        label={muted ? "muted" : "voice"}
+        tone={tone}
+      />
+    </div>
+  );
+}
+
+function StudyTextStage({
+  lang,
+  activeSegmentText,
+  status,
+  isAiCompanion,
+  partnerOnline,
+  audio,
+  selectedText,
+  selectedAskPending,
+  onSelectedText,
+  onAskSelected,
+}: {
+  lang: "he" | "en";
+  activeSegmentText: string;
+  status: string;
+  isAiCompanion: boolean;
+  partnerOnline: boolean;
+  audio: ReturnType<typeof useStudyAudioCall>;
+  selectedText: string;
+  selectedAskPending: boolean;
+  onSelectedText: (value: string) => void;
+  onAskSelected: () => void;
+}) {
+  const articleRef = useRef<HTMLElement | null>(null);
+  const live = audio.state === "live" || audio.state === "muted";
+  const localLevel = useAudioLevel(audio.localStream, live && !audio.muted);
+  const remoteLevel = useAudioLevel(audio.remoteStream, live);
+
+  const captureSelection = useCallback(() => {
+    if (typeof window === "undefined" || !articleRef.current) return;
+    const selection = window.getSelection();
+    const text = selection?.toString().replace(/\s+/g, " ").trim() ?? "";
+    if (!text || text.length < 2) return;
+    const anchor = selection?.anchorNode;
+    if (anchor && articleRef.current.contains(anchor)) onSelectedText(text.slice(0, 700));
+  }, [onSelectedText]);
+
+  return (
+    <div>
+      <div className="border-b border-border bg-background/35 p-4 sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="eyebrow">{lang === "he" ? "חדר חי" : "Live study room"}</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "he"
+                ? "הטקסט משותף באמצע. מסמנים מילים ושואלים את ה-AI על המקום."
+                : "The shared text stays in the middle. Select words and ask AI in context."}
+            </p>
+          </div>
+          <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+            {status}
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ParticipantTile
+            name={lang === "he" ? "אני" : "Me"}
+            role={
+              audio.muted
+                ? lang === "he"
+                  ? "מיקרופון סגור"
+                  : "mic off"
+                : lang === "he"
+                  ? "בלימוד"
+                  : "studying"
+            }
+            online
+            muted={audio.muted || !live}
+            level={localLevel}
+          />
+          <ParticipantTile
+            name={isAiCompanion ? "AI חברותא" : lang === "he" ? "החברותא" : "Chavruta"}
+            role={
+              isAiCompanion
+                ? lang === "he"
+                  ? "זמין לשאלות"
+                  : "ready for questions"
+                : partnerOnline
+                  ? lang === "he"
+                    ? "מחובר"
+                    : "online"
+                  : lang === "he"
+                    ? "ממתין לחיבור"
+                    : "waiting"
+            }
+            online={isAiCompanion || partnerOnline || !!audio.remoteStream}
+            muted={!isAiCompanion && !audio.remoteStream}
+            level={remoteLevel}
+            tone="emerald"
+          />
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-7">
+        <article
+          ref={articleRef}
+          onMouseUp={captureSelection}
+          onKeyUp={captureSelection}
+          className="rounded-3xl border border-border bg-[rgba(255,250,239,0.78)] p-5 text-xl leading-9 shadow-inner selection:bg-primary/20 sm:p-8 sm:text-2xl sm:leading-[2.35]"
+        >
+          {activeSegmentText}
+        </article>
+        <div className="mt-4 rounded-3xl border border-border bg-background/35 p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground">
+                {lang === "he" ? "שאלת AI על סימון" : "AI question from selection"}
+              </div>
+              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                {selectedText ||
+                  (lang === "he"
+                    ? "סמן מילה או משפט בתוך המקור כדי לשאול מה הפירוש."
+                    : "Select a word or sentence in the source to ask what it means.")}
+              </p>
+            </div>
+            <button
+              disabled={!selectedText.trim() || selectedAskPending}
+              onClick={onAskSelected}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-45"
+            >
+              {selectedAskPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {lang === "he" ? "שאל על הסימון" : "Ask about selection"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
