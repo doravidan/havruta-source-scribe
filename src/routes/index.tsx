@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 
 const HOME_TITLE = "חסידותא · Chassiduta — חברותא לחסידות חב״ד";
 const HOME_DESC =
-  "חסידותא — חברותא לחסידות, בכל זמן ובכל מקום. לימוד מקורות חסידות חב״ד, חיפוש, שאלות ותשובות מבוססות מקור.";
+  "חסידותא — שאלה אחת שמחזירה אותך אל המקור: קריאה מלאה, קול נקי, סדר יומי וחברותא ללימוד חסידות חב״ד.";
 const HOME_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8cf675d8-f93d-4815-a2d4-50bacefc2c97/id-preview-058f936a--ed713669-c7b4-4cdb-be4f-8878effb64ff.lovable.app-1782162151012.png";
 
@@ -58,7 +58,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-
 const tile = {
   hidden: { opacity: 0, y: 16 },
   show: (i: number) => ({
@@ -99,7 +98,6 @@ function Index() {
               variants={tile}
               className="space-y-6 lg:sticky lg:top-24 min-w-0"
             >
-              
               <YiddishHelper />
             </motion.aside>
           </div>

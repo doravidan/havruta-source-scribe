@@ -50,15 +50,15 @@ export function Hero() {
             >
               {rtl ? (
                 <>
-                  ללמוד חסידות
+                  שאלה אחת.
                   <br />
-                  עם מקור, קול וחברותא.
+                  מקור פתוח. חברותא חיה.
                 </>
               ) : (
                 <>
-                  Study Chassidus
+                  One question.
                   <br />
-                  with source, voice, and chavruta.
+                  Open source. Living chavruta.
                 </>
               )}
             </motion.h1>
@@ -70,8 +70,8 @@ export function Hero() {
               className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground"
             >
               {rtl
-                ? "לא עוד מסך AI נוצץ. שולחן לימוד נקי: שאלה עם מקורות, קורא מלא, שיעורים יומיים, וחיבור לחברותא אמיתית."
-                : "Not another shiny AI screen. A calm study table: sourced answers, a full reader, daily study, and real chavruta connection."}
+                ? "מתחילים בשאלה קטנה, חוזרים אל הלשון בפנים, וממשיכים משם: קריאה מלאה, קול נקי, סדר יומי, וחברותא כשצריך. המקור נשאר במרכז."
+                : "Start with a small question, return to the words inside, then keep learning: full reading, clean voice, daily seder, and chavruta when needed. The source stays in the center."}
             </motion.p>
 
             <motion.div
