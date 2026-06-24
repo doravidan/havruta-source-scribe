@@ -755,7 +755,7 @@ function AudioControls({
               : "Voice conversation ready";
 
   return (
-    <div className="min-w-[18rem] rounded-3xl border border-border bg-background/35 p-2 shadow-sm">
+    <div className="w-full min-w-0 rounded-3xl border border-border bg-background/35 p-2 shadow-sm sm:min-w-[18rem]">
       <div className="mb-2 flex items-center justify-between gap-2 px-2">
         <div>
           <div className="text-xs font-semibold text-foreground">{statusLabel}</div>
@@ -881,7 +881,7 @@ function AiVoiceControls({
   const Icon = voice.status === "listening" || voice.status === "speaking" ? MicOff : Mic;
 
   return (
-    <div className="min-w-[19rem] rounded-3xl border border-primary/25 bg-primary/5 p-2 shadow-sm">
+    <div className="w-full min-w-0 rounded-3xl border border-primary/25 bg-primary/5 p-2 shadow-sm sm:min-w-[19rem]">
       <div className="mb-2 flex items-center justify-between gap-3 px-2">
         <div>
           <div className="text-xs font-semibold text-foreground">{label}</div>

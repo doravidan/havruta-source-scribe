@@ -20,7 +20,23 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-[rgba(248,242,230,0.86)] backdrop-blur-xl">
-      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center gap-2 px-4 py-2 sm:gap-5 sm:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 sm:px-8 lg:min-h-16 lg:flex-row lg:flex-wrap lg:items-center lg:gap-5">
+        <div className="flex w-full items-center justify-between gap-3 sm:hidden">
+          <Link to="/" className="group flex min-w-0 items-center gap-2">
+            <img
+              src={logo}
+              alt={
+                lang === "he"
+                  ? `${t.brand} — לוגו פלטפורמת לימוד חסידות`
+                  : `${t.brand} — Chassidus learning platform logo`
+              }
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-full border border-border bg-white/50 p-0.5 shadow-sm"
+            />
+            <span className="truncate text-lg font-semibold text-[var(--ink)]">{t.brand}</span>
+          </Link>
+        </div>
         <Link to="/" className="group hidden min-w-0 items-center gap-3 sm:flex">
           <img
             src={logo}
@@ -60,7 +76,7 @@ export function TopBar() {
           )}
         </div>
 
-        <nav className="ms-0 flex max-w-full items-center gap-1.5 overflow-hidden sm:ms-auto">
+        <nav className="ms-0 flex w-full max-w-full items-center gap-1.5 overflow-x-auto pb-1 lg:ms-auto lg:w-auto lg:flex-wrap lg:justify-end lg:overflow-visible lg:pb-0">
           <NavLink
             to="/library"
             icon={<Library className="h-4 w-4" />}
@@ -80,7 +96,7 @@ export function TopBar() {
 
           <button
             onClick={toggle}
-            className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
+            className="inline-flex h-10 min-w-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
             aria-label={lang === "he" ? "החלפת שפה" : "Toggle language"}
           >
             <Languages className="h-4 w-4" />
@@ -90,7 +106,7 @@ export function TopBar() {
           {isAdmin && (
             <Link
               to="/admin"
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-primary/35 px-3 text-sm font-medium text-primary hover:bg-primary/10"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-primary/35 px-3 text-sm font-medium text-primary hover:bg-primary/10"
             >
               <ShieldCheck className="h-4 w-4" />
               <span className="hidden sm:inline">{t.adminTitle}</span>
@@ -100,7 +116,7 @@ export function TopBar() {
           {session ? (
             <button
               onClick={() => supabase.auth.signOut()}
-              className="inline-flex h-10 min-w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-white/45"
+              className="inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-white/45"
               aria-label={t.signOut}
             >
               <LogOut className="h-4 w-4" />
@@ -108,7 +124,7 @@ export function TopBar() {
           ) : (
             <Link
               to="/auth"
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-95"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-95"
             >
               <LogIn className="h-4 w-4" />
               <span className="hidden sm:inline">{t.signIn}</span>
@@ -135,10 +151,10 @@ function NavLink({
     <Link
       to={to}
       aria-label={label}
-      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
+      className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-white/35 px-3 text-sm transition-colors hover:bg-white/60"
     >
       {icon}
-      <span className={wide ? "hidden lg:inline" : "hidden sm:inline"}>{label}</span>
+      <span className={wide ? "inline sm:hidden lg:inline" : "inline"}>{label}</span>
     </Link>
   );
 }

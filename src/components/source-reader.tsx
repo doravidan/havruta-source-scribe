@@ -254,8 +254,8 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
           </div>
         )}
 
-        <div className="p-3 sm:p-4 border-b border-border/70 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 me-auto">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/70 p-3 sm:p-4">
+          <div className="order-2 me-auto flex items-center gap-1 sm:order-none">
             <button
               onClick={() => setFontStep((s) => Math.max(0, s - 1))}
               className="h-10 w-10 rounded-md border border-border hover:bg-secondary inline-flex items-center justify-center"
@@ -271,7 +271,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               <Plus className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
+          <div className="order-1 flex w-full flex-none items-center gap-2 sm:order-none sm:min-w-[200px] sm:max-w-md sm:flex-1">
             <div className="flex items-center gap-2 px-3 h-10 rounded-md border border-border bg-background/50 flex-1">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input
@@ -426,7 +426,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
             className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? t.readerCopied : t.readerCopy}
+            <span className="hidden sm:inline">{copied ? t.readerCopied : t.readerCopy}</span>
           </button>
           {session && (
             <button
@@ -446,13 +446,15 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               ) : (
                 <BookCheck className="h-4 w-4" />
               )}
-              {studiedQuery.data?.studied
-                ? lang === "he"
-                  ? "נלמד"
-                  : "Studied"
-                : lang === "he"
-                  ? "סמן כנלמד"
-                  : "Mark studied"}
+              <span className="hidden sm:inline">
+                {studiedQuery.data?.studied
+                  ? lang === "he"
+                    ? "נלמד"
+                    : "Studied"
+                  : lang === "he"
+                    ? "סמן כנלמד"
+                    : "Mark studied"}
+              </span>
             </button>
           )}
         </div>

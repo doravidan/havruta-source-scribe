@@ -46,7 +46,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.62, delay: 0.04 }}
-              className="max-w-5xl text-[3.15rem] leading-[0.94] tracking-[-0.055em] text-[var(--ink)] sm:text-7xl lg:text-[6.6rem]"
+              className="max-w-5xl text-[2.55rem] leading-[0.98] tracking-[-0.045em] text-[var(--ink)] min-[380px]:text-[3rem] sm:text-7xl sm:leading-[0.94] sm:tracking-[-0.055em] lg:text-[6.6rem]"
             >
               {rtl ? (
                 <>

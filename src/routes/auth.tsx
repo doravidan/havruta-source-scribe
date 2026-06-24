@@ -10,7 +10,11 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Havruta Chabad" },
-      { name: "description", content: "Sign in or create an account on Havruta Chabad to track study progress, find a chavruta, and ask sourced Chassidus questions." },
+      {
+        name: "description",
+        content:
+          "Sign in or create an account on Havruta Chabad to track study progress, find a chavruta, and ask sourced Chassidus questions.",
+      },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Sign in — Havruta Chabad" },
       { property: "og:description", content: "Sign in to your Havruta Chabad account." },
@@ -55,8 +59,8 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-    } catch (e: any) {
-      setErr(e?.message ?? t.authError);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : t.authError);
     } finally {
       setBusy(false);
     }
@@ -65,19 +69,24 @@ function AuthPage() {
   const google = async () => {
     setErr(null);
     setBusy(true);
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const r = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
     if (r.error) {
-      setErr(String((r as any).error?.message ?? "OAuth error"));
+      setErr(r.error instanceof Error ? r.error.message : "OAuth error");
       setBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 sm:py-10 flex items-center justify-center">
-      <div className="w-full max-w-5xl grid lg:grid-cols-[0.9fr_1fr] gap-6 items-stretch">
+    <div className="flex min-h-screen items-center justify-center px-4 py-5 sm:py-10">
+      <div className="grid w-full max-w-5xl items-stretch gap-6 lg:grid-cols-[0.9fr_1fr]">
         <section className="scholar-card p-6 sm:p-8 hidden lg:flex flex-col justify-between">
           <div>
-            <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
               <BookOpen className="h-4 w-4 text-primary" />
               {lang === "he" ? "חזרה לחסידותא" : "Back to Chassiduta"}
             </Link>
@@ -92,17 +101,26 @@ function AuthPage() {
           </div>
           <div className="rounded-2xl border border-border/70 bg-background/35 p-4 text-sm text-muted-foreground flex items-start gap-3">
             <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            {lang === "he" ? "המקורות נקראים מתוך המאגר, לא דרך קישורים חיצוניים." : "Sources are read from the database, not external links."}
+            {lang === "he"
+              ? "המקורות נקראים מתוך המאגר, לא דרך קישורים חיצוניים."
+              : "Sources are read from the database, not external links."}
           </div>
         </section>
 
-        <section className="w-full max-w-md mx-auto scholar-card p-6 sm:p-8">
-          <Link to="/" className="lg:hidden text-xs text-muted-foreground hover:text-foreground">
+        <section className="scholar-card mx-auto w-full max-w-md p-6 sm:p-8">
+          <Link
+            to="/"
+            className="inline-flex h-10 items-center rounded-full px-1 text-sm text-muted-foreground hover:text-foreground lg:hidden"
+          >
             ← {lang === "he" ? "חזרה" : "Back"}
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold gold-text">{mode === "in" ? t.signIn : t.signUp}</h1>
+          <h1 className="mt-2 text-3xl font-semibold gold-text">
+            {mode === "in" ? t.signIn : t.signUp}
+          </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            {lang === "he" ? "המשך ללמוד מהמקום שבו עצרת." : "Continue learning where you left off."}
+            {lang === "he"
+              ? "המשך ללמוד מהמקום שבו עצרת."
+              : "Continue learning where you left off."}
           </p>
 
           <button
@@ -159,11 +177,15 @@ function AuthPage() {
 
           <button
             onClick={() => setMode(mode === "in" ? "up" : "in")}
-            className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground"
+            className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl text-sm text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
           >
             {mode === "in"
-              ? lang === "he" ? "אין לך חשבון? הרשם" : "No account? Sign up"
-              : lang === "he" ? "יש לך חשבון? התחבר" : "Have an account? Sign in"}
+              ? lang === "he"
+                ? "אין לך חשבון? הרשם"
+                : "No account? Sign up"
+              : lang === "he"
+                ? "יש לך חשבון? התחבר"
+                : "Have an account? Sign in"}
           </button>
         </section>
       </div>
