@@ -41,9 +41,15 @@ function getRecognitionCtor(): { new (): SpeechRecognitionLike } | null {
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
+type VoiceAnswer =
+  | string
+  | { displayText?: string | null; speechText?: string | null }
+  | null
+  | undefined;
+
 export function useAiVoice(opts: {
   lang: "he" | "en";
-  onTranscript: (text: string) => Promise<string | null | undefined>;
+  onTranscript: (text: string) => Promise<VoiceAnswer>;
 }) {
   const { lang, onTranscript } = opts;
   const [status, setStatus] = useState<Status>("idle");
@@ -114,9 +120,18 @@ export function useAiVoice(opts: {
         setStatus("thinking");
         try {
           const answer = await onTranscriptRef.current(final);
-          if (answer && answer.trim()) {
-            setLastAnswer(answer.trim());
-            speak(answer);
+          let displayText = "";
+          let speechText = "";
+          if (typeof answer === "string") {
+            displayText = answer.trim();
+            speechText = displayText;
+          } else if (answer) {
+            displayText = (answer.displayText ?? "").trim();
+            speechText = (answer.speechText ?? displayText).trim();
+          }
+          if (displayText || speechText) {
+            setLastAnswer(displayText || speechText);
+            speak(speechText || displayText);
           } else setStatus("idle");
         } catch (err) {
           setError(err instanceof Error ? err.message : "ai_error");

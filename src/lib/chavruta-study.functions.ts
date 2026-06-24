@@ -55,6 +55,7 @@ const AskInput = z.object({
   segmentIndex: z.number().int().min(0),
   question: QuestionText,
   lang: z.enum(["he", "en"]).default("he"),
+  includeSpeech: z.boolean().optional().default(false),
 });
 
 type AnySb = any;
@@ -266,6 +267,44 @@ function parseQuestions(raw: string, lang: "he" | "en") {
   return lines.length ? lines.slice(0, 3) : fallbackQuestions(lang);
 }
 
+function cleanSpeechText(raw: string, lang: "he" | "en") {
+  const withoutMarkdown = raw
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/^\s*[-*•]+\s+/gm, "")
+    .replace(/^\s*\d+[.)]\s+/gm, "")
+    .replace(/["“”'׳״*_#~<>|{}()[\]\\/]/g, " ");
+
+  const allowed = lang === "he" ? /[^\u0590-\u05FF\s.,;:?!־-]/g : /[^A-Za-z0-9\s.,;:?!'-]/g;
+  return withoutMarkdown.replace(allowed, " ").replace(/\s+/g, " ").trim();
+}
+
+async function prepareSpeechText(answer: string, lang: "he" | "en") {
+  const cleaned = cleanSpeechText(answer, lang);
+  if (!cleaned) return "";
+  if (lang !== "he") return cleaned;
+
+  try {
+    const { chatCompletion } = await import("./ai-gateway.server");
+    const raw = await chatCompletion({
+      system:
+        "אתה מנקד טקסט עברי לקריאה קולית. החזר עברית מנוקדת בלבד. בלי Markdown, בלי סוגריים, בלי מרכאות, בלי כוכביות, בלי מקפים מיותרים, בלי מספרי סעיפים, בלי סימנים מיוחדים. שמור את אותה משמעות ואל תוסיף מידע.",
+      messages: [
+        {
+          role: "user",
+          content: `נקה ונקד את הטקסט הבא לקריאה בקול בדפדפן. השאר רק עברית נקייה עם ניקוד וסימני פיסוק פשוטים:\n\n${cleaned}`,
+        },
+      ],
+      temperature: 0.05,
+    });
+    return cleanSpeechText(raw, "he") || cleaned;
+  } catch (e) {
+    console.warn("prepareSpeechText fallback", e);
+    return cleaned;
+  }
+}
+
 export const generateSegmentQuestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
@@ -334,8 +373,8 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
       const { chatCompletion } = await import("./ai-gateway.server");
       const system =
         data.lang === "he"
-          ? "אתה חברותא ללימוד חסידות חב״ד. ענה בעברית בלבד, לפי הקטע שסופק בלבד. אם חסר הקשר, אמור זאת."
-          : "You are a Chabad Chassidus chavruta. Answer in English only, only from the provided segment. Say if context is missing.";
+          ? "אתה חברותא ללימוד חסידות חב״ד. ענה בעברית בלבד, לפי הקטע שסופק בלבד. אם חסר הקשר, אמור זאת. כתוב תשובה נקייה בלי Markdown, בלי כוכביות, בלי טבלאות, ובלי סימנים מיוחדים."
+          : "You are a Chabad Chassidus chavruta. Answer in English only, only from the provided segment. Say if context is missing. Keep the answer clean, with no Markdown tables or special formatting.";
       const userPrompt =
         data.lang === "he"
           ? `מקור: ${bundle.source.title}\n\nקטע:\n${segment.text}\n\nשאלה:\n${data.question}`
@@ -348,6 +387,9 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
     } catch (e) {
       console.warn("askStudySegmentQuestion fallback", e);
     }
+
+    if (data.includeSpeech) answer = cleanSpeechText(answer, data.lang) || answer;
+    const speech_text = data.includeSpeech ? await prepareSpeechText(answer, data.lang) : null;
 
     const { data: row, error } = await sb
       .from("chavruta_study_questions")
@@ -362,5 +404,5 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
       .select("*")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row;
+    return speech_text ? { ...row, speech_text } : row;
   });

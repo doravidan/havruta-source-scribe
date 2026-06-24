@@ -277,10 +277,23 @@ function StudyRoomPage() {
               lang={lang}
               onAsk={async (text) => {
                 const row = await askFn({
-                  data: { sessionId, segmentIndex: activeIndex, question: text, lang },
+                  data: {
+                    sessionId,
+                    segmentIndex: activeIndex,
+                    question: text,
+                    lang,
+                    includeSpeech: true,
+                  },
                 });
                 invalidateStudy();
-                return (row as { answer?: string | null } | null)?.answer ?? null;
+                const voiceRow = row as {
+                  answer?: string | null;
+                  speech_text?: string | null;
+                } | null;
+                return {
+                  displayText: voiceRow?.answer ?? null,
+                  speechText: voiceRow?.speech_text ?? voiceRow?.answer ?? null,
+                };
               }}
             />
           ) : (
@@ -608,7 +621,11 @@ function AiVoiceControls({
   onAsk,
 }: {
   lang: "he" | "en";
-  onAsk: (text: string) => Promise<string | null | undefined>;
+  onAsk: (
+    text: string,
+  ) => Promise<
+    string | { displayText?: string | null; speechText?: string | null } | null | undefined
+  >;
 }) {
   const voice = useAiVoice({ lang, onTranscript: onAsk });
   if (!voice.supported) {
