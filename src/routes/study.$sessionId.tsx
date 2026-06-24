@@ -263,9 +263,16 @@ function StudyRoomPage() {
             </p>
           </div>
           {isAiCompanion ? (
-            <div className="rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
-              {lang === "he" ? "מצב AI" : "AI mode"}
-            </div>
+            <AiVoiceControls
+              lang={lang}
+              onAsk={async (text) => {
+                const row = await askFn({
+                  data: { sessionId, segmentIndex: activeIndex, question: text, lang },
+                });
+                qc.invalidateQueries({ queryKey: ["study-session", sessionId] });
+                return (row as { answer?: string | null } | null)?.answer ?? null;
+              }}
+            />
           ) : (
             <AudioControls audio={audio} lang={lang} />
           )}
