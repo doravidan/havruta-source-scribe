@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
+import { sanitizeSourceText } from "@/lib/sanitize-source-text";
 import { createAiStudySession } from "@/lib/chavruta-study.functions";
 
 export type DateNav = {
@@ -138,17 +139,22 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
 
   const fontSize = [15, 17, 19, 22, 25][Math.max(0, Math.min(4, fontStep))];
 
+  const cleanText = useMemo(
+    () => sanitizeSourceText(data?.text ?? "", data?.language ?? null),
+    [data?.text, data?.language],
+  );
+
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    return parseSefariaText(data.text ?? "", { highlight: needle });
-  }, [data, needle]);
+    return parseSefariaText(cleanText, { highlight: needle });
+  }, [data, cleanText, needle]);
 
   if (!open) return null;
 
   const copyAll = async () => {
     if (!data) return;
     try {
-      await navigator.clipboard.writeText(data.text ?? "");
+      await navigator.clipboard.writeText(cleanText);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -372,10 +378,10 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               <div className="inline-flex items-center gap-1">
                 <button
                   onClick={() => {
-                    if (!data?.text) return;
+                    if (!cleanText) return;
                     if (playing) return read.pause();
                     if (paused) return read.resume();
-                    read.speak(data.text, (data.language as "he" | "en") ?? lang);
+                    read.speak(cleanText, (data?.language as "he" | "en") ?? lang);
                   }}
                   disabled={!data || loading}
                   className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-60 ${
