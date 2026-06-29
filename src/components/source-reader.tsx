@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
+import { sanitizeSourceText } from "@/lib/sanitize-source-text";
 import { createAiStudySession } from "@/lib/chavruta-study.functions";
 
 export type DateNav = {
