@@ -378,10 +378,10 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               <div className="inline-flex items-center gap-1">
                 <button
                   onClick={() => {
-                    if (!data?.text) return;
+                    if (!cleanText) return;
                     if (playing) return read.pause();
                     if (paused) return read.resume();
-                    read.speak(data.text, (data.language as "he" | "en") ?? lang);
+                    read.speak(cleanText, (data?.language as "he" | "en") ?? lang);
                   }}
                   disabled={!data || loading}
                   className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-60 ${
