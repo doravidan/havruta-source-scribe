@@ -139,17 +139,22 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
 
   const fontSize = [15, 17, 19, 22, 25][Math.max(0, Math.min(4, fontStep))];
 
+  const cleanText = useMemo(
+    () => sanitizeSourceText(data?.text ?? "", data?.language ?? null),
+    [data?.text, data?.language],
+  );
+
   const { html, matchCount } = useMemo(() => {
     if (!data) return { html: "", matchCount: 0 };
-    return parseSefariaText(data.text ?? "", { highlight: needle });
-  }, [data, needle]);
+    return parseSefariaText(cleanText, { highlight: needle });
+  }, [data, cleanText, needle]);
 
   if (!open) return null;
 
   const copyAll = async () => {
     if (!data) return;
     try {
-      await navigator.clipboard.writeText(data.text ?? "");
+      await navigator.clipboard.writeText(cleanText);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
