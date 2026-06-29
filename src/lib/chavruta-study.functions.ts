@@ -112,15 +112,18 @@ async function loadSessionBundle(sb: AnySb, sessionId: string, lang: "he" | "en"
 
   const { localizeSourceForStudy } = await import("./localize-source.server");
   const localizedSource = await localizeSourceForStudy(source, lang);
+  const { sanitizeSourceText } = await import("./sanitize-source-text");
+  const cleanedText = sanitizeSourceText(localizedSource.text ?? "", localizedSource.language ?? lang);
+  const cleanedSource = { ...localizedSource, text: cleanedText };
 
   return {
     session,
-    source: localizedSource,
+    source: cleanedSource,
     match,
     progress: progress ?? [],
     questions: questions ?? [],
     messages: messages ?? [],
-    segments: segmentSourceText(localizedSource.text ?? "", localizedSource.title ?? "קטע"),
+    segments: segmentSourceText(cleanedText, cleanedSource.title ?? "קטע"),
   };
 }
 
