@@ -105,16 +105,6 @@ export function SearchPanel() {
                   >
                     {t.cardSummary}
                   </button>
-                  {r.source_url && (
-                    <a
-                      href={r.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1.5 rounded-lg border border-border hover:bg-secondary inline-flex items-center gap-1"
-                    >
-                      {t.cardOpenOriginal}
-                    </a>
-                  )}
                 </div>
               </div>
             );
