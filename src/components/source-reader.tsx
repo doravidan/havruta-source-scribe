@@ -16,7 +16,6 @@ import {
   Search,
   BookCheck,
   Loader2,
-  ExternalLink,
   Sparkles,
   Play,
   Pause,
