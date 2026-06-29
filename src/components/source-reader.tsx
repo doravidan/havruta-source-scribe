@@ -16,7 +16,6 @@ import {
   Search,
   BookCheck,
   Loader2,
-  ExternalLink,
   Sparkles,
   Play,
   Pause,
@@ -408,19 +407,6 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               </div>
             );
           })()}
-          {data?.source_url && (
-            <a
-              href={data.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
-              title={t.readerOpenOriginal}
-              aria-label={t.readerOpenOriginal}
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden sm:inline">{t.readerOpenOriginal}</span>
-            </a>
-          )}
           <button
             onClick={copyAll}
             className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"

@@ -135,17 +135,6 @@ export function AskPanel() {
                         >
                           {t.cardSummary}
                         </button>
-                        {s.source_url && (
-                          <a
-                            href={s.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2.5 py-1.5 rounded-lg border border-border hover:bg-secondary inline-flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {t.cardOpenOriginal}
-                          </a>
-                        )}
                       </div>
                     </div>
                   );
