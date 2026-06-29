@@ -24,11 +24,25 @@ export function sanitizeSourceText(text: string | null | undefined, language?: s
     // English translation column. Hebrew letters, niqqud, cantillation,
     // punctuation and whitespace are preserved.
     s = s.replace(/[A-Za-z0-9“”"']+/g, "");
-    // Keep only lines that still contain Hebrew (or are blank separators)
+    // Keep only lines that still contain Hebrew (or are blank separators),
+    // then drop whitespace-separated tokens that have no Hebrew letter
+    // (orphaned punctuation like ", , ?  -" left over from removed English).
     s = s
       .split("\n")
       .filter((l) => /[\u0590-\u05FF]/.test(l) || l.trim() === "")
+      .map((l) =>
+        l
+          .split(/\s+/)
+          .filter((tok) => tok === "" || /[\u0590-\u05FF]/.test(tok))
+          .join(" "),
+      )
       .join("\n");
+    // Collapse runs of the same punctuation mark left adjacent after removal.
+    s = s.replace(/([,.;:?!\-־])(\s*\1)+/g, "$1");
+    // Remove standalone punctuation tokens sitting between spaces.
+    s = s.replace(/(^|\s)[,.;:?!\-־]+(?=\s|$)/g, "$1");
+    // Collapse leftover double spaces.
+    s = s.replace(/[ \t]{2,}/g, " ");
   }
 
   // Collapse whitespace
