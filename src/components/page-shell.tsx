@@ -3,13 +3,12 @@ import { BookOpen, Loader2 } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
 export function SkipToContent() {
-  const { lang } = useLang();
   return (
     <a
       href="#main-content"
       className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-lg"
     >
-      {lang === "he" ? "דלג לתוכן" : "Skip to content"}
+      Skip to content / דלג לתוכן
     </a>
   );
 }

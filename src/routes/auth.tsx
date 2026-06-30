@@ -178,6 +178,7 @@ function AuthPage() {
           </form>
 
           <button
+            type="button"
             onClick={() => setMode(mode === "in" ? "up" : "in")}
             className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl text-sm text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
           >
