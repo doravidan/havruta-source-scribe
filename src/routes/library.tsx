@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { TopBar } from "@/components/top-bar";
 import { SourceReader } from "@/components/source-reader";
+import { AppFooter } from "@/components/page-shell";
 import { useLang } from "@/lib/lang-context";
 import { browseLibrary } from "@/lib/library-browse.functions";
 import {
@@ -90,7 +91,7 @@ function LibraryPage() {
   return (
     <div className="min-h-screen" dir={dir}>
       <TopBar />
-      <main className="mx-auto max-w-6xl px-4 sm:px-8 py-10 sm:py-14">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 sm:px-8 py-10 sm:py-14">
         <header className="mb-8 sm:mb-10 grid lg:grid-cols-[1fr_auto] gap-5 items-end">
           <div>
             <div className="eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/45 px-3 py-2">
@@ -220,11 +221,7 @@ function LibraryPage() {
           )}
         </div>
 
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-primary">
-            ← {lang === "he" ? "חזרה לדף הבית" : "Back to home"}
-          </Link>
-        </div>
+        <AppFooter />
       </main>
 
       <SourceReader sourceId={openId} onClose={() => setOpenId(null)} />

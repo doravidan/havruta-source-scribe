@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
+import { Toaster } from "@/components/ui/sonner";
+import { SkipToContent } from "@/components/page-shell";
 
 function NotFoundComponent() {
   return (
@@ -88,7 +90,9 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <SkipToContent />
         {children}
+        <Toaster richColors closeButton position="top-center" />
         <Scripts />
       </body>
     </html>

@@ -7,6 +7,7 @@ import { YiddishHelper } from "@/components/helpers";
 
 import { DailyStudyPanel } from "@/components/daily-study";
 import { useLang } from "@/lib/lang-context";
+import { AppFooter } from "@/components/page-shell";
 import { motion } from "framer-motion";
 
 const HOME_TITLE = "חסידותא · Chassiduta — חברותא לחסידות חב״ד";
@@ -68,14 +69,14 @@ const tile = {
 };
 
 function Index() {
-  const { t } = useLang();
+  useLang();
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main>
+      <main id="main-content">
         <Hero />
 
-        <section className="mx-auto max-w-7xl px-4 sm:px-8 mt-8 sm:mt-10 pb-16">
+        <section className="mx-auto max-w-7xl px-4 sm:px-8 mt-8 sm:mt-10 pb-8">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-7 items-start">
             <div className="space-y-6 min-w-0">
               <motion.div id="ask" custom={0} initial="hidden" animate="show" variants={tile}>
@@ -102,7 +103,7 @@ function Index() {
             </motion.aside>
           </div>
 
-          <footer className="mt-14 text-center text-xs text-muted-foreground">{t.poweredBy}</footer>
+          <AppFooter />
         </section>
       </main>
     </div>

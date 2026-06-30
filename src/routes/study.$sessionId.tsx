@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { TopBar } from "@/components/top-bar";
+import { PageLoader } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -226,12 +227,19 @@ function StudyRoomPage() {
     },
   });
 
-  if (loading) return <div className="min-h-screen" />;
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <TopBar />
+        <PageLoader />
+      </div>
+    );
+  }
   if (!user) {
     return (
       <div className="min-h-screen" dir={dir}>
         <TopBar />
-        <main className="mx-auto max-w-2xl px-4 py-12 text-center">
+        <main id="main-content" className="mx-auto max-w-2xl px-4 py-12 text-center">
           <section className="scholar-card p-7">
             <h1 className="text-3xl">{lang === "he" ? "צריך להתחבר" : "Sign in required"}</h1>
             <Link
@@ -250,7 +258,7 @@ function StudyRoomPage() {
     <div className="min-h-screen" dir={dir}>
       <TopBar />
       <audio ref={remoteAudioRef} autoPlay playsInline />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
         <header className="mb-5 flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <Link
@@ -352,6 +360,7 @@ function StudyRoomPage() {
             <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)_360px]">
               <aside className={`${tab === "text" ? "block" : "hidden"} lg:block`}>
                 <SegmentOutline
+                  lang={lang}
                   bundle={bundle}
                   activeIndex={activeIndex}
                   onJump={(i) => advanceMutation.mutate(i)}
@@ -953,10 +962,12 @@ function AiVoiceControls({
 }
 
 function SegmentOutline({
+  lang,
   bundle,
   activeIndex,
   onJump,
 }: {
+  lang: "he" | "en";
   bundle: Bundle;
   activeIndex: number;
   onJump: (index: number) => void;
@@ -970,10 +981,12 @@ function SegmentOutline({
 
   return (
     <div className="scholar-card p-4">
-      <div className="eyebrow mb-3">קטעים</div>
+      <div className="eyebrow mb-3">{lang === "he" ? "קטעים" : "Segments"}</div>
       {visibleSegments.length < bundle.segments.length && (
         <div className="mb-2 rounded-2xl border border-border bg-background/30 p-2 text-xs text-muted-foreground">
-          מציגים את הקטעים סביב המיקום הנוכחי כדי לשמור על ביצועים.
+          {lang === "he"
+            ? "מציגים את הקטעים סביב המיקום הנוכחי כדי לשמור על ביצועים."
+            : "Showing segments near your current position for performance."}
         </div>
       )}
       <div className="max-h-[70vh] space-y-2 overflow-auto pe-1">
@@ -983,7 +996,9 @@ function SegmentOutline({
             onClick={() => onJump(segment.index)}
             className={`block w-full rounded-2xl border p-3 text-start text-sm ${segment.index === activeIndex ? "border-primary bg-primary/10 text-primary" : "border-border bg-background/30 text-muted-foreground"}`}
           >
-            <div className="font-medium">קטע {segment.index + 1}</div>
+            <div className="font-medium">
+              {lang === "he" ? `קטע ${segment.index + 1}` : `Segment ${segment.index + 1}`}
+            </div>
             <div className="mt-1 line-clamp-2 text-xs">{segment.text}</div>
           </button>
         ))}

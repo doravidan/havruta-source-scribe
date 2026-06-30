@@ -79,7 +79,7 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-5 sm:py-10">
+    <div className="flex min-h-screen items-center justify-center px-4 py-5 sm:py-10" id="main-content">
       <div className="grid w-full max-w-5xl items-stretch gap-6 lg:grid-cols-[0.9fr_1fr]">
         <section className="scholar-card p-6 sm:p-8 hidden lg:flex flex-col justify-between">
           <div>
@@ -150,6 +150,7 @@ function AuthPage() {
             <input
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t.email}
@@ -158,6 +159,7 @@ function AuthPage() {
             <input
               type="password"
               required
+              autoComplete={mode === "in" ? "current-password" : "new-password"}
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
