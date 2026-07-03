@@ -303,6 +303,41 @@ export type Database = {
         }
         Relationships: []
       }
+      chavruta_queue: {
+        Row: {
+          enqueued_at: string
+          exclude_user_id: string | null
+          lang: string
+          matched_session_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          enqueued_at?: string
+          exclude_user_id?: string | null
+          lang?: string
+          matched_session_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          enqueued_at?: string
+          exclude_user_id?: string | null
+          lang?: string
+          matched_session_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chavruta_queue_matched_session_id_fkey"
+            columns: ["matched_session_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chavruta_study_progress: {
         Row: {
           id: string
@@ -933,6 +968,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      instant_chavruta_status: { Args: never; Returns: Json }
+      join_instant_chavruta: { Args: { _lang?: string }; Returns: Json }
+      leave_instant_chavruta: { Args: never; Returns: undefined }
       library_browse: { Args: { _path: string[] }; Returns: Json }
       match_chunks: {
         Args: {
