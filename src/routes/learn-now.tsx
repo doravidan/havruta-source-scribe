@@ -25,7 +25,8 @@ export const Route = createFileRoute("/learn-now")({
       { title: "לימוד מיידי — חסידותא · Chassiduta" },
       {
         name: "description",
-        content: "לחיצה אחת ומקבלים חברותא חיה: התאמה מיידית עם לומד שמחובר עכשיו, מקור משותף, וקול.",
+        content:
+          "לחיצה אחת ומקבלים חברותא חיה: התאמה מיידית עם לומד שמחובר עכשיו, מקור משותף, וקול.",
       },
     ],
   }),
@@ -202,7 +203,10 @@ function LearnNowPage() {
         id="main-content"
         className="relative mx-auto flex min-h-[calc(100dvh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-12"
       >
-        <div aria-hidden className="hero-aurora pointer-events-none absolute inset-0 -z-10 opacity-60" />
+        <div
+          aria-hidden
+          className="hero-aurora pointer-events-none absolute inset-0 -z-10 opacity-60"
+        />
 
         <AnimatePresence mode="wait">
           {phase === "idle" && (
@@ -217,8 +221,10 @@ function LearnNowPage() {
                 <Radio className="h-3.5 w-3.5 text-[var(--moss)]" />
                 {he ? "חברותא מיידית" : "instant chavruta"}
               </div>
-              <h1 className="text-5xl leading-tight gold-text sm:text-6xl">
-                {he ? "מישהו מחכה ללמוד איתך" : "Someone is waiting to learn with you"}
+              <h1 className="text-5xl leading-tight sm:text-6xl">
+                <span className="flow-text">
+                  {he ? "מישהו מחכה ללמוד איתך" : "Someone is waiting to learn with you"}
+                </span>
               </h1>
               <p className="mx-auto mt-4 max-w-md text-base leading-7 text-muted-foreground">
                 {he
@@ -232,9 +238,9 @@ function LearnNowPage() {
                 whileTap={{ scale: 0.97 }}
                 disabled={join.isPending}
                 onClick={() => join.mutate()}
-                className="group relative mx-auto mt-10 grid h-44 w-44 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_30px_80px_-30px_rgba(92,37,31,0.85)] disabled:opacity-60"
+                className="flow-button group relative mx-auto mt-10 grid h-44 w-44 place-items-center rounded-full shadow-[0_30px_80px_-30px_rgba(92,37,31,0.85)] disabled:opacity-60"
               >
-                <span className="absolute inset-0 -z-10 animate-glow-pulse rounded-full bg-primary/30 blur-2xl" />
+                <span className="absolute inset-0 -z-10 animate-glow-pulse rounded-full bg-[var(--rose)]/30 blur-2xl" />
                 <span className="grid place-items-center gap-2">
                   {join.isPending ? (
                     <Loader2 className="h-9 w-9 animate-spin" />
@@ -271,7 +277,7 @@ function LearnNowPage() {
                       ["⏭️", "Next in line", "Not a fit? Skip to the next learner"],
                     ]
                 ).map(([icon, title, body]) => (
-                  <div key={title} className="scholar-card p-4">
+                  <div key={title} className="scholar-card glow-card p-4">
                     <div className="text-2xl">{icon}</div>
                     <div className="mt-2 text-sm font-semibold">{title}</div>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{body}</p>
@@ -290,16 +296,20 @@ function LearnNowPage() {
               className="w-full max-w-xl text-center"
             >
               <div className="relative mx-auto grid h-52 w-52 place-items-center">
-                <span className="absolute inset-0 animate-ping rounded-full border-2 border-primary/30" />
-                <span className="absolute inset-4 animate-ping rounded-full border-2 border-primary/20 [animation-delay:300ms]" />
-                <span className="absolute inset-8 animate-ping rounded-full border-2 border-primary/10 [animation-delay:600ms]" />
-                <div className="grid h-28 w-28 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl">
-                  <Users className="h-10 w-10" />
+                <span className="absolute inset-0 animate-ping rounded-full border-2 border-[var(--rose)]/30" />
+                <span className="absolute inset-4 animate-ping rounded-full border-2 border-[var(--royal)]/25 [animation-delay:300ms]" />
+                <span className="absolute inset-8 animate-ping rounded-full border-2 border-[var(--teal)]/20 [animation-delay:600ms]" />
+                <div className="flow-ring rounded-full p-1">
+                  <div className="grid h-28 w-28 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl">
+                    <Users className="h-10 w-10" />
+                  </div>
                 </div>
               </div>
 
-              <h2 className="mt-8 text-3xl gold-text sm:text-4xl">
-                {he ? "מחפשים לך חברותא…" : "Finding your chavruta…"}
+              <h2 className="mt-8 text-3xl sm:text-4xl">
+                <span className="flow-text">
+                  {he ? "מחפשים לך חברותא…" : "Finding your chavruta…"}
+                </span>
               </h2>
               <p className="mt-3 text-muted-foreground">
                 {he
@@ -342,12 +352,14 @@ function LearnNowPage() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 16 }}
-                className="mx-auto grid h-32 w-32 place-items-center rounded-full bg-[var(--moss)] text-white shadow-2xl"
+                className="flow-ring mx-auto w-fit rounded-full p-1 shadow-2xl"
               >
-                <Users className="h-14 w-14" />
+                <div className="grid h-32 w-32 place-items-center rounded-full bg-[var(--moss)] text-white">
+                  <Users className="h-14 w-14" />
+                </div>
               </motion.div>
-              <h2 className="mt-6 text-4xl gold-text">
-                {he ? "נמצאה חברותא!" : "Chavruta found!"}
+              <h2 className="mt-6 text-4xl">
+                <span className="flow-text">{he ? "נמצאה חברותא!" : "Chavruta found!"}</span>
               </h2>
               <p className="mt-2 text-muted-foreground">
                 {he ? "פותחים לכם חדר לימוד…" : "Opening your study room…"}

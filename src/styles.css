@@ -129,6 +129,22 @@
   --shadow-card: 0 1px 0 rgba(255,255,255,0.75) inset, 0 18px 50px -42px rgba(75, 48, 24, 0.55);
   --shadow-rise: 0 1px 0 rgba(255,255,255,0.85) inset, 0 24px 70px -42px rgba(75, 48, 24, 0.65);
   --shadow-glow: 0 0 0 1px rgba(136, 57, 47, 0.16), 0 30px 80px -52px rgba(136, 57, 47, 0.32);
+
+  /* Vibrant accents that still sit well on parchment */
+  --royal: #3d4d9e;
+  --royal-soft: rgba(61, 77, 158, 0.12);
+  --rose: #b34a68;
+  --rose-soft: rgba(179, 74, 104, 0.12);
+  --amber: #d9952f;
+  --teal: #2f8f77;
+  --teal-soft: rgba(47, 143, 119, 0.12);
+
+  /* Flowing gradient stops used by aurora / flow-text / rings */
+  --flow-a: #88392f;
+  --flow-b: #d9952f;
+  --flow-c: #2f8f77;
+  --flow-d: #3d4d9e;
+  --flow-e: #b34a68;
 }
 
 @layer base {
@@ -332,6 +348,66 @@
   50% { transform: translate3d(0.45rem,-0.35rem,0); }
 }
 
+@keyframes flow-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes aurora-morph {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    filter: hue-rotate(0deg);
+  }
+  33% {
+    transform: translate3d(2%, -3%, 0) rotate(1.2deg) scale(1.04);
+    filter: hue-rotate(-8deg);
+  }
+  66% {
+    transform: translate3d(-2%, 2%, 0) rotate(-1deg) scale(1.02);
+    filter: hue-rotate(6deg);
+  }
+}
+
+@keyframes orbit-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.6); }
+  70% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ticker-slide {
+  0% { opacity: 0; transform: translateY(0.9em); }
+  12%, 88% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-0.9em); }
+}
+
+@keyframes cheer-burst {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35) rotate(-8deg); }
+  70% { transform: scale(0.92) rotate(4deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ring-rotate {
+  to { --ring-angle: 360deg; }
+}
+
+@property --ring-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 @keyframes reaction-float {
   0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.5); }
   12% { opacity: 1; transform: translate3d(calc(var(--drift, 0px) * 0.2), -18px, 0) scale(1.15); }
@@ -353,12 +429,13 @@
 
 @utility hero-aurora {
   background:
-    linear-gradient(120deg, transparent 0 24%, rgba(136,57,47,0.08) 24% 25%, transparent 25% 100%),
-    linear-gradient(300deg, transparent 0 58%, rgba(72,107,87,0.07) 58% 59%, transparent 59% 100%),
-    radial-gradient(420px 260px at 28% 18%, rgba(72,107,87,0.12), transparent 58%),
-    radial-gradient(520px 320px at 82% 72%, rgba(185,130,45,0.1), transparent 62%);
-  animation: slow-drift 12s ease-in-out infinite;
-  opacity: 0.85;
+    radial-gradient(560px 340px at 22% 14%, rgba(47,143,119,0.16), transparent 60%),
+    radial-gradient(640px 400px at 84% 22%, rgba(136,57,47,0.15), transparent 62%),
+    radial-gradient(520px 380px at 70% 86%, rgba(217,149,47,0.14), transparent 60%),
+    radial-gradient(460px 320px at 8% 78%, rgba(61,77,158,0.11), transparent 58%),
+    radial-gradient(380px 280px at 48% 46%, rgba(179,74,104,0.07), transparent 62%);
+  animation: aurora-morph 18s ease-in-out infinite;
+  opacity: 0.9;
 }
 
 @utility glass-panel {
@@ -378,12 +455,114 @@
 
 @utility animate-confetti-fall { animation: confetti-fall 1.4s ease-in forwards; }
 
+@utility animate-float-y { animation: float-y 5s ease-in-out infinite; }
+
+@utility animate-pop-in { animation: pop-in 0.5s cubic-bezier(.2,1.2,.3,1) both; }
+
+@utility animate-cheer-burst { animation: cheer-burst 0.55s cubic-bezier(.3,1.4,.4,1); }
+
 @utility shimmer-text {
   background: linear-gradient(90deg, var(--oxide-deep), var(--clay), var(--oxide-deep));
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Animated multicolor headline — the signature "color flow" */
+@utility flow-text {
+  background: linear-gradient(
+    100deg,
+    var(--flow-a) 0%,
+    var(--flow-e) 22%,
+    var(--flow-d) 44%,
+    var(--flow-c) 66%,
+    var(--flow-b) 84%,
+    var(--flow-a) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: flow-pan 9s ease-in-out infinite;
+}
+
+/* Animated gradient border ring (conic) — for avatars & live cards */
+@utility flow-ring {
+  position: relative;
+  background:
+    linear-gradient(var(--panel-strong), var(--panel-strong)) padding-box,
+    conic-gradient(
+      from var(--ring-angle, 0deg),
+      var(--flow-a),
+      var(--flow-b),
+      var(--flow-c),
+      var(--flow-d),
+      var(--flow-e),
+      var(--flow-a)
+    ) border-box;
+  border: 2px solid transparent;
+  animation: ring-rotate 5s linear infinite;
+}
+
+/* Soft animated gradient wash for section backdrops */
+@utility flow-wash {
+  background: linear-gradient(
+    115deg,
+    rgba(136,57,47,0.10),
+    rgba(217,149,47,0.10),
+    rgba(47,143,119,0.10),
+    rgba(61,77,158,0.09),
+    rgba(179,74,104,0.09),
+    rgba(136,57,47,0.10)
+  );
+  background-size: 320% 320%;
+  animation: flow-pan 14s ease-in-out infinite;
+}
+
+/* Gradient CTA button with sheen sweep */
+@utility flow-button {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, var(--flow-a), var(--flow-e) 45%, var(--flow-d) 100%);
+  background-size: 220% 100%;
+  animation: flow-pan 7s ease-in-out infinite;
+  color: #fff8ea;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.28) 50%, transparent 62%);
+    transform: translateX(-120%);
+    transition: transform 700ms ease;
+  }
+  &:hover::after { transform: translateX(120%); }
+  html[dir="rtl"] &::after { transform: translateX(120%); }
+  html[dir="rtl"] &:hover::after { transform: translateX(-120%); }
+}
+
+/* Vertical rotating ticker for live activity lines */
+@utility ticker-line { animation: ticker-slide 3.6s ease-in-out infinite; }
+
+/* Elevated glass card with colorful edge glow on hover */
+@utility glow-card {
+  position: relative;
+  transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(120deg, var(--flow-b), var(--flow-c), var(--flow-d));
+    opacity: 0;
+    filter: blur(14px);
+    transition: opacity 260ms ease;
+  }
+  &:hover { transform: translateY(-3px); }
+  &:hover::after { opacity: 0.35; }
 }
 
 @media (max-width: 640px) {

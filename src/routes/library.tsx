@@ -105,8 +105,8 @@ function LibraryPage() {
               <LibraryIcon className="h-3.5 w-3.5 text-primary" />
               {lang === "he" ? "עיון במאגר" : "browse corpus"}
             </div>
-            <h1 className="text-4xl sm:text-5xl gold-text">
-              {lang === "he" ? "ספריית לימוד" : "Study library"}
+            <h1 className="text-4xl sm:text-5xl">
+              <span className="flow-text">{lang === "he" ? "ספריית לימוד" : "Study library"}</span>
             </h1>
             <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-muted-foreground">
               {lang === "he"

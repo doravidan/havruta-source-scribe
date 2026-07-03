@@ -1,7 +1,17 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Sparkles, Users, Zap } from "lucide-react";
+import {
+  BookOpen,
+  Languages,
+  Library,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Zap,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
@@ -12,8 +22,7 @@ import logo from "@/assets/chassiduta-logo.png";
 
 const navLinkBase =
   "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 text-sm transition-colors min-w-10";
-const navLinkIdle =
-  "border-border/80 bg-white/35 text-foreground hover:bg-white/60";
+const navLinkIdle = "border-border/80 bg-white/35 text-foreground hover:bg-white/60";
 const navLinkActive =
   "border-primary/45 bg-primary/10 text-primary font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]";
 
@@ -34,6 +43,7 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-[rgba(248,242,230,0.92)] shadow-[0_10px_40px_-32px_rgba(75,48,24,0.5)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(248,242,230,0.86)]">
+      <div aria-hidden className="flow-wash h-[3px] w-full opacity-80" />
       <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 sm:px-8 lg:min-h-16 lg:flex-row lg:flex-wrap lg:items-center lg:gap-5">
         <div className="flex w-full items-center justify-between gap-3 sm:hidden">
           <BrandLink lang={lang} t={t} compact />
@@ -75,9 +85,7 @@ export function TopBar() {
             aria-label={lang === "he" ? "לימוד מיידי" : "Learn now"}
             aria-current={isActive("/learn-now") ? "page" : undefined}
             className={`${navLinkBase} ${
-              isActive("/learn-now")
-                ? navLinkActive
-                : "border-[var(--moss)]/40 bg-[var(--moss)]/10 font-semibold text-[var(--moss)] hover:bg-[var(--moss)]/20"
+              isActive("/learn-now") ? navLinkActive : "flow-button border-transparent font-bold"
             }`}
           >
             <Zap className="h-4 w-4" />
@@ -182,7 +190,9 @@ function BrandLink({
         className={`rounded-full border border-border bg-white/50 p-0.5 shadow-sm transition-transform group-hover:scale-[1.03] ${compact ? "h-9 w-9" : "h-10 w-10"}`}
       />
       <div className="min-w-0 leading-tight">
-        <span className={`block truncate font-semibold text-[var(--ink)] ${compact ? "text-lg" : "text-xl"}`}>
+        <span
+          className={`block truncate font-semibold text-[var(--ink)] ${compact ? "text-lg" : "text-xl"}`}
+        >
           {t.brand}
         </span>
         {!compact && (

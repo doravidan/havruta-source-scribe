@@ -22,12 +22,18 @@ export function SessionCompleteOverlay({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 backdrop-blur-sm">
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-card p-8 text-center shadow-2xl">
+        <div
+          aria-hidden
+          className="flow-wash pointer-events-none absolute inset-x-0 top-0 h-24 opacity-60"
+        />
         <ConfettiBurst burstKey={1} />
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/12 text-primary">
-          <PartyPopper className="h-8 w-8" />
+        <div className="flow-ring animate-pop-in mx-auto w-fit rounded-full p-1">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-card text-primary">
+            <PartyPopper className="h-8 w-8" />
+          </div>
         </div>
-        <h2 className="mt-4 text-3xl gold-text">
-          {he ? "סיימתם את הלימוד!" : "You finished the study!"}
+        <h2 className="mt-4 text-3xl">
+          <span className="flow-text">{he ? "סיימתם את הלימוד!" : "You finished the study!"}</span>
         </h2>
         <p className="mt-2 text-muted-foreground">{sourceTitle}</p>
 
@@ -76,7 +82,13 @@ export function SessionCompleteOverlay({
             to={isAiCompanion ? "/library" : "/chavruta"}
             className="inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-semibold"
           >
-            {he ? (isAiCompanion ? "לספרייה" : "לחברותות") : isAiCompanion ? "Library" : "Chavrutot"}
+            {he
+              ? isAiCompanion
+                ? "לספרייה"
+                : "לחברותות"
+              : isAiCompanion
+                ? "Library"
+                : "Chavrutot"}
           </Link>
         </div>
       </div>

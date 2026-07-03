@@ -17,16 +17,7 @@ import {
 } from "@/lib/chavruta-matching";
 import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import { toast } from "sonner";
-import {
-  CalendarClock,
-  Check,
-  MessageCircle,
-  Phone,
-  Plus,
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
+import { CalendarClock, Check, MessageCircle, Phone, Plus, Sparkles, Users, X } from "lucide-react";
 
 export const Route = createFileRoute("/chavruta")({
   head: () => ({
@@ -234,10 +225,8 @@ function ChavrutaPage() {
         { event: "INSERT", schema: "public", table: "chavruta_messages" },
         () => qc.invalidateQueries({ queryKey: ["chavruta-social", user.id] }),
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chavruta_matches" },
-        () => qc.invalidateQueries({ queryKey: ["chavruta-social", user.id] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "chavruta_matches" }, () =>
+        qc.invalidateQueries({ queryKey: ["chavruta-social", user.id] }),
       )
       .subscribe();
     return () => {
@@ -412,8 +401,8 @@ function ChavrutaPage() {
     queryKey: ["chavruta-contacts", socialQ.data?.matches?.map((m) => m.id).join(",")],
     enabled: !!user && !!socialQ.data?.matches?.some((m) => m.status === "accepted"),
     queryFn: async () => {
-      const acceptedIds = socialQ.data!.matches
-        .filter((x) => x.status === "accepted")
+      const acceptedIds = socialQ
+        .data!.matches.filter((x) => x.status === "accepted")
         .map((m) => m.id);
       if (!acceptedIds.length) return {};
       const { data, error } = await db.rpc<
@@ -499,8 +488,10 @@ function ChavrutaPage() {
               <Users className="h-3.5 w-3.5 text-primary" />
               {lang === "he" ? "רשת חברותות" : "chavruta network"}
             </div>
-            <h1 className="text-4xl sm:text-5xl gold-text">
-              {lang === "he" ? "לומדים חסידות ביחד" : "Learn Chassidus together"}
+            <h1 className="text-4xl sm:text-5xl">
+              <span className="flow-text">
+                {lang === "he" ? "לומדים חסידות ביחד" : "Learn Chassidus together"}
+              </span>
             </h1>
             <p className="mt-3 max-w-2xl text-muted-foreground leading-7">
               {lang === "he"
