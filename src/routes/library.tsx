@@ -9,6 +9,7 @@ import { useLang } from "@/lib/lang-context";
 import { browseLibrary } from "@/lib/library-browse.functions";
 import { useSourceSequenceNav } from "@/hooks/use-source-sequence-nav";
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -16,6 +17,7 @@ import {
   Home,
   Library as LibraryIcon,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/library")({
