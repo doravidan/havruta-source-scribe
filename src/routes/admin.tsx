@@ -355,6 +355,91 @@ function AdminPage() {
           </div>
         </div>
 
+        <div className="scholar-card p-5 mb-6">
+          <div className="flex items-start justify-between mb-2 gap-2">
+            <h2 className="font-medium flex items-center gap-2">
+              <Database className="h-4 w-4 text-primary" />
+              {lang === "he" ? "בניית אינדקס HNSW" : "HNSW index build"}
+            </h2>
+            <button
+              onClick={() => refetchHnsw()}
+              disabled={hnswLoading}
+              className="text-xs inline-flex items-center gap-1 px-2 h-8 rounded-md border border-border disabled:opacity-40"
+              aria-label={lang === "he" ? "רענן" : "Refresh"}
+            >
+              <RefreshCw className={`h-3 w-3 ${hnswLoading ? "animate-spin" : ""}`} />
+              {lang === "he" ? "רענן" : "Refresh"}
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === "he"
+              ? "בונה אינדקס HNSW על source_chunks.embedding_half ברקע דרך pg_cron (עוקף את מגבלת הזמן של הפרוקסי HTTP)."
+              : "Builds the HNSW index on source_chunks.embedding_half in the background via pg_cron (bypasses the HTTP proxy timeout)."}
+          </p>
+
+          {hnsw ? (
+            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+              <div className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "אינדקס קיים" : "Index exists"}:{" "}
+                <b className={hnsw.index_exists ? "text-primary" : ""}>
+                  {hnsw.index_exists ? (lang === "he" ? "כן" : "yes") : (lang === "he" ? "לא" : "no")}
+                </b>
+              </div>
+              <div className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "גודל" : "Size"}: <b className="tabular-nums">{hnsw.index_size ?? "—"}</b>
+              </div>
+              <div className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "משימת cron" : "Cron scheduled"}:{" "}
+                <b>{hnsw.job_scheduled ? (lang === "he" ? "כן" : "yes") : (lang === "he" ? "לא" : "no")}</b>
+              </div>
+              <div className="px-2 py-1 rounded bg-background/40 border border-border">
+                {lang === "he" ? "בונים פעילים" : "Active builds"}:{" "}
+                <b className="tabular-nums">{hnsw.active_builds?.length ?? 0}</b>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground mb-3 inline-flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {lang === "he" ? "טוען סטטוס…" : "Loading status…"}
+            </div>
+          )}
+
+          {hnsw?.last_run && (
+            <details className="text-xs mb-3">
+              <summary className="cursor-pointer text-muted-foreground">
+                {lang === "he" ? "הרצה אחרונה" : "Last run"}
+              </summary>
+              <pre className="mt-2 p-2 rounded bg-background/40 border border-border overflow-x-auto">
+                {JSON.stringify(hnsw.last_run, null, 2)}
+              </pre>
+            </details>
+          )}
+
+          {hnsw?.active_builds && hnsw.active_builds.length > 0 && (
+            <details className="text-xs mb-3">
+              <summary className="cursor-pointer text-muted-foreground">
+                {lang === "he" ? "בונים פעילים" : "Active builds"} ({hnsw.active_builds.length})
+              </summary>
+              <pre className="mt-2 p-2 rounded bg-background/40 border border-border overflow-x-auto">
+                {JSON.stringify(hnsw.active_builds, null, 2)}
+              </pre>
+            </details>
+          )}
+
+          <button
+            onClick={() => startHnswM.mutate()}
+            disabled={startHnswM.isPending || hnsw?.index_exists}
+            className="px-4 h-11 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-40 inline-flex items-center gap-2"
+          >
+            {startHnswM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {hnsw?.index_exists
+              ? (lang === "he" ? "האינדקס קיים" : "Index already built")
+              : (lang === "he" ? "נסה בנייה שוב" : "Retry build")}
+          </button>
+        </div>
+
+
+
 
 
         <div className="scholar-card p-5 mb-6">
