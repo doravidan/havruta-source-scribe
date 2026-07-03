@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Users } from "lucide-react";
+import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
@@ -81,6 +81,12 @@ export function TopBar() {
             icon={<Users className="h-4 w-4" />}
             label={lang === "he" ? "חברותות" : "Chavruta"}
             active={isActive("/chavruta")}
+          />
+          <NavLink
+            to="/community"
+            icon={<Sparkles className="h-4 w-4" />}
+            label={lang === "he" ? "קהילה" : "Community"}
+            active={isActive("/community")}
           />
           <NavLink
             to="/beit-midrash"
@@ -183,7 +189,7 @@ function NavLink({
   wide,
   active,
 }: {
-  to: "/library" | "/chavruta" | "/beit-midrash";
+  to: "/library" | "/chavruta" | "/beit-midrash" | "/community";
   icon: React.ReactNode;
   label: string;
   wide?: boolean;

@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Check,
+  Flag,
   HelpCircle,
   Loader2,
   Sparkles,
@@ -17,6 +18,7 @@ import {
   ChatPanel,
   GuidePanel,
   SegmentOutline,
+  SessionCompleteOverlay,
   StudyTextStage,
   type StudyProgressRow,
   type StudyQuestionRow,
@@ -28,6 +30,7 @@ import { toast } from "sonner";
 import {
   advanceStudySegment,
   askStudySegmentQuestion,
+  completeStudySession,
   generateSegmentQuestions,
   getStudySession,
   setSegmentStatus,
@@ -52,10 +55,16 @@ function StudyRoomPage() {
   const advanceFn = useServerFn(advanceStudySegment);
   const generateFn = useServerFn(generateSegmentQuestions);
   const askFn = useServerFn(askStudySegmentQuestion);
+  const completeFn = useServerFn(completeStudySession);
   const [draft, setDraft] = useState("");
   const [questionDraft, setQuestionDraft] = useState("");
   const [selectedText, setSelectedText] = useState("");
   const [tab, setTab] = useState<"text" | "guide" | "chat">("text");
+  const [confettiKey, setConfettiKey] = useState(0);
+  const [completion, setCompletion] = useState<{
+    stats: { questions: number; understoodSegments: number };
+  } | null>(null);
+  const celebratedSegmentsRef = useRef<Set<number>>(new Set());
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audio = useStudyAudioCall(sessionId, user?.id);
   const presence = useStudyPresence(sessionId, user?.id);
@@ -92,6 +101,11 @@ function StudyRoomPage() {
       progress.find((p: StudyProgressRow) => p.user_id === user?.id && p.segment_index === activeIndex),
     [activeIndex, progress, user?.id],
   );
+  const partnerProgress = useMemo(
+    () =>
+      progress.find((p: StudyProgressRow) => p.user_id !== user?.id && p.segment_index === activeIndex),
+    [activeIndex, progress, user?.id],
+  );
   const understoodCount = useMemo(
     () =>
       new Set(
@@ -101,11 +115,39 @@ function StudyRoomPage() {
       ).size,
     [activeIndex, progress],
   );
+  const myUnderstoodTotal = useMemo(
+    () =>
+      new Set(
+        progress
+          .filter((p: StudyProgressRow) => p.user_id === user?.id && p.status === "understood")
+          .map((p: StudyProgressRow) => p.segment_index),
+      ).size,
+    [progress, user?.id],
+  );
+  const segmentsTotal = Math.max(1, bundle?.segments.length ?? 1);
+  const progressPct = (myUnderstoodTotal / segmentsTotal) * 100;
+  const isLastSegment = activeIndex >= segmentsTotal - 1;
+  const bothUnderstood = isAiCompanion
+    ? myProgress?.status === "understood"
+    : myProgress?.status === "understood" && partnerProgress?.status === "understood";
+
+  // Celebrate the first time a segment is fully understood by everyone in the room.
+  useEffect(() => {
+    if (!bothUnderstood || celebratedSegmentsRef.current.has(activeIndex)) return;
+    celebratedSegmentsRef.current.add(activeIndex);
+    setConfettiKey((k) => k + 1);
+  }, [bothUnderstood, activeIndex]);
 
   useEffect(() => {
     if (!audio.remoteStream || !remoteAudioRef.current) return;
     remoteAudioRef.current.srcObject = audio.remoteStream;
-  }, [audio.remoteStream]);
+    remoteAudioRef.current.play().catch(() => {
+      toast.info(
+        lang === "he" ? "לחץ במסך כדי להפעיל שמע" : "Tap anywhere to enable audio",
+        { duration: 4000 },
+      );
+    });
+  }, [audio.remoteStream, lang]);
 
   useEffect(() => {
     if (!user) return;
@@ -171,6 +213,17 @@ function StudyRoomPage() {
     mutationFn: (status: "reading" | "confused" | "understood" | "answered") =>
       setStatusFn({ data: { sessionId, segmentIndex: activeIndex, status } }),
     onSuccess: () => invalidateStudy(),
+    onError: toastError,
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: () => completeFn({ data: { sessionId } }),
+    onSuccess: (result) => {
+      setCompletion({ stats: result.stats });
+      setConfettiKey((k) => k + 1);
+      invalidateStudy();
+      qc.invalidateQueries({ queryKey: ["study-summary"] });
+    },
     onError: toastError,
   });
 
@@ -374,6 +427,7 @@ function StudyRoomPage() {
                   bundle={bundle}
                   activeIndex={activeIndex}
                   onJump={(i) => advanceMutation.mutate(i)}
+                  userId={user.id}
                 />
               </aside>
 
@@ -384,6 +438,7 @@ function StudyRoomPage() {
                   lang={lang}
                   activeSegmentText={activeSegment.text}
                   status={myProgress?.status ?? "reading"}
+                  partnerStatus={partnerProgress?.status}
                   isAiCompanion={isAiCompanion}
                   partnerOnline={presence.partnerOnline}
                   audio={audio}
@@ -391,14 +446,28 @@ function StudyRoomPage() {
                   selectedAskPending={askSelectedMutation.isPending}
                   onSelectedText={setSelectedText}
                   onAskSelected={() => askSelectedMutation.mutate()}
+                  reactions={presence.reactions}
+                  onReact={presence.sendReaction}
+                  progressPct={progressPct}
+                  confettiKey={confettiKey}
                 />
                 <div className="flex flex-wrap gap-2 border-t border-border bg-background/30 p-4 sm:p-5">
                   <button
                     onClick={() => statusMutation.mutate("understood")}
-                    className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                    className={`inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-all ${
+                      myProgress?.status === "understood"
+                        ? "bg-[var(--moss)] text-white shadow-md"
+                        : "bg-primary text-primary-foreground"
+                    }`}
                   >
                     <Check className="h-4 w-4" />
-                    {lang === "he" ? "הבנתי" : "Understood"}
+                    {myProgress?.status === "understood"
+                      ? lang === "he"
+                        ? "הבנתי ✓"
+                        : "Understood ✓"
+                      : lang === "he"
+                        ? "הבנתי"
+                        : "Understood"}
                   </button>
                   <button
                     onClick={() => statusMutation.mutate("confused")}
@@ -415,13 +484,41 @@ function StudyRoomPage() {
                     <Sparkles className="h-4 w-4" />
                     {lang === "he" ? "שאלות על הקטע" : "Questions on this"}
                   </button>
-                  <button
-                    disabled={activeIndex >= bundle.segments.length - 1}
-                    onClick={() => advanceMutation.mutate(activeIndex + 1)}
-                    className="ms-auto inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-40"
-                  >
-                    {lang === "he" ? "הבא" : "Next"}
-                  </button>
+                  {isLastSegment ? (
+                    <button
+                      disabled={completeMutation.isPending}
+                      onClick={() => completeMutation.mutate()}
+                      className={`ms-auto inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold text-white disabled:opacity-60 ${
+                        bothUnderstood
+                          ? "animate-glow-pulse bg-[var(--moss)]"
+                          : "bg-[var(--moss)]/80"
+                      }`}
+                    >
+                      {completeMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Flag className="h-4 w-4" />
+                      )}
+                      {lang === "he" ? "סיימנו!" : "We finished!"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => advanceMutation.mutate(activeIndex + 1)}
+                      className={`ms-auto inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold transition-all ${
+                        bothUnderstood
+                          ? "animate-glow-pulse bg-primary text-primary-foreground shadow-lg"
+                          : "border border-border"
+                      }`}
+                    >
+                      {bothUnderstood
+                        ? lang === "he"
+                          ? "ממשיכים! ←"
+                          : "Onward! →"
+                        : lang === "he"
+                          ? "הבא"
+                          : "Next"}
+                    </button>
+                  )}
                 </div>
               </section>
 
@@ -476,6 +573,16 @@ function StudyRoomPage() {
           </>
         )}
       </main>
+      {completion && bundle && (
+        <SessionCompleteOverlay
+          lang={lang}
+          sourceTitle={bundle.source.title ?? (lang === "he" ? "המקור" : "the source")}
+          segmentsTotal={segmentsTotal}
+          stats={completion.stats}
+          isAiCompanion={isAiCompanion}
+          onKeepReading={() => setCompletion(null)}
+        />
+      )}
     </div>
   );
 }

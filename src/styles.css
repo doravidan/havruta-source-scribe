@@ -323,6 +323,17 @@
   50% { transform: translate3d(0.45rem,-0.35rem,0); }
 }
 
+@keyframes reaction-float {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.5); }
+  12% { opacity: 1; transform: translate3d(calc(var(--drift, 0px) * 0.2), -18px, 0) scale(1.15); }
+  100% { opacity: 0; transform: translate3d(var(--drift, 0px), -180px, 0) scale(0.9); }
+}
+
+@keyframes confetti-fall {
+  0% { opacity: 1; transform: translate3d(0, -10%, 0) rotate(0deg); }
+  100% { opacity: 0; transform: translate3d(0, 70vh, 0) rotate(var(--spin, 180deg)); }
+}
+
 @utility hero-stage {
   isolation: isolate;
   background:
@@ -341,6 +352,10 @@
 @utility hero-orbit-card { animation: none; }
 
 @utility animate-glow-pulse { animation: glow-pulse 2.8s ease-in-out infinite; }
+
+@utility animate-reaction-float { animation: reaction-float 2.5s ease-out forwards; }
+
+@utility animate-confetti-fall { animation: confetti-fall 1.4s ease-in forwards; }
 
 @utility shimmer-text {
   background: linear-gradient(90deg, var(--oxide-deep), var(--clay), var(--oxide-deep));
