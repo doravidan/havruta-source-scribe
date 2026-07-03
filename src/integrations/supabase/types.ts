@@ -844,6 +844,10 @@ export type Database = {
         Args: { _maintenance_work_mem?: string }
         Returns: Json
       }
+      can_access_study_realtime_channel: {
+        Args: { _topic: string }
+        Returns: boolean
+      }
       claim_chabad_crawl_batch: {
         Args: { batch_size: number }
         Returns: {
@@ -884,6 +888,24 @@ export type Database = {
         Returns: {
           display_name: string
           phone: string
+          user_id: string
+        }[]
+      }
+      get_chavruta_match_contacts: {
+        Args: { _match_ids: string[] }
+        Returns: {
+          display_name: string
+          match_id: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      get_chavruta_matching_slots: {
+        Args: never
+        Returns: {
+          day_of_week: number
+          end_time: string
+          start_time: string
           user_id: string
         }[]
       }
