@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { timingSafeEq } from "@/lib/timing-safe-eq.server";
 
 const CHABAD_API = "https://chabadlibrary.org/books/api/main?path=";
 const CHABAD_URL = "https://chabadlibrary.org/books/";
@@ -12,13 +13,6 @@ const CHABAD_URL = "https://chabadlibrary.org/books/";
  *   - if the node has text, ingests + embeds it
  * Called by pg_cron once per minute until queue empties.
  */
-function timingSafeEq(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 export const Route = createFileRoute("/api/public/hooks/chabad-crawl-tick")({
   server: {
     handlers: {

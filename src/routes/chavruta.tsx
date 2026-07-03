@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { TopBar } from "@/components/top-bar";
@@ -292,6 +292,7 @@ function ChavrutaPage() {
   const days = lang === "he" ? dayHe : dayEn;
   const [newSlot, setNewSlot] = useState({ day: 0, start: "20:00", end: "21:00" });
   const [topicInput, setTopicInput] = useState(defaultTopics.join(", "));
+  const topicsInitializedRef = useRef(false);
   const [messageDraft, setMessageDraft] = useState<Record<string, string>>({});
   const [sourceIntentId, setSourceIntentId] = useState<string | null>(null);
 
@@ -314,10 +315,21 @@ function ChavrutaPage() {
         .select("phone")
         .eq("user_id", user!.id)
         .maybeSingle();
-      if (profile?.topics?.length) setTopicInput(profile.topics.join(", "));
       return { profile: profile as Profile | null, phone: contact?.phone ?? "" };
     },
   });
+
+  useEffect(() => {
+    topicsInitializedRef.current = false;
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (topicsInitializedRef.current) return;
+    const topics = profileQ.data?.profile?.topics;
+    if (!topics?.length) return;
+    setTopicInput(topics.join(", "));
+    topicsInitializedRef.current = true;
+  }, [profileQ.data?.profile?.topics]);
 
   const availabilityQ = useQuery({
     queryKey: ["chavruta-availability", user?.id],

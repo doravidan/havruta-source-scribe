@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const SourceIdInput = z.object({ sourceId: z.string().uuid() });
 
 export type StudySummary = {
   loggedIn: true;
@@ -90,7 +93,7 @@ export const getStudySummary = createServerFn({ method: "GET" })
 
 export const toggleSourceStudied = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sourceId: string }) => input)
+  .inputValidator((d: unknown) => SourceIdInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -130,7 +133,7 @@ export const toggleSourceStudied = createServerFn({ method: "POST" })
 
 export const isSourceStudied = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sourceId: string }) => input)
+  .inputValidator((d: unknown) => SourceIdInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row, error } = await supabase

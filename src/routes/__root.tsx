@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -102,12 +102,29 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        lastUserIdRef.current = null;
         router.invalidate();
-        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+        queryClient.invalidateQueries();
+        return;
+      }
+      if (event === "USER_UPDATED") {
+        router.invalidate();
+        queryClient.invalidateQueries({ queryKey: ["chavruta-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-role"] });
+        return;
+      }
+      if (event === "SIGNED_IN") {
+        const uid = session?.user?.id ?? null;
+        if (uid !== lastUserIdRef.current) {
+          lastUserIdRef.current = uid;
+          router.invalidate();
+          queryClient.invalidateQueries();
+        }
       }
     });
     return () => sub.subscription.unsubscribe();

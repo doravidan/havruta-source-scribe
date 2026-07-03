@@ -19,6 +19,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
   }, [userId]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const localStreamRef = useRef<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -35,6 +36,33 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
       });
     },
     [peerId],
+  );
+
+  const flushPendingCandidates = useCallback(async (pc: RTCPeerConnection) => {
+    if (!pc.remoteDescription) return;
+    const pending = pendingCandidatesRef.current.splice(0);
+    for (const candidate of pending) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch {
+        // Non-fatal: a late or duplicate candidate should not tear down the call.
+      }
+    }
+  }, []);
+
+  const addIceCandidateSafe = useCallback(
+    async (pc: RTCPeerConnection, candidate: RTCIceCandidateInit) => {
+      if (!pc.remoteDescription) {
+        pendingCandidatesRef.current.push(candidate);
+        return;
+      }
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch {
+        // Ignore individual candidate failures during trickle ICE.
+      }
+    },
+    [],
   );
 
   const ensurePeer = useCallback(async () => {
@@ -57,9 +85,18 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     };
 
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      pc.close();
       throw new Error("mic_unavailable");
     }
-    const local = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    let local: MediaStream;
+    try {
+      local = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (e) {
+      pc.close();
+      throw e;
+    }
+
     localStreamRef.current = local;
     setLocalStream(local);
     for (const track of local.getAudioTracks()) pc.addTrack(track, local);
@@ -83,6 +120,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
 
   const hangUp = useCallback(() => {
     sendSignal({ type: "hangup" });
+    pendingCandidatesRef.current = [];
     pcRef.current?.close();
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -116,14 +154,21 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
           setState("connecting");
           const pc = await ensurePeer();
           await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+          await flushPendingCandidates(pc);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           sendSignal({ type: "answer", sdp: answer });
         } else if (msg.type === "answer" && msg.sdp && pcRef.current) {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-        } else if (msg.type === "ice" && msg.candidate && pcRef.current) {
-          await pcRef.current.addIceCandidate(new RTCIceCandidate(msg.candidate));
+          await flushPendingCandidates(pcRef.current);
+        } else if (msg.type === "ice" && msg.candidate) {
+          if (pcRef.current) {
+            await addIceCandidateSafe(pcRef.current, msg.candidate);
+          } else {
+            pendingCandidatesRef.current.push(msg.candidate);
+          }
         } else if (msg.type === "hangup") {
+          pendingCandidatesRef.current = [];
           pcRef.current?.close();
           pcRef.current = null;
           localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -144,8 +189,9 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     });
 
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
       channelRef.current = null;
+      pendingCandidatesRef.current = [];
       pcRef.current?.close();
       pcRef.current = null;
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -153,7 +199,15 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
       setLocalStream(null);
       setRemoteStream(null);
     };
-  }, [ensurePeer, peerId, sendSignal, sessionId, userId]);
+  }, [
+    addIceCandidateSafe,
+    ensurePeer,
+    flushPendingCandidates,
+    peerId,
+    sendSignal,
+    sessionId,
+    userId,
+  ]);
 
   return { state, error, muted, localStream, remoteStream, startCall, hangUp, toggleMute };
 }

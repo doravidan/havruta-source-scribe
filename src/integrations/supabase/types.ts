@@ -757,6 +757,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      consume_ai_rate_limit: {
+        Args: {
+          _bucket: string
+          _max_per_window: number
+          _window_seconds?: number
+        }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

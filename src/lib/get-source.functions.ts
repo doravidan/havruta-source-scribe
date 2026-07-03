@@ -6,6 +6,10 @@ const Input = z.object({
   lang: z.enum(["he", "en"]).default("he"),
 });
 
+function normalizeLang(lang: string | null | undefined): "he" | "en" {
+  return lang === "en" ? "en" : "he";
+}
+
 export const getSource = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
@@ -20,6 +24,13 @@ export const getSource = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("not_found");
+
+    const sourceLang = normalizeLang(row.language);
+    if (data.lang !== sourceLang) {
+      const { assertAuthenticatedRequest } = await import("./assert-auth.server");
+      await assertAuthenticatedRequest();
+    }
+
     const { localizeSourceForStudy } = await import("./localize-source.server");
     return localizeSourceForStudy(row, data.lang);
   });

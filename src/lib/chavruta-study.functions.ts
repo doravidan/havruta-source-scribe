@@ -312,6 +312,8 @@ export const generateSegmentQuestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAiRateLimit } = await import("./ai-rate-limit.server");
+    await assertAiRateLimit(context.supabase, "study_ai");
     const sb = context.supabase as AnySb;
     const bundle = await loadSessionBundle(sb, data.sessionId, data.lang);
     const existing = bundle.questions.filter(
@@ -366,6 +368,8 @@ export const askStudySegmentQuestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => AskInput.parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAiRateLimit } = await import("./ai-rate-limit.server");
+    await assertAiRateLimit(context.supabase, "study_ai");
     const sb = context.supabase as AnySb;
     const bundle = await loadSessionBundle(sb, data.sessionId, data.lang);
     const segment = bundle.segments[data.segmentIndex];

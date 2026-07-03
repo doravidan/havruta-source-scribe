@@ -84,6 +84,8 @@ export const askHavruta = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
     const t0 = Date.now();
+    const { assertAiRateLimit } = await import("./ai-rate-limit.server");
+    await assertAiRateLimit(context.supabase, "ask");
     const { embed, chatCompletion } = await import("./ai-gateway.server");
     const { getPublicServerClient } = await import("./supabase-public.server");
     const { deterministicHelper } = await import("./helpers-deterministic");
