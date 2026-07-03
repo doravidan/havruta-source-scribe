@@ -1,0 +1,1 @@
+ALTER TABLE public.source_chunks ADD COLUMN IF NOT EXISTS embedding_half halfvec(3072);

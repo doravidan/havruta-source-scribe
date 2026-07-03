@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_buckets: {
+        Row: {
+          bucket: string
+          count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       ask_sessions: {
         Row: {
           answer: string | null
@@ -538,6 +559,7 @@ export type Database = {
           chunk_index: number
           created_at: string
           embedding: string | null
+          embedding_half: unknown
           fts: unknown
           id: string
           source_id: string
@@ -548,6 +570,7 @@ export type Database = {
           chunk_index: number
           created_at?: string
           embedding?: string | null
+          embedding_half?: unknown
           fts?: unknown
           id?: string
           source_id: string
@@ -558,6 +581,7 @@ export type Database = {
           chunk_index?: number
           created_at?: string
           embedding?: string | null
+          embedding_half?: unknown
           fts?: unknown
           id?: string
           source_id?: string
@@ -756,6 +780,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      consume_ai_rate_limit: {
+        Args: {
+          _bucket: string
+          _max_per_window: number
+          _window_seconds?: number
+        }
+        Returns: boolean
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }

@@ -7,6 +7,7 @@ import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
 import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import { supabase } from "@/integrations/supabase/client";
+import { dict } from "@/lib/i18n";
 import logo from "@/assets/chassiduta-logo.png";
 
 const navLinkBase =
@@ -143,7 +144,7 @@ function BrandLink({
   className = "",
 }: {
   lang: "he" | "en";
-  t: (typeof import("@/lib/i18n"))["dict"]["he"];
+  t: (typeof dict)["he"] | (typeof dict)["en"];
   compact?: boolean;
   className?: string;
 }) {
