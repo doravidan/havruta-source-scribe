@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Sparkles, Users, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
@@ -33,7 +33,7 @@ export function TopBar() {
     path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-[rgba(248,242,230,0.92)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(248,242,230,0.86)]">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-[rgba(248,242,230,0.92)] shadow-[0_10px_40px_-32px_rgba(75,48,24,0.5)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(248,242,230,0.86)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 sm:px-8 lg:min-h-16 lg:flex-row lg:flex-wrap lg:items-center lg:gap-5">
         <div className="flex w-full items-center justify-between gap-3 sm:hidden">
           <BrandLink lang={lang} t={t} compact />
@@ -70,6 +70,19 @@ export function TopBar() {
           className="ms-0 flex w-full max-w-full items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:ms-auto lg:w-auto lg:flex-wrap lg:justify-end lg:overflow-visible lg:pb-0 [&::-webkit-scrollbar]:hidden"
           aria-label={lang === "he" ? "ניווט ראשי" : "Main navigation"}
         >
+          <Link
+            to="/learn-now"
+            aria-label={lang === "he" ? "לימוד מיידי" : "Learn now"}
+            aria-current={isActive("/learn-now") ? "page" : undefined}
+            className={`${navLinkBase} ${
+              isActive("/learn-now")
+                ? navLinkActive
+                : "border-[var(--moss)]/40 bg-[var(--moss)]/10 font-semibold text-[var(--moss)] hover:bg-[var(--moss)]/20"
+            }`}
+          >
+            <Zap className="h-4 w-4" />
+            <span>{lang === "he" ? "לימוד מיידי" : "Learn now"}</span>
+          </Link>
           <NavLink
             to="/library"
             icon={<Library className="h-4 w-4" />}
