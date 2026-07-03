@@ -762,6 +762,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_hnsw_build_status: { Args: never; Returns: Json }
+      admin_start_hnsw_build: {
+        Args: { _maintenance_work_mem?: string }
+        Returns: Json
+      }
       claim_chabad_crawl_batch: {
         Args: { batch_size: number }
         Returns: {
