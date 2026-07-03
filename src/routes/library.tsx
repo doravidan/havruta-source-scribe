@@ -75,10 +75,15 @@ function LibraryPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const fn = useServerFn(browseLibrary);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["library-browse", path],
     queryFn: () => fn({ data: { path } }),
+    retry: 1,
   });
+
+  const errMsg = error instanceof Error ? error.message : error ? String(error) : "";
+  const isTimeout = /timeout|canceling statement|57014|took too long/i.test(errMsg);
+
 
   const isRtl = dir === "rtl";
   const Chevron = isRtl ? ChevronLeft : ChevronRight;
