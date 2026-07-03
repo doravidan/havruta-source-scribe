@@ -101,7 +101,10 @@ function AdminPage() {
   const { data: hnsw, refetch: refetchHnsw, isFetching: hnswLoading } = useQuery({
     queryKey: ["hnsw-build-status"],
     queryFn: () => hnswStatusFn(),
-    refetchInterval: 15000,
+    refetchInterval: (query) => {
+      const data = query.state.data as { index_exists?: boolean } | undefined;
+      return data?.index_exists ? false : 3000;
+    },
     enabled: isAdmin,
   });
   const startHnswM = useMutation({
