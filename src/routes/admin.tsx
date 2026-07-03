@@ -95,6 +95,24 @@ function AdminPage() {
     onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
   });
 
+  // ── HNSW index build ──────────────────────────────────────────
+  const startHnswFn = useServerFn(startHnswBuild);
+  const hnswStatusFn = useServerFn(hnswBuildStatus);
+  const { data: hnsw, refetch: refetchHnsw, isFetching: hnswLoading } = useQuery({
+    queryKey: ["hnsw-build-status"],
+    queryFn: () => hnswStatusFn(),
+    refetchInterval: 15000,
+    enabled: isAdmin,
+  });
+  const startHnswM = useMutation({
+    mutationFn: () => startHnswFn({ data: { maintenanceWorkMem: "256MB" } }),
+    onSuccess: (r) => {
+      setResultMsg(`HNSW build: ${r.status}${r.job_id ? ` (cron job ${r.job_id})` : ""}.`);
+      refetchHnsw();
+    },
+    onError: (e: any) => setResultMsg("Error: " + (e?.message ?? String(e))),
+  });
+
   // ── Sefaria ingest ────────────────────────────────────────────
   const listSlicesFn = useServerFn(listSefariaSlices);
   const ingestSefariaFn = useServerFn(ingestSefariaSlice);
