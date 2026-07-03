@@ -198,7 +198,7 @@ function LibraryPage() {
             </div>
           )}
 
-          {!isLoading && data && data.children.length === 0 && data.leaves.length === 0 && (
+          {!error && !isLoading && data && data.children.length === 0 && data.leaves.length === 0 && (
             <p className="text-sm text-muted-foreground py-12 text-center">
               {lang === "he" ? "אין מקורות בקטגוריה זו עדיין." : "No sources in this section yet."}
             </p>
