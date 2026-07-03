@@ -538,7 +538,6 @@ export type Database = {
           chunk_index: number
           created_at: string
           embedding: string | null
-          embedding_half: string | null
           fts: unknown
           id: string
           source_id: string
@@ -758,14 +757,6 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      consume_ai_rate_limit: {
-        Args: {
-          _bucket: string
-          _max_per_window: number
-          _window_seconds?: number
-        }
-        Returns: boolean
-      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -779,24 +770,6 @@ export type Database = {
         Returns: {
           display_name: string
           phone: string
-          user_id: string
-        }[]
-      }
-      get_chavruta_match_contacts: {
-        Args: { _match_ids: string[] }
-        Returns: {
-          display_name: string
-          match_id: string
-          phone: string
-          user_id: string
-        }[]
-      }
-      get_chavruta_matching_slots: {
-        Args: Record<string, never>
-        Returns: {
-          day_of_week: number
-          end_time: string
-          start_time: string
           user_id: string
         }[]
       }
