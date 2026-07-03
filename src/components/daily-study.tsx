@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useLang } from "@/lib/lang-context";
 import { getDailyStudySource } from "@/lib/daily-study.functions";
+import { localIsoDate, parseLocalIso, shiftLocalIso } from "@/lib/local-date";
 import { SourceReader } from "@/components/source-reader";
 
 type FeatureKey =
@@ -60,18 +61,8 @@ function hebrewToday(lang: "he" | "en") {
   }
 }
 
-function isoFor(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function shiftIso(iso: string, deltaDays: number): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + deltaDays);
-  return isoFor(d);
-}
-
 function formatDateLabel(iso: string, lang: "he" | "en"): string {
-  const d = new Date(`${iso}T12:00:00Z`);
+  const d = parseLocalIso(iso);
   try {
     const greg = new Intl.DateTimeFormat(lang === "he" ? "he" : "en", {
       day: "numeric",
@@ -97,7 +88,7 @@ export function DailyStudyPanel() {
 
   const fetchFn = useServerFn(getDailyStudySource);
   const [activeKey, setActiveKey] = useState<FeatureKey | null>(null);
-  const [activeDate, setActiveDate] = useState<string>(() => isoFor(new Date()));
+  const [activeDate, setActiveDate] = useState<string>(() => localIsoDate());
   const [openId, setOpenId] = useState<string | null>(null);
   const [errKey, setErrKey] = useState<FeatureKey | null>(null);
 
@@ -107,7 +98,7 @@ export function DailyStudyPanel() {
   });
 
   const handleOpen = (key: FeatureKey) => {
-    const today = isoFor(new Date());
+    const today = localIsoDate();
     setErrKey(null);
     setActiveKey(key);
     setActiveDate(today);
@@ -136,7 +127,7 @@ export function DailyStudyPanel() {
     );
   };
 
-  const todayIso = isoFor(new Date());
+  const todayIso = localIsoDate();
   const canGoNext = activeDate < todayIso;
 
   return (
@@ -201,8 +192,8 @@ export function DailyStudyPanel() {
           activeKey
             ? {
                 label: formatDateLabel(activeDate, lang),
-                onPrev: () => goToDate(shiftIso(activeDate, -1)),
-                onNext: () => goToDate(shiftIso(activeDate, 1)),
+                onPrev: () => goToDate(shiftLocalIso(activeDate, -1)),
+                onNext: () => goToDate(shiftLocalIso(activeDate, 1)),
                 canNext: canGoNext,
                 onToday: activeDate !== todayIso ? () => goToDate(todayIso) : undefined,
                 todayLabel: lang === "he" ? "חזרה להיום" : "Jump to today",

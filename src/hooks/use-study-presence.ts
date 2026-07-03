@@ -12,7 +12,7 @@ export function useStudyPresence(sessionId: string, userId: string | undefined) 
   useEffect(() => {
     if (!userId || !sessionId) return;
     const channel = supabase.channel(`chavruta-presence:${sessionId}`, {
-      config: { presence: { key: userId } },
+      config: { presence: { key: userId }, private: true },
     });
     channelRef.current = channel;
 

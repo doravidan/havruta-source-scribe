@@ -18,6 +18,7 @@ import { PageLoader } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   advanceStudySegment,
   askStudySegmentQuestion,
@@ -43,6 +44,8 @@ function StudyRoomPage() {
   const { sessionId } = Route.useParams();
   const { user, loading } = useAuth();
   const { lang, dir } = useLang();
+  const toastError = (err: Error) =>
+    toast.error(err.message || (lang === "he" ? "משהו השתבש" : "Something went wrong"));
   const qc = useQueryClient();
   const getStudy = useServerFn(getStudySession);
   const setStatusFn = useServerFn(setSegmentStatus);
@@ -140,7 +143,7 @@ function StudyRoomPage() {
       )
       .subscribe();
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [invalidateStudy, sessionId, user]);
 
@@ -160,7 +163,7 @@ function StudyRoomPage() {
       )
       .subscribe();
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [bundle?.session.match_id, invalidateStudy, isAiCompanion, user]);
 
@@ -168,16 +171,19 @@ function StudyRoomPage() {
     mutationFn: (status: "reading" | "confused" | "understood" | "answered") =>
       setStatusFn({ data: { sessionId, segmentIndex: activeIndex, status } }),
     onSuccess: () => invalidateStudy(),
+    onError: toastError,
   });
 
   const advanceMutation = useMutation({
     mutationFn: (next: number) => advanceFn({ data: { sessionId, segmentIndex: next } }),
     onSuccess: () => invalidateStudy(),
+    onError: toastError,
   });
 
   const generateMutation = useMutation({
     mutationFn: () => generateFn({ data: { sessionId, segmentIndex: activeIndex, lang } }),
     onSuccess: () => invalidateStudy(),
+    onError: toastError,
   });
 
   const askMutation = useMutation({
@@ -187,6 +193,7 @@ function StudyRoomPage() {
       setQuestionDraft("");
       invalidateStudy();
     },
+    onError: toastError,
   });
 
   const askSelectedMutation = useMutation({
@@ -202,6 +209,7 @@ function StudyRoomPage() {
       setTab("guide");
       invalidateStudy();
     },
+    onError: toastError,
   });
 
   const sendMessage = useMutation({
@@ -225,6 +233,7 @@ function StudyRoomPage() {
       setDraft("");
       invalidateStudy();
     },
+    onError: toastError,
   });
 
   if (loading) {
@@ -398,8 +407,9 @@ function StudyRoomPage() {
                     {lang === "he" ? "צריך הסבר" : "Need explanation"}
                   </button>
                   <button
+                    disabled={generateMutation.isPending}
                     onClick={() => generateMutation.mutate()}
-                    className="inline-flex h-11 items-center gap-2 rounded-full border border-primary/35 px-5 text-sm font-semibold text-primary"
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-primary/35 px-5 text-sm font-semibold text-primary disabled:opacity-50"
                   >
                     <Sparkles className="h-4 w-4" />
                     {lang === "he" ? "שאלות על הקטע" : "Questions on this"}

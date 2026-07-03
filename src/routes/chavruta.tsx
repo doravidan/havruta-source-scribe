@@ -8,10 +8,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
 import { createAiStudySession, createStudySession } from "@/lib/chavruta-study.functions";
+import { toast } from "sonner";
 import {
   CalendarClock,
   Check,
-  Clock,
   MessageCircle,
   Phone,
   Plus,
@@ -120,11 +120,8 @@ function mins(t: string) {
 function time(m: number) {
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
-function overlap(a: Availability, b: Availability) {
-  if (a.day_of_week !== b.day_of_week) return null;
-  const start = Math.max(mins(a.start_time), mins(b.start_time));
-  const end = Math.min(mins(a.end_time), mins(b.end_time));
-  return end > start ? { day: a.day_of_week, start: time(start), end: time(end) } : null;
+function toastMutationError(lang: "he" | "en", err: Error) {
+  toast.error(err.message || (lang === "he" ? "משהו השתבש" : "Something went wrong"));
 }
 
 // ---------- Time-zone aware matching ----------
@@ -366,6 +363,26 @@ function ChavrutaPage() {
     },
   });
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`chavruta-social:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chavruta_messages" },
+        () => qc.invalidateQueries({ queryKey: ["chavruta-social", user.id] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chavruta_matches" },
+        () => qc.invalidateQueries({ queryKey: ["chavruta-social", user.id] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, qc]);
+
   const sourceIntentQ = useQuery({
     queryKey: ["chavruta-source-intent", sourceIntentId],
     enabled: !!user && !!sourceIntentId,
@@ -382,41 +399,6 @@ function ChavrutaPage() {
 
   const myProfile = profileQ.data?.profile;
   const mySlots = useMemo(() => availabilityQ.data ?? [], [availabilityQ.data]);
-
-  const suggestions = useMemo(() => {
-    if (!user || !socialQ.data || mySlots.length === 0) return [];
-    const existing = new Set(
-      (socialQ.data.matches ?? []).map((m) =>
-        [m.requester_id, m.suggested_user_id].sort().join(":"),
-      ),
-    );
-    const out: Array<{
-      profile: Profile;
-      slot: Availability;
-      overlap: { day: number; start: string; end: string };
-      score: number;
-    }> = [];
-    for (const p of socialQ.data.profiles) {
-      if (p.user_id === user.id || !p.is_active) continue;
-      if (existing.has([p.user_id, user.id].sort().join(":"))) continue;
-      const theirSlots = socialQ.data.slots.filter((s) => s.user_id === p.user_id);
-      for (const mine of mySlots)
-        for (const theirs of theirSlots) {
-          const o = overlap(mine, theirs);
-          if (!o) continue;
-          const topicScore = (p.topics ?? []).filter((x) =>
-            (myProfile?.topics ?? []).includes(x),
-          ).length;
-          out.push({
-            profile: p,
-            slot: theirs,
-            overlap: o,
-            score: topicScore * 10 + (mins(o.end) - mins(o.start)),
-          });
-        }
-    }
-    return out.sort((a, b) => b.score - a.score).slice(0, 8);
-  }, [socialQ.data, mySlots, myProfile?.topics, user]);
 
   const saveProfile = useMutation({
     mutationFn: async (form: FormData) => {
@@ -446,6 +428,7 @@ function ChavrutaPage() {
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-profile", user?.id] }),
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const addSlot = useMutation({
@@ -463,6 +446,7 @@ function ChavrutaPage() {
       qc.invalidateQueries({ queryKey: ["chavruta-availability", user?.id] });
       qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] });
     },
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const removeSlot = useMutation({
@@ -471,19 +455,7 @@ function ChavrutaPage() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-availability", user?.id] }),
-  });
-
-  const propose = useMutation({
-    mutationFn: async (s: (typeof suggestions)[number]) => {
-      const { error } = await db.rpc("propose_chavruta_match", {
-        _target_user_id: s.profile.user_id,
-        _day: s.overlap.day,
-        _start: s.overlap.start,
-        _end: s.overlap.end,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const viewerTz = myProfile?.time_zone ?? detectTz();
@@ -566,6 +538,7 @@ function ChavrutaPage() {
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const sendMessage = useMutation({
@@ -579,6 +552,7 @@ function ChavrutaPage() {
       setMessageDraft((d) => ({ ...d, [matchId]: "" }));
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const openStudyRoom = useMutation({
@@ -589,6 +563,7 @@ function ChavrutaPage() {
     onSuccess: (room) => {
       navigate({ to: "/study/$sessionId", params: { sessionId: room.id } });
     },
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const openAiStudyRoom = useMutation({
@@ -599,6 +574,7 @@ function ChavrutaPage() {
     onSuccess: (room) => {
       navigate({ to: "/study/$sessionId", params: { sessionId: room.id } });
     },
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const accept = useMutation({
@@ -607,6 +583,7 @@ function ChavrutaPage() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chavruta-social", user?.id] }),
+    onError: (err) => toastMutationError(lang, err),
   });
 
   const contactQ = useQuery({
@@ -1050,60 +1027,6 @@ function ChavrutaPage() {
                           {lang === "he" ? "פתח שיחה" : "Start chat"}
                         </button>
                       </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="scholar-card p-5 sm:p-6">
-              <h2 className="eyebrow mb-4">
-                {lang === "he" ? "הצעות התאמה" : "Suggested matches"}
-              </h2>
-              {suggestions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {lang === "he"
-                    ? "הוסף זמני זמינות כדי לקבל הצעות."
-                    : "Add availability to see suggestions."}
-                </p>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-3">
-                  {suggestions.map((s) => (
-                    <article
-                      key={`${s.profile.user_id}-${s.overlap.day}-${s.overlap.start}`}
-                      className="rounded-2xl border border-border/80 bg-background/30 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-medium">{s.profile.display_name}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                            {s.profile.bio ||
-                              (lang === "he"
-                                ? "מחפש חברותא ללימוד חסידות"
-                                : "Looking for a Chassidus chavruta")}
-                          </p>
-                        </div>
-                        <Clock className="h-4 w-4 text-primary shrink-0" />
-                      </div>
-                      <div className="mt-3 text-sm text-muted-foreground">
-                        {days[s.overlap.day]} · {s.overlap.start}–{s.overlap.end}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {(s.profile.topics ?? []).slice(0, 3).map((x) => (
-                          <span
-                            key={x}
-                            className="rounded-full border border-border/70 px-2 py-1 text-xs text-muted-foreground"
-                          >
-                            {x}
-                          </span>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => propose.mutate(s)}
-                        className="mt-4 h-10 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground"
-                      >
-                        {lang === "he" ? "פתח שיחה" : "Start chat"}
-                      </button>
                     </article>
                   ))}
                 </div>

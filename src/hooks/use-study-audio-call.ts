@@ -142,7 +142,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
 
   useEffect(() => {
     const channel = supabase.channel(`chavruta-audio:${sessionId}`, {
-      config: { broadcast: { self: false }, presence: { key: peerId } },
+      config: { broadcast: { self: false }, presence: { key: peerId }, private: true },
     });
     channelRef.current = channel;
 

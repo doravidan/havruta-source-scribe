@@ -538,6 +538,7 @@ export type Database = {
           chunk_index: number
           created_at: string
           embedding: string | null
+          embedding_half: string | null
           fts: unknown
           id: string
           source_id: string

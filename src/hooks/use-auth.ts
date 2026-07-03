@@ -6,12 +6,14 @@ export type AuthState = {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  isAdminLoading: boolean;
   loading: boolean;
 };
 
 export function useAuth(): AuthState {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,16 +29,28 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     let active = true;
-    if (!session?.user) { setIsAdmin(false); return; }
+    if (!session?.user) {
+      setIsAdmin(false);
+      setIsAdminLoading(false);
+      return;
+    }
+    setIsAdminLoading(true);
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id)
       .eq("role", "admin")
       .maybeSingle()
-      .then(({ data }) => { if (active) setIsAdmin(!!data); });
-    return () => { active = false; };
+      .then(({ data }) => {
+        if (active) {
+          setIsAdmin(!!data);
+          setIsAdminLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [session?.user?.id]);
 
-  return { session, user: session?.user ?? null, isAdmin, loading };
+  return { session, user: session?.user ?? null, isAdmin, isAdminLoading, loading };
 }

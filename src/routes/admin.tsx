@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { t, lang } = useLang();
-  const { session, isAdmin, loading } = useAuth();
+  const { session, isAdmin, isAdminLoading, loading } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
   const [json, setJson] = useState("");
@@ -53,11 +53,17 @@ function AdminPage() {
   const startFullFn = useServerFn(startFullCrawl);
   const retryFailedFn = useServerFn(retryFailedCrawl);
   const queueStatsFn = useServerFn(crawlQueueStats);
-  const { data: stats } = useQuery({ queryKey: ["corpus-stats"], queryFn: () => statsFn(), refetchInterval: 15000 });
+  const { data: stats } = useQuery({
+    queryKey: ["corpus-stats"],
+    queryFn: () => statsFn(),
+    refetchInterval: 15000,
+    enabled: isAdmin,
+  });
   const { data: queueStats } = useQuery({
     queryKey: ["crawl-queue-stats"],
     queryFn: () => queueStatsFn(),
     refetchInterval: 10000,
+    enabled: isAdmin,
   });
   const securityEventsFn = useServerFn(listSecurityEvents);
   const { data: securityEvents, refetch: refetchSecurity, isFetching: secLoading } = useQuery({
@@ -223,7 +229,7 @@ function AdminPage() {
   const toggleRoot = (id: string) =>
     setSelectedRoots((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (loading || isAdminLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
   if (!session) return null;
 
   if (!isAdmin) {
