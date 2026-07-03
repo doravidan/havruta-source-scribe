@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as BeitMidrashRouteImport } from './routes/beit-midrash'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -30,6 +31,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChavrutaRoute = ChavrutaRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
+  '/community': typeof CommunityRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
+  '/community': typeof CommunityRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
+  '/community': typeof CommunityRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/beit-midrash'
     | '/chavruta'
+    | '/community'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/beit-midrash'
     | '/chavruta'
+    | '/community'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/beit-midrash'
     | '/chavruta'
+    | '/community'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BeitMidrashRoute: typeof BeitMidrashRoute
   ChavrutaRoute: typeof ChavrutaRoute
+  CommunityRoute: typeof CommunityRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudySessionIdRoute: typeof StudySessionIdRoute
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chavruta': {
@@ -283,6 +303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BeitMidrashRoute: BeitMidrashRoute,
   ChavrutaRoute: ChavrutaRoute,
+  CommunityRoute: CommunityRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudySessionIdRoute: StudySessionIdRoute,

@@ -155,6 +155,15 @@ export const createStudySession = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!session) throw new Error("could_not_create_study_session");
+
+    const { logLearningActivity } = await import("./social.functions");
+    await logLearningActivity(sb, context.userId, {
+      kind: "session_started",
+      sourceId: data.sourceId,
+      sessionId: session.id,
+      sourceTitle: source?.title ?? null,
+      meta: { companion: "human" },
+    });
     return session;
   });
 
@@ -193,6 +202,15 @@ export const createAiStudySession = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!session) throw new Error("could_not_create_ai_study_session");
+
+    const { logLearningActivity } = await import("./social.functions");
+    await logLearningActivity(sb, context.userId, {
+      kind: "session_started",
+      sourceId: data.sourceId,
+      sessionId: session.id,
+      sourceTitle: source?.title ?? null,
+      meta: { companion: "ai" },
+    });
     return session;
   });
 
@@ -239,6 +257,92 @@ export const advanceStudySegment = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row;
+  });
+
+const CompleteInput = z.object({ sessionId: Uuid });
+
+/** Mark the session complete, credit personal corpus progress, and share to the feed. */
+export const completeStudySession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CompleteInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as AnySb;
+    const { data: session, error: sessionError } = await sb
+      .from("chavruta_study_sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+    if (sessionError) throw new Error(sessionError.message);
+    if (!session) throw new Error("study_session_not_found");
+
+    const alreadyCompleted = session.status === "completed";
+    if (!alreadyCompleted) {
+      const { error: updateError } = await sb
+        .from("chavruta_study_sessions")
+        .update({ status: "completed" })
+        .eq("id", data.sessionId);
+      if (updateError) throw new Error(updateError.message);
+    }
+
+    const { data: source } = await sb
+      .from("sources")
+      .select("id, title, tree_parts")
+      .eq("id", session.source_id)
+      .maybeSingle();
+
+    // Credit the personal corpus tracker so streaks include chavruta learning.
+    const section = (source?.tree_parts as string[] | null)?.[0] ?? null;
+    await sb.from("study_progress").upsert(
+      {
+        user_id: context.userId,
+        source_id: session.source_id,
+        section,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,source_id" },
+    );
+
+    // Session stats for the celebration screen.
+    const [{ count: questionCount }, { data: progressRows }] = await Promise.all([
+      sb
+        .from("chavruta_study_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", data.sessionId),
+      sb
+        .from("chavruta_study_progress")
+        .select("segment_index, status, user_id")
+        .eq("session_id", data.sessionId),
+    ]);
+
+    const understoodSegments = new Set(
+      ((progressRows ?? []) as Array<{ segment_index: number; status: string }>)
+        .filter((p) => p.status === "understood")
+        .map((p) => p.segment_index),
+    ).size;
+
+    if (!alreadyCompleted) {
+      const { logLearningActivity } = await import("./social.functions");
+      await logLearningActivity(sb, context.userId, {
+        kind: "session_completed",
+        sourceId: session.source_id,
+        sessionId: session.id,
+        sourceTitle: source?.title ?? session.title ?? null,
+        meta: {
+          companion: session.companion_type,
+          questions: questionCount ?? 0,
+          understood_segments: understoodSegments,
+        },
+      });
+    }
+
+    return {
+      completed: true,
+      alreadyCompleted,
+      stats: {
+        questions: questionCount ?? 0,
+        understoodSegments,
+      },
+    };
   });
 
 function fallbackQuestions(lang: "he" | "en") {

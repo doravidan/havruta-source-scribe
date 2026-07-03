@@ -42,7 +42,7 @@ function AdminPage() {
   const [maxPages, setMaxPages] = useState(40);
 
   useEffect(() => {
-    if (!loading && !session) nav({ to: "/auth" });
+    if (!loading && !session) nav({ to: "/auth", search: { redirect: "/admin" } });
   }, [loading, session, nav]);
 
   const ingestFn = useServerFn(ingestSources);
