@@ -15,7 +15,7 @@ export const browseLibrary = createServerFn({ method: "POST" })
     const sb = getPublicServerClient();
     const { data: rows, error } = await sb
       .from("sources")
-      .select("id, title, tree, tree_parts, char_count, language, text")
+      .select("id, title, tree, tree_parts, char_count, language")
       .gte("char_count", 250)
       .limit(6000);
     if (error) throw new Error(error.message);
