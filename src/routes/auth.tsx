@@ -4,9 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useLang } from "@/lib/lang-context";
 import { useAuth } from "@/hooks/use-auth";
-import { BookOpen, Loader2, ShieldCheck } from "lucide-react";
+import { safeRedirect } from "@/lib/safe-redirect";
+import { BookOpen, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: safeRedirect(search.redirect),
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — חסידותא · Chassiduta" },
@@ -28,6 +32,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { t, lang } = useLang();
   const { session } = useAuth();
+  const { redirect } = Route.useSearch();
   const nav = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -35,10 +40,11 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    if (session) nav({ to: "/" });
-  }, [session, nav]);
+    if (session) nav({ to: redirect });
+  }, [session, nav, redirect]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,15 +52,19 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "up") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${redirect}`,
             data: { name },
           },
         });
         if (error) throw error;
+        if (data.user && !data.session) {
+          setPendingEmail(email);
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -70,13 +80,41 @@ function AuthPage() {
     setErr(null);
     setBusy(true);
     const r = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${redirect}`,
     });
     if (r.error) {
       setErr(r.error instanceof Error ? r.error.message : "OAuth error");
       setBusy(false);
     }
   };
+
+  if (pendingEmail) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4 py-5 sm:py-10" id="main-content">
+        <section
+          className="scholar-card mx-auto w-full max-w-md p-6 sm:p-8 text-center"
+          data-testid="auth-email-confirmation"
+        >
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <MailCheck className="h-7 w-7" aria-hidden />
+          </div>
+          <h1 className="mt-5 text-3xl font-semibold gold-text">{t.authCheckEmailTitle}</h1>
+          <p className="mt-3 text-sm text-muted-foreground leading-7">{t.authCheckEmailBody(pendingEmail)}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setPendingEmail(null);
+              setMode("in");
+              setPassword("");
+            }}
+            className="mt-7 inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground"
+          >
+            {t.authBackToSignIn}
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-5 sm:py-10" id="main-content">

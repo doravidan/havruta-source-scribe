@@ -65,6 +65,10 @@ export const dict = {
     continueWithGoogle: "המשך עם Google",
     or: "או",
     authError: "פרטי התחברות שגויים.",
+    authCheckEmailTitle: "בדוק את האימייל",
+    authCheckEmailBody: (email: string) =>
+      `שלחנו קישור אימות ל-${email}. לחץ על הקישור כדי להשלים את ההרשמה, ואז חזור לכאן להתחבר.`,
+    authBackToSignIn: "חזרה להתחברות",
     // admin
     adminTitle: "ניהול מאגר המקורות",
     adminOnly: "גישה למנהל בלבד.",
@@ -136,6 +140,10 @@ export const dict = {
     continueWithGoogle: "Continue with Google",
     or: "or",
     authError: "Wrong credentials.",
+    authCheckEmailTitle: "Check your email",
+    authCheckEmailBody: (email: string) =>
+      `We sent a confirmation link to ${email}. Click the link to finish signing up, then return here to sign in.`,
+    authBackToSignIn: "Back to sign in",
     adminTitle: "Source ingestion",
     adminOnly: "Admin only.",
     adminSeed: "Load sample corpus",

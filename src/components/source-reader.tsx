@@ -37,6 +37,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export type DateNav = {
   label: string;
@@ -141,19 +143,6 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId, autoSummarize]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
   const fontSize = [15, 17, 19, 22, 25][Math.max(0, Math.min(4, fontStep))];
 
   const cleanText = useMemo(
@@ -167,6 +156,13 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
   }, [data, cleanText, needle]);
 
   if (!open) return null;
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      read.stop();
+      onClose();
+    }
+  };
 
   const copyAll = async () => {
     if (!data) return;
@@ -182,17 +178,17 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center sm:justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-6"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      dir={dir}
-    >
-      <div
-        className="relative w-full sm:max-w-3xl bg-card border border-border rounded-none sm:rounded-2xl shadow-2xl flex flex-col max-h-[100dvh] sm:max-h-[88dvh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        dir={dir}
+        aria-describedby={undefined}
+        className={cn(
+          "fixed inset-0 z-50 flex h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 border-0 bg-transparent p-0 shadow-none sm:inset-auto sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[88dvh] sm:max-w-3xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-0 sm:shadow-2xl",
+          "[&>button:last-child]:hidden",
+        )}
+        onPointerDownOutside={() => handleOpenChange(false)}
       >
+        <div className="relative flex w-full flex-col max-h-[100dvh] sm:max-h-[88dvh] overflow-hidden">
         <header className="p-4 sm:p-5 border-b border-border/70 flex items-start gap-3">
           {dateNav && (
             <button
@@ -219,9 +215,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
                 )}
               </div>
             )}
-            <h2 className="text-lg sm:text-2xl font-semibold leading-tight">
+            <DialogTitle id="source-reader-title" className="text-lg sm:text-2xl font-semibold leading-tight">
               {data?.title ?? "…"}
-            </h2>
+            </DialogTitle>
             {data && (
               <div className="mt-1 text-[11px] text-muted-foreground">
                 {data.char_count?.toLocaleString()} {t.charsLabel}
@@ -440,8 +436,9 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
             />
           )}
         </div>
-      </div>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
