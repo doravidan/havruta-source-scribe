@@ -9,6 +9,23 @@ type SignalPayload = {
   candidate?: RTCIceCandidateInit;
 };
 
+function peerUserId(from: string): string {
+  return from.split(":")[0] ?? from;
+}
+
+function waitForChannelReady(isReady: () => boolean, timeoutMs = 10_000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (isReady()) return resolve();
+    const started = Date.now();
+    const tick = () => {
+      if (isReady()) return resolve();
+      if (Date.now() - started >= timeoutMs) return reject(new Error("signaling_timeout"));
+      window.setTimeout(tick, 50);
+    };
+    tick();
+  });
+}
+
 export function useStudyAudioCall(sessionId: string, userId: string | undefined) {
   const peerId = useMemo(() => {
     const rand =
@@ -18,6 +35,8 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     return `${userId ?? "anon"}:${rand}`;
   }, [userId]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelReadyRef = useRef(false);
+  const makingOfferRef = useRef(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -27,16 +46,22 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
 
-  const sendSignal = useCallback(
-    (payload: Omit<SignalPayload, "from">) => {
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "signal",
-        payload: { ...payload, from: peerId },
-      });
+  const isPoliteToward = useCallback(
+    (remoteFrom: string) => {
+      if (!userId) return true;
+      return userId < peerUserId(remoteFrom);
     },
-    [peerId],
+    [userId],
   );
+
+  const sendSignal = useCallback((payload: Omit<SignalPayload, "from">) => {
+    if (!channelReadyRef.current) return;
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "signal",
+      payload: { ...payload, from: peerId },
+    });
+  }, [peerId]);
 
   const flushPendingCandidates = useCallback(async (pc: RTCPeerConnection) => {
     if (!pc.remoteDescription) return;
@@ -108,13 +133,19 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     try {
       setError(null);
       setState("connecting");
+      await waitForChannelReady(() => channelReadyRef.current);
       const pc = await ensurePeer();
+      if (pc.signalingState !== "stable") return;
+
+      makingOfferRef.current = true;
       const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
       sendSignal({ type: "offer", sdp: offer });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setState("error");
+    } finally {
+      makingOfferRef.current = false;
     }
   }, [ensurePeer, sendSignal]);
 
@@ -141,6 +172,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
   }, [muted]);
 
   useEffect(() => {
+    channelReadyRef.current = false;
     const channel = supabase.channel(`chavruta-audio:${sessionId}`, {
       config: { broadcast: { self: false }, presence: { key: peerId }, private: true },
     });
@@ -151,8 +183,16 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
       if (!msg || msg.from === peerId) return;
       try {
         if (msg.type === "offer" && msg.sdp) {
+          const polite = isPoliteToward(msg.from);
+          const offerCollision =
+            makingOfferRef.current || pcRef.current?.signalingState === "have-local-offer";
+          if (offerCollision && !polite) return;
+
           setState("connecting");
           const pc = await ensurePeer();
+          if (offerCollision && polite) {
+            await pc.setLocalDescription({ type: "rollback" });
+          }
           await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
           await flushPendingCandidates(pc);
           const answer = await pc.createAnswer();
@@ -184,11 +224,14 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     });
 
     channel.subscribe(async (status) => {
-      if (status === "SUBSCRIBED")
+      if (status === "SUBSCRIBED") {
+        channelReadyRef.current = true;
         await channel.track({ userId, peerId, online_at: new Date().toISOString() });
+      }
     });
 
     return () => {
+      channelReadyRef.current = false;
       supabase.removeChannel(channel);
       channelRef.current = null;
       pendingCandidatesRef.current = [];
@@ -203,6 +246,7 @@ export function useStudyAudioCall(sessionId: string, userId: string | undefined)
     addIceCandidateSafe,
     ensurePeer,
     flushPendingCandidates,
+    isPoliteToward,
     peerId,
     sendSignal,
     sessionId,

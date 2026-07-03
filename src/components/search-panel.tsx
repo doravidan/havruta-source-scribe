@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { searchSources } from "@/lib/search.functions";
 import { BookOpen, Loader2, Search, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { SourceReader } from "./source-reader";
 import { EmptyState } from "./page-shell";
 
@@ -20,6 +21,8 @@ export function SearchPanel() {
   const m = useMutation({
     mutationFn: (query: string) => fn({ data: { query, lang, limit: 12 } }) as Promise<SearchResult>,
     onSuccess: () => setHasSearched(true),
+    onError: (err) =>
+      toast.error(err.message || (lang === "he" ? "החיפוש נכשל" : "Search failed")),
   });
 
   const submit = () => {

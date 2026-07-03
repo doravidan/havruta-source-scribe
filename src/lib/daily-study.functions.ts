@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { localIsoDate } from "./local-date";
 
 /**
  * Daily study fetcher backed by Sefaria's open APIs.
@@ -65,7 +66,15 @@ const Input = z.object({
 });
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localIsoDate();
+}
+
+function assertDateWindow(day: string, maxDays = 14) {
+  const requested = new Date(`${day}T12:00:00Z`);
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12));
+  const diffDays = Math.abs(requested.getTime() - today.getTime()) / 86_400_000;
+  if (diffDays > maxDays) throw new Error("date_out_of_range");
 }
 
 function stripHtml(s: string): string {
@@ -338,13 +347,13 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const day = data.date ?? todayIso();
+    assertDateWindow(day);
     const dateObj = new Date(`${day}T12:00:00Z`);
-    // bump cache version when the formatter changes
     const cacheKey = `v2:${data.feature}:${data.lang}:${day}`;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: existing } = await supabaseAdmin
+    const { getPublicServerClient } = await import("./supabase-public.server");
+    const sb = getPublicServerClient();
+    const { data: existing } = await sb
       .from("sources")
       .select("id, char_count")
       .eq("source_provider", "sefaria-daily")
@@ -355,7 +364,10 @@ export const getDailyStudySource = createServerFn({ method: "POST" })
       return { id: existing.id as string, cached: true };
     }
 
-    // Resolve ref + labels per feature.
+    const { assertAuthenticatedRequest } = await import("./assert-auth.server");
+    await assertAuthenticatedRequest();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let ref: string;
     let displayHe: string;
     let displayEn: string;

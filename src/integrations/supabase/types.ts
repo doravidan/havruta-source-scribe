@@ -782,6 +782,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_chavruta_matching_slots: {
+        Args: Record<string, never>
+        Returns: {
+          day_of_week: number
+          end_time: string
+          start_time: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
