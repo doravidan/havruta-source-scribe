@@ -7,6 +7,7 @@ import { BookMarked, Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SourceReader } from "./source-reader";
 import { EmptyState } from "./page-shell";
+import { useSourceSequenceNav, buildDailyReaderNav } from "@/hooks/use-source-sequence-nav";
 
 type AskResult = Awaited<ReturnType<typeof askHavruta>>;
 type SourceCard = AskResult["sources"][number] & { source_url?: string | null };
@@ -32,6 +33,14 @@ export function AskPanel() {
     setQuestion(text);
     m.mutate(text);
   };
+
+  const readerNav = useSourceSequenceNav(openSourceId, {
+    lang,
+    onNavigate: (id) => {
+      setOpenSummarize(false);
+      setOpenSourceId(id);
+    },
+  });
 
   return (
     <section className="w-full" aria-labelledby="ask-panel-title">
@@ -198,7 +207,12 @@ export function AskPanel() {
         </article>
       )}
 
-      <SourceReader sourceId={openSourceId} onClose={() => setOpenSourceId(null)} autoSummarize={openSummarize} />
+      <SourceReader
+        sourceId={openSourceId}
+        onClose={() => setOpenSourceId(null)}
+        autoSummarize={openSummarize}
+        readerNav={readerNav}
+      />
     </section>
   );
 }

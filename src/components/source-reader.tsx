@@ -41,25 +41,34 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-export type DateNav = {
+export type ReaderNav = {
   label: string;
+  subtitle?: string;
   onPrev: () => void;
   onNext: () => void;
   canPrev?: boolean;
   canNext?: boolean;
+  prevLabel?: string;
+  nextLabel?: string;
   onToday?: () => void;
   todayLabel?: string;
   loading?: boolean;
 };
 
+/** @deprecated Use ReaderNav */
+export type DateNav = ReaderNav;
+
 type Props = {
   sourceId: string | null;
   onClose: () => void;
   autoSummarize?: boolean;
-  dateNav?: DateNav;
+  readerNav?: ReaderNav;
+  /** @deprecated Use readerNav */
+  dateNav?: ReaderNav;
 };
 
-export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Props) {
+export function SourceReader({ sourceId, onClose, autoSummarize, readerNav, dateNav }: Props) {
+  const nav = readerNav ?? dateNav;
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
   const authRedirect = useAuthRedirectSearch();
@@ -116,6 +125,34 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
   const [needle, setNeedle] = useState("");
   const [copied, setCopied] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+
+  useEffect(() => {
+    if (!nav || !open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const goPrev = dir === "rtl" ? event.key === "ArrowRight" : event.key === "ArrowLeft";
+      if (goPrev) {
+        if (nav.canPrev === false || nav.loading) return;
+        event.preventDefault();
+        nav.onPrev();
+        return;
+      }
+      if (nav.canNext === false || nav.loading) return;
+      event.preventDefault();
+      nav.onNext();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [nav, open, dir]);
 
   const summary = useMutation({
     mutationFn: () => summarizeFn({ data: { id: sourceId!, lang } }),
@@ -192,7 +229,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
       >
         <div className="relative flex w-full flex-col max-h-[100dvh] sm:max-h-[88dvh] overflow-hidden">
         <header className="p-4 sm:p-5 border-b border-border/70 flex items-start gap-3">
-          {dateNav && (
+          {nav && (
             <button
               onClick={onClose}
               className="h-10 w-10 inline-flex items-center justify-center rounded-md hover:bg-secondary shrink-0"
@@ -235,42 +272,45 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
           </button>
         </header>
 
-        {dateNav && (
+        {nav && (
           <div className="px-4 sm:px-5 py-2 border-b border-border/70 flex items-center justify-between gap-2 bg-secondary/30">
             <button
               type="button"
-              onClick={dateNav.onPrev}
-              disabled={dateNav.canPrev === false || dateNav.loading}
+              onClick={nav.onPrev}
+              disabled={nav.canPrev === false || nav.loading}
               className="h-9 px-3 rounded-md border border-border hover:bg-background inline-flex items-center gap-1.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label={lang === "he" ? "יום קודם" : "Previous day"}
+              aria-label={nav.prevLabel ?? (lang === "he" ? "קודם" : "Previous")}
             >
               <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-              <span className="hidden sm:inline">{lang === "he" ? "יום קודם" : "Previous"}</span>
+              <span className="hidden sm:inline">{nav.prevLabel ?? (lang === "he" ? "קודם" : "Previous")}</span>
             </button>
             <div className="min-w-0 flex-1 text-center">
               <div className="text-sm font-medium truncate inline-flex items-center gap-2">
-                {dateNav.loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {dateNav.label}
+                {nav.loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {nav.label}
               </div>
-              {dateNav.onToday && (
+              {nav.subtitle && (
+                <div className="text-[11px] text-muted-foreground tabular-nums">{nav.subtitle}</div>
+              )}
+              {nav.onToday && (
                 <button
                   type="button"
-                  onClick={dateNav.onToday}
-                  disabled={dateNav.loading}
+                  onClick={nav.onToday}
+                  disabled={nav.loading}
                   className="block mx-auto mt-0.5 text-[11px] text-primary hover:underline disabled:opacity-50"
                 >
-                  {dateNav.todayLabel ?? (lang === "he" ? "חזרה להיום" : "Jump to today")}
+                  {nav.todayLabel ?? (lang === "he" ? "חזרה להיום" : "Jump to today")}
                 </button>
               )}
             </div>
             <button
               type="button"
-              onClick={dateNav.onNext}
-              disabled={dateNav.canNext === false || dateNav.loading}
+              onClick={nav.onNext}
+              disabled={nav.canNext === false || nav.loading}
               className="h-9 px-3 rounded-md border border-border hover:bg-background inline-flex items-center gap-1.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label={lang === "he" ? "יום הבא" : "Next day"}
+              aria-label={nav.nextLabel ?? (lang === "he" ? "הבא" : "Next")}
             >
-              <span className="hidden sm:inline">{lang === "he" ? "יום הבא" : "Next"}</span>
+              <span className="hidden sm:inline">{nav.nextLabel ?? (lang === "he" ? "הבא" : "Next")}</span>
               <ChevronRight className="h-4 w-4 rtl:rotate-180" />
             </button>
           </div>

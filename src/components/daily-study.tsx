@@ -7,6 +7,7 @@ import { useLang } from "@/lib/lang-context";
 import { getDailyStudySource } from "@/lib/daily-study.functions";
 import { localIsoDate, parseLocalIso, shiftLocalIso } from "@/lib/local-date";
 import { SourceReader } from "@/components/source-reader";
+import { buildDailyReaderNav } from "@/hooks/use-source-sequence-nav";
 
 type FeatureKey =
   | "chumash" | "tehillim" | "tanya"
@@ -188,9 +189,10 @@ export function DailyStudyPanel() {
           setOpenId(null);
           setActiveKey(null);
         }}
-        dateNav={
+        readerNav={
           activeKey
-            ? {
+            ? buildDailyReaderNav({
+                lang,
                 label: formatDateLabel(activeDate, lang),
                 onPrev: () => goToDate(shiftLocalIso(activeDate, -1)),
                 onNext: () => goToDate(shiftLocalIso(activeDate, 1)),
@@ -198,7 +200,7 @@ export function DailyStudyPanel() {
                 onToday: activeDate !== todayIso ? () => goToDate(todayIso) : undefined,
                 todayLabel: lang === "he" ? "חזרה להיום" : "Jump to today",
                 loading: open.isPending,
-              }
+              })
             : undefined
         }
       />

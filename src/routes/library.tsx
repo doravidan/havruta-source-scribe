@@ -7,6 +7,7 @@ import { SourceReader } from "@/components/source-reader";
 import { AppFooter } from "@/components/page-shell";
 import { useLang } from "@/lib/lang-context";
 import { browseLibrary } from "@/lib/library-browse.functions";
+import { useSourceSequenceNav } from "@/hooks/use-source-sequence-nav";
 import {
   ChevronLeft,
   ChevronRight,
@@ -87,6 +88,12 @@ function LibraryPage() {
     path.forEach((p, i) => out.push({ label: p, path: path.slice(0, i + 1) }));
     return out;
   }, [path, lang]);
+
+  const readerNav = useSourceSequenceNav(openId, {
+    lang,
+    browsePath: path,
+    onNavigate: setOpenId,
+  });
 
   return (
     <div className="min-h-screen" dir={dir}>
@@ -224,7 +231,7 @@ function LibraryPage() {
         <AppFooter />
       </main>
 
-      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} />
+      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} readerNav={readerNav} />
     </div>
   );
 }

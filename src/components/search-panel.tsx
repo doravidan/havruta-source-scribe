@@ -7,6 +7,7 @@ import { BookOpen, Loader2, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SourceReader } from "./source-reader";
 import { EmptyState } from "./page-shell";
+import { useSourceSequenceNav } from "@/hooks/use-source-sequence-nav";
 
 type SearchResult = Awaited<ReturnType<typeof searchSources>>;
 type ResultRow = SearchResult["results"][number] & { source_url?: string | null };
@@ -30,6 +31,14 @@ export function SearchPanel() {
     if (!text || m.isPending) return;
     m.mutate(text);
   };
+
+  const readerNav = useSourceSequenceNav(openId, {
+    lang,
+    onNavigate: (id) => {
+      setOpenSummarize(false);
+      setOpenId(id);
+    },
+  });
 
   return (
     <section className="w-full" aria-labelledby="search-panel-title">
@@ -162,7 +171,12 @@ export function SearchPanel() {
         </div>
       )}
 
-      <SourceReader sourceId={openId} onClose={() => setOpenId(null)} autoSummarize={openSummarize} />
+      <SourceReader
+        sourceId={openId}
+        onClose={() => setOpenId(null)}
+        autoSummarize={openSummarize}
+        readerNav={readerNav}
+      />
     </section>
   );
 }
