@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LearnNowRouteImport } from './routes/learn-now'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as ChavrutaRouteImport } from './routes/chavruta'
 import { Route as BeitMidrashRouteImport } from './routes/beit-midrash'
@@ -31,6 +32,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnNowRoute = LearnNowRouteImport.update({
+  id: '/learn-now',
+  path: '/learn-now',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommunityRoute = CommunityRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/community': typeof CommunityRoute
+  '/learn-now': typeof LearnNowRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/community': typeof CommunityRoute
+  '/learn-now': typeof LearnNowRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/beit-midrash': typeof BeitMidrashRoute
   '/chavruta': typeof ChavrutaRoute
   '/community': typeof CommunityRoute
+  '/learn-now': typeof LearnNowRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study/$sessionId': typeof StudySessionIdRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/beit-midrash'
     | '/chavruta'
     | '/community'
+    | '/learn-now'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/beit-midrash'
     | '/chavruta'
     | '/community'
+    | '/learn-now'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/beit-midrash'
     | '/chavruta'
     | '/community'
+    | '/learn-now'
     | '/library'
     | '/sitemap.xml'
     | '/study/$sessionId'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   BeitMidrashRoute: typeof BeitMidrashRoute
   ChavrutaRoute: typeof ChavrutaRoute
   CommunityRoute: typeof CommunityRoute
+  LearnNowRoute: typeof LearnNowRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudySessionIdRoute: typeof StudySessionIdRoute
@@ -215,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn-now': {
+      id: '/learn-now'
+      path: '/learn-now'
+      fullPath: '/learn-now'
+      preLoaderRoute: typeof LearnNowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/community': {
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   BeitMidrashRoute: BeitMidrashRoute,
   ChavrutaRoute: ChavrutaRoute,
   CommunityRoute: CommunityRoute,
+  LearnNowRoute: LearnNowRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudySessionIdRoute: StudySessionIdRoute,
@@ -315,3 +336,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

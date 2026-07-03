@@ -3,12 +3,12 @@ import { useLang } from "@/lib/lang-context";
 import { motion } from "framer-motion";
 import {
   ArrowDown,
-  BookOpen,
   Library,
   MessageCircle,
   Search,
   ShieldCheck,
   Users,
+  Zap,
 } from "lucide-react";
 
 export function Hero() {
@@ -18,12 +18,12 @@ export function Hero() {
     ? [
         ["35k+", "מקורות מלאים"],
         ["יומי", "חת״ת ורמב״ם"],
-        ["חי", "התאמת חברותא"],
+        ["מיידי", "חברותא בלחיצה"],
       ]
     : [
         ["35k+", "full sources"],
         ["daily", "Chitas & Rambam"],
-        ["live", "chavruta matching"],
+        ["instant", "one-click chavruta"],
       ];
 
   return (
@@ -80,6 +80,15 @@ export function Hero() {
               transition={{ duration: 0.62, delay: 0.18 }}
               className="mt-8 flex flex-col gap-3 sm:flex-row"
             >
+              <Link
+                to="/learn-now"
+                className="group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[var(--moss)] px-6 text-sm font-semibold text-white shadow-[0_18px_46px_-30px_rgba(72,107,87,0.9)] transition-transform hover:-translate-y-0.5"
+              >
+                <span className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <Zap className="h-4 w-4 transition-transform group-hover:rotate-12" />
+                {rtl ? "חברותא עכשיו" : "Chavruta now"}
+                <span className="ms-1 inline-flex h-2 w-2 animate-glow-pulse rounded-full bg-white/90" />
+              </Link>
               <a
                 href="#ask"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[0_18px_46px_-32px_rgba(92,37,31,0.8)] transition-transform hover:-translate-y-0.5"
@@ -88,11 +97,11 @@ export function Hero() {
                 {rtl ? "פתח שאלה" : "Ask a question"}
               </a>
               <Link
-                to="/beit-midrash"
+                to="/library"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-[rgba(255,250,239,0.72)] px-6 text-sm font-semibold text-foreground transition-colors hover:border-[var(--oxide)]/40 hover:bg-white/70"
               >
-                <BookOpen className="h-4 w-4 text-primary" />
-                {rtl ? "בית המדרש שלי" : "My study room"}
+                <Library className="h-4 w-4 text-primary" />
+                {rtl ? "לספרייה" : "Library"}
               </Link>
             </motion.div>
 
@@ -149,8 +158,8 @@ export function Hero() {
                   />
                   <Row
                     icon={<Users className="h-4 w-4" />}
-                    title={rtl ? "המשך עם חברותא" : "Continue with chavruta"}
-                    body={rtl ? "שלח מקור כפתיח לשיחה." : "Use a source as the chat opener."}
+                    title={rtl ? "חברותא חיה בלחיצה" : "Live chavruta in one click"}
+                    body={rtl ? "התאמה מיידית, קול ומקור משותף." : "Instant pairing, voice, shared source."}
                   />
                 </div>
 

@@ -272,6 +272,15 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
   transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, border-color 180ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent);
+    pointer-events: none;
+  }
 }
 
 @utility scholar-card-hover {
@@ -338,15 +347,27 @@
   isolation: isolate;
   background:
     linear-gradient(180deg, rgba(255,250,239,0.42), transparent 72%),
-    radial-gradient(760px 380px at 70% 16%, rgba(136,57,47,0.12), transparent 62%);
+    radial-gradient(760px 380px at 70% 16%, rgba(136,57,47,0.14), transparent 62%),
+    radial-gradient(620px 420px at 12% 82%, rgba(185,130,45,0.09), transparent 60%);
 }
 
 @utility hero-aurora {
   background:
     linear-gradient(120deg, transparent 0 24%, rgba(136,57,47,0.08) 24% 25%, transparent 25% 100%),
-    radial-gradient(420px 260px at 28% 18%, rgba(72,107,87,0.1), transparent 58%);
+    linear-gradient(300deg, transparent 0 58%, rgba(72,107,87,0.07) 58% 59%, transparent 59% 100%),
+    radial-gradient(420px 260px at 28% 18%, rgba(72,107,87,0.12), transparent 58%),
+    radial-gradient(520px 320px at 82% 72%, rgba(185,130,45,0.1), transparent 62%);
   animation: slow-drift 12s ease-in-out infinite;
-  opacity: 0.82;
+  opacity: 0.85;
+}
+
+@utility glass-panel {
+  background: linear-gradient(180deg, rgba(255,250,239,0.78), rgba(255,250,239,0.62));
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 20px 60px -44px rgba(75,48,24,0.6);
 }
 
 @utility hero-orbit-card { animation: none; }

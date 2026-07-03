@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +8,7 @@ import {
   Flag,
   HelpCircle,
   Loader2,
+  SkipForward,
   Sparkles,
 } from "lucide-react";
 import { TopBar } from "@/components/top-bar";
@@ -47,6 +48,7 @@ function StudyRoomPage() {
   const { sessionId } = Route.useParams();
   const { user, loading } = useAuth();
   const { lang, dir } = useLang();
+  const navigate = useNavigate();
   const toastError = (err: Error) =>
     toast.error(err.message || (lang === "he" ? "משהו השתבש" : "Something went wrong"));
   const qc = useQueryClient();
@@ -322,7 +324,7 @@ function StudyRoomPage() {
       <TopBar />
       <audio ref={remoteAudioRef} autoPlay playsInline />
       <main id="main-content" className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
-        <header className="mb-5 flex flex-col gap-3 rounded-3xl border border-border bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="glass-panel mb-5 flex flex-col gap-3 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <Link
               to="/chavruta"
@@ -359,6 +361,20 @@ function StudyRoomPage() {
                 : ""}
             </p>
           </div>
+          {!isAiCompanion && (
+            <button
+              type="button"
+              onClick={() => {
+                audio.hangUp();
+                navigate({ to: "/learn-now", search: { auto: "1" } });
+              }}
+              className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-full border border-border bg-card/60 px-4 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary sm:self-center"
+              title={lang === "he" ? "לעבור לחברותא הבאה" : "Skip to the next chavruta"}
+            >
+              <SkipForward className="h-4 w-4" />
+              {lang === "he" ? "חברותא הבאה" : "Next chavruta"}
+            </button>
+          )}
           {isAiCompanion ? (
             <AiVoiceControls
               lang={lang}
