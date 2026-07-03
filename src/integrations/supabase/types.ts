@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_cheers: {
+        Row: {
+          activity_id: string
+          created_at: string
+          emoji: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          emoji?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          emoji?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_cheers_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "learning_activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_buckets: {
         Row: {
           bucket: string
@@ -494,6 +523,54 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_activity: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          meta: Json
+          session_id: string | null
+          source_id: string | null
+          source_title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          meta?: Json
+          session_id?: string | null
+          source_id?: string | null
+          source_title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          session_id?: string | null
+          source_id?: string | null
+          source_title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_activity_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chavruta_study_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_activity_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -807,6 +884,22 @@ export type Database = {
         Returns: {
           display_name: string
           phone: string
+          user_id: string
+        }[]
+      }
+      get_community_feed: {
+        Args: { _limit?: number }
+        Returns: {
+          cheer_count: number
+          cheered_by_me: boolean
+          created_at: string
+          display_name: string
+          id: string
+          kind: string
+          meta: Json
+          session_id: string
+          source_id: string
+          source_title: string
           user_id: string
         }[]
       }
