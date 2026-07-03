@@ -7,6 +7,7 @@ import { isSourceStudied, toggleSourceStudied } from "@/lib/study-progress.funct
 import { summarizeSource } from "@/lib/summarize-source.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import {
   X,
   Copy,
@@ -61,6 +62,7 @@ type Props = {
 export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Props) {
   const { lang, t, dir } = useLang();
   const { session } = useAuth();
+  const authRedirect = useAuthRedirectSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fn = useServerFn(getSource);
@@ -327,6 +329,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               toggleStudied={toggleStudied}
               studiedQuery={studiedQuery}
               setShowSummary={setShowSummary}
+              authRedirect={authRedirect}
               compact={false}
             />
           </div>
@@ -347,6 +350,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
               toggleStudied={toggleStudied}
               studiedQuery={studiedQuery}
               setShowSummary={setShowSummary}
+              authRedirect={authRedirect}
               compact
               primaryOnly
             />
@@ -375,6 +379,7 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
                   toggleStudied={toggleStudied}
                   studiedQuery={studiedQuery}
                   setShowSummary={setShowSummary}
+                  authRedirect={authRedirect}
                   compact
                   menuItems
                 />
@@ -456,6 +461,7 @@ type ToolbarProps = {
   toggleStudied: { isPending: boolean; mutate: () => void };
   studiedQuery: { isLoading: boolean; data?: { studied: boolean } | null };
   setShowSummary: (v: boolean) => void;
+  authRedirect: { redirect: string };
   compact?: boolean;
   primaryOnly?: boolean;
   menuItems?: boolean;
@@ -476,6 +482,7 @@ function ReaderToolbarActions(props: ToolbarProps) {
     toggleStudied,
     studiedQuery,
     setShowSummary,
+    authRedirect,
     compact,
     primaryOnly,
     menuItems,
@@ -593,6 +600,7 @@ function ReaderToolbarActions(props: ToolbarProps) {
       <Link
         key="ai-auth"
         to="/auth"
+        search={authRedirect}
         className={`${btnClass} border border-primary bg-primary font-semibold text-primary-foreground`}
       >
         <Sparkles className="h-4 w-4" />

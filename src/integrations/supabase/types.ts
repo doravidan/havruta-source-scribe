@@ -782,6 +782,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_chavruta_match_contacts: {
+        Args: { _match_ids: string[] }
+        Returns: {
+          display_name: string
+          match_id: string
+          phone: string
+          user_id: string
+        }[]
+      }
       get_chavruta_matching_slots: {
         Args: Record<string, never>
         Returns: {

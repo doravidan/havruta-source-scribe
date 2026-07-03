@@ -6,10 +6,12 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { getStudySummary } from "@/lib/study-progress.functions";
+import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 
 export function StudySidebar() {
   const { session } = useAuth();
   const { t, lang } = useLang();
+  const authRedirect = useAuthRedirectSearch();
   const fn = useServerFn(getStudySummary);
 
   const { data, isLoading } = useQuery({
@@ -33,6 +35,7 @@ export function StudySidebar() {
         </p>
         <Link
           to="/auth"
+          search={authRedirect}
           className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-95"
         >
           {t.signIn}

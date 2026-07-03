@@ -15,6 +15,7 @@ import {
   type ChavrutaProfile,
   type MatchingSlot,
 } from "@/lib/chavruta-matching";
+import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import { toast } from "sonner";
 import {
   CalendarClock,
@@ -127,6 +128,7 @@ function matchStatusLabel(status: string, lang: "he" | "en") {
 function ChavrutaPage() {
   const { user, loading } = useAuth();
   const { lang, dir } = useLang();
+  const authRedirect = useAuthRedirectSearch();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const createStudyFn = useServerFn(createStudySession);
@@ -410,13 +412,17 @@ function ChavrutaPage() {
     queryKey: ["chavruta-contacts", socialQ.data?.matches?.map((m) => m.id).join(",")],
     enabled: !!user && !!socialQ.data?.matches?.some((m) => m.status === "accepted"),
     queryFn: async () => {
+      const acceptedIds = socialQ.data!.matches
+        .filter((x) => x.status === "accepted")
+        .map((m) => m.id);
+      if (!acceptedIds.length) return {};
+      const { data, error } = await db.rpc<
+        { match_id: string; display_name: string; phone: string }[]
+      >("get_chavruta_match_contacts", { _match_ids: acceptedIds });
+      if (error) throw error;
       const contacts: Record<string, { display_name: string; phone: string }> = {};
-      for (const m of socialQ.data!.matches.filter((x) => x.status === "accepted")) {
-        const { data } = await db.rpc<{ display_name: string; phone: string }[]>(
-          "get_chavruta_match_contact",
-          { _match_id: m.id },
-        );
-        if (data?.[0]) contacts[m.id] = data[0];
+      for (const row of data ?? []) {
+        contacts[row.match_id] = { display_name: row.display_name, phone: row.phone };
       }
       return contacts;
     },
@@ -447,6 +453,7 @@ function ChavrutaPage() {
             </p>
             <Link
               to="/auth"
+              search={authRedirect}
               className="mt-6 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-primary-foreground"
             >
               {lang === "he" ? "התחברות" : "Sign in"}

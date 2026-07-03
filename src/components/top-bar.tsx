@@ -5,6 +5,7 @@ import { BookOpen, Languages, Library, LogIn, LogOut, ShieldCheck, Users } from 
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { corpusStats } from "@/lib/corpus.functions";
+import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/chassiduta-logo.png";
 
@@ -20,6 +21,7 @@ export function TopBar() {
   const { session, isAdmin } = useAuth();
   const fn = useServerFn(corpusStats);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const authRedirect = useAuthRedirectSearch();
   const { data: stats } = useQuery({
     queryKey: ["corpus-stats"],
     queryFn: () => fn(),
@@ -121,6 +123,7 @@ export function TopBar() {
           ) : (
             <Link
               to="/auth"
+              search={authRedirect}
               className={`${navLinkBase} border-transparent bg-primary px-4 font-semibold text-primary-foreground hover:opacity-95`}
             >
               <LogIn className="h-4 w-4" />

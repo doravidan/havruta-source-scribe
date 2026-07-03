@@ -8,6 +8,7 @@ import { AppFooter, PageLoader } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { getStudySummary } from "@/lib/study-progress.functions";
+import { useAuthRedirectSearch } from "@/lib/auth-redirect";
 import { supabase } from "@/integrations/supabase/client";
 
 type AskSession = {
@@ -53,6 +54,7 @@ const daysEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
 function BeitMidrashPage() {
   const { session, loading } = useAuth();
   const { lang, dir } = useLang();
+  const authRedirect = useAuthRedirectSearch();
   const summaryFn = useServerFn(getStudySummary);
   const days = lang === "he" ? daysHe : daysEn;
 
@@ -113,6 +115,7 @@ function BeitMidrashPage() {
             </p>
             <Link
               to="/auth"
+              search={authRedirect}
               className="mt-6 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-primary-foreground"
             >
               {lang === "he" ? "התחברות" : "Sign in"}
