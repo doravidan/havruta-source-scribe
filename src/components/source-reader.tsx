@@ -24,11 +24,19 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  MoreHorizontal,
 } from "lucide-react";
 import { useReadAloud } from "@/hooks/use-read-aloud";
 import { parseSefariaText } from "@/lib/sefaria-text";
 import { sanitizeSourceText } from "@/lib/sanitize-source-text";
 import { createAiStudySession } from "@/lib/chavruta-study.functions";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type DateNav = {
   label: string;
@@ -76,6 +84,15 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
     onSuccess: (res) => {
       qc.setQueryData(["studied", sourceId, session?.user?.id], res);
       qc.invalidateQueries({ queryKey: ["study-summary"] });
+      toast.success(
+        res.studied
+          ? lang === "he"
+            ? "סומן כנלמד"
+            : "Marked as studied"
+          : lang === "he"
+            ? "הוסר מנלמדו"
+            : "Removed from studied",
+      );
     },
   });
 
@@ -156,9 +173,11 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
     try {
       await navigator.clipboard.writeText(cleanText);
       setCopied(true);
+      toast.success(t.readerCopied);
       setTimeout(() => setCopied(false), 1500);
     } catch {
       setCopied(false);
+      toast.error(lang === "he" ? "לא הצלחנו להעתיק" : "Could not copy text");
     }
   };
 
@@ -262,193 +281,110 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
         <div className="flex flex-wrap items-center gap-2 border-b border-border/70 p-3 sm:p-4">
           <div className="order-2 me-auto flex items-center gap-1 sm:order-none">
             <button
+              type="button"
               onClick={() => setFontStep((s) => Math.max(0, s - 1))}
-              className="h-10 w-10 rounded-md border border-border hover:bg-secondary inline-flex items-center justify-center"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-secondary"
               aria-label={t.readerSmaller}
             >
               <Minus className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => setFontStep((s) => Math.min(4, s + 1))}
-              className="h-10 w-10 rounded-md border border-border hover:bg-secondary inline-flex items-center justify-center"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-secondary"
               aria-label={t.readerLarger}
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
           <div className="order-1 flex w-full flex-none items-center gap-2 sm:order-none sm:min-w-[200px] sm:max-w-md sm:flex-1">
-            <div className="flex items-center gap-2 px-3 h-10 rounded-md border border-border bg-background/50 flex-1">
-              <Search className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-10 flex-1 items-center gap-2 rounded-md border border-border bg-background/50 px-3">
+              <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
               <input
                 value={needle}
                 onChange={(e) => setNeedle(e.target.value)}
                 placeholder={t.readerSearchPh}
-                className="bg-transparent outline-none flex-1 text-sm"
+                aria-label={t.readerSearchPh}
+                className="flex-1 bg-transparent text-sm outline-none"
               />
             </div>
             {needle && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
+              <span className="whitespace-nowrap text-xs text-muted-foreground">
                 {matchCount === 0 ? t.readerNoMatches : t.readerMatches(matchCount)}
               </span>
             )}
           </div>
-          <button
-            onClick={() => {
-              setShowSummary(true);
-              if (!summary.data && !summary.isPending) summary.mutate();
-            }}
-            disabled={summary.isPending || !data}
-            className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium border border-[var(--indigo-deep)]/40 text-[var(--indigo-deep)] bg-[color:var(--indigo-soft,transparent)] hover:bg-[var(--indigo-deep)] hover:text-white transition-colors disabled:opacity-60"
-            title={t.readerSummary}
-            aria-label={t.readerSummary}
-          >
-            {summary.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">
-              {summary.isPending ? t.readerSummarizing : t.readerSummary}
-            </span>
-          </button>
-          {session && data ? (
-            <button
-              onClick={() => openAiStudy.mutate()}
-              disabled={openAiStudy.isPending || !data}
-              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-foreground border border-primary hover:opacity-95 transition-colors disabled:opacity-60"
-              title={
-                lang === "he" ? "פתח חדר לימוד עם חברותא AI" : "Open a study room with AI chavruta"
-              }
-              aria-label={lang === "he" ? "פתח חדר לימוד עם חברותא AI" : "Open AI study room"}
-            >
-              {openAiStudy.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              <span>{lang === "he" ? "לימוד עם AI" : "Study with AI"}</span>
-            </button>
-          ) : data ? (
-            <Link
-              to="/auth"
-              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-foreground border border-primary hover:opacity-95 transition-colors"
-              title={lang === "he" ? "התחבר כדי לפתוח חדר לימוד עם AI" : "Sign in to study with AI"}
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>{lang === "he" ? "לימוד עם AI" : "Study with AI"}</span>
-            </Link>
-          ) : null}
-          {session && data && (
-            <Link
-              to="/chavruta"
-              search={{ source: data.id } as never}
-              className="h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium border border-primary/35 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-colors"
-              title={lang === "he" ? "מצא חברותא למקור הזה" : "Find a chavruta for this source"}
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {lang === "he" ? "חברותא למקור" : "Chavruta"}
-              </span>
-            </Link>
-          )}
-          {/* Read aloud */}
-          {(() => {
-            const playing = read.status === "playing";
-            const paused = read.status === "paused";
-            const loading = read.status === "loading";
-            const active = playing || paused || loading;
-            const label =
-              lang === "he"
-                ? loading
-                  ? "טוען…"
-                  : playing
-                    ? "השהה"
-                    : paused
-                      ? "המשך"
-                      : "הקרא בקול"
-                : loading
-                  ? "Loading…"
-                  : playing
-                    ? "Pause"
-                    : paused
-                      ? "Resume"
-                      : "Read aloud";
-            const Icon = loading ? Loader2 : playing ? Pause : Play;
-            return (
-              <div className="inline-flex items-center gap-1">
+
+          {/* Primary actions — always visible */}
+          <div className="hidden items-center gap-2 sm:flex">
+            <ReaderToolbarActions
+              lang={lang}
+              t={t}
+              data={data}
+              session={session}
+              summary={summary}
+              read={read}
+              cleanText={cleanText}
+              copied={copied}
+              copyAll={copyAll}
+              openAiStudy={openAiStudy}
+              toggleStudied={toggleStudied}
+              studiedQuery={studiedQuery}
+              setShowSummary={setShowSummary}
+              compact={false}
+            />
+          </div>
+
+          {/* Mobile overflow menu */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <ReaderToolbarActions
+              lang={lang}
+              t={t}
+              data={data}
+              session={session}
+              summary={summary}
+              read={read}
+              cleanText={cleanText}
+              copied={copied}
+              copyAll={copyAll}
+              openAiStudy={openAiStudy}
+              toggleStudied={toggleStudied}
+              studiedQuery={studiedQuery}
+              setShowSummary={setShowSummary}
+              compact
+              primaryOnly
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <button
-                  onClick={() => {
-                    if (!cleanText) return;
-                    if (playing) return read.pause();
-                    if (paused) return read.resume();
-                    read.speak(cleanText, (data?.language as "he" | "en") ?? lang);
-                  }}
-                  disabled={!data || loading}
-                  className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-60 ${
-                    active
-                      ? "bg-[var(--saffron)] text-white border border-[var(--saffron)] hover:opacity-95"
-                      : "border border-[var(--saffron)] text-[var(--indigo-deep)] bg-[color:var(--saffron-soft)] hover:bg-[var(--saffron)] hover:text-white"
-                  }`}
-                  title={label}
-                  aria-label={label}
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-secondary"
+                  aria-label={lang === "he" ? "פעולות נוספות" : "More actions"}
                 >
-                  <Icon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                  <span className="hidden sm:inline">{label}</span>
-                  {active && read.progress > 0 && (
-                    <span className="hidden md:inline text-[11px] opacity-80 tabular-nums">
-                      {Math.round(read.progress * 100)}%
-                    </span>
-                  )}
+                  <MoreHorizontal className="h-4 w-4" />
                 </button>
-                {active && (
-                  <button
-                    onClick={() => read.stop()}
-                    className="h-10 w-10 rounded-md border border-border hover:bg-secondary inline-flex items-center justify-center"
-                    title={lang === "he" ? "עצור" : "Stop"}
-                    aria-label={lang === "he" ? "עצור" : "Stop"}
-                  >
-                    <Square className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            );
-          })()}
-          <button
-            onClick={copyAll}
-            className="h-10 px-3 rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5 text-sm"
-          >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            <span className="hidden sm:inline">{copied ? t.readerCopied : t.readerCopy}</span>
-          </button>
-          {session && (
-            <button
-              onClick={() => toggleStudied.mutate()}
-              disabled={toggleStudied.isPending || studiedQuery.isLoading}
-              className={`h-10 px-3 rounded-md inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                studiedQuery.data?.studied
-                  ? "bg-[var(--sage)] text-white border border-[var(--sage)] hover:opacity-95"
-                  : "border border-[var(--saffron)] text-[var(--indigo-deep)] bg-[color:var(--saffron-soft)] hover:bg-[color:var(--saffron)] hover:text-white"
-              } disabled:opacity-60`}
-              aria-pressed={!!studiedQuery.data?.studied}
-            >
-              {toggleStudied.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : studiedQuery.data?.studied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <BookCheck className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">
-                {studiedQuery.data?.studied
-                  ? lang === "he"
-                    ? "נלמד"
-                    : "Studied"
-                  : lang === "he"
-                    ? "סמן כנלמד"
-                    : "Mark studied"}
-              </span>
-            </button>
-          )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <ReaderToolbarActions
+                  lang={lang}
+                  t={t}
+                  data={data}
+                  session={session}
+                  summary={summary}
+                  read={read}
+                  cleanText={cleanText}
+                  copied={copied}
+                  copyAll={copyAll}
+                  openAiStudy={openAiStudy}
+                  toggleStudied={toggleStudied}
+                  studiedQuery={studiedQuery}
+                  setShowSummary={setShowSummary}
+                  compact
+                  menuItems
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-8">
@@ -507,4 +443,256 @@ export function SourceReader({ sourceId, onClose, autoSummarize, dateNav }: Prop
       </div>
     </div>
   );
+}
+
+type ToolbarProps = {
+  lang: "he" | "en";
+  t: ReturnType<typeof useLang>["t"];
+  data: { id: string; language?: string | null } | undefined;
+  session: ReturnType<typeof useAuth>["session"];
+  summary: { isPending: boolean; data?: { summary: string } | null; mutate: () => void };
+  read: ReturnType<typeof useReadAloud>;
+  cleanText: string;
+  copied: boolean;
+  copyAll: () => void;
+  openAiStudy: { isPending: boolean; mutate: () => void };
+  toggleStudied: { isPending: boolean; mutate: () => void };
+  studiedQuery: { isLoading: boolean; data?: { studied: boolean } | null };
+  setShowSummary: (v: boolean) => void;
+  compact?: boolean;
+  primaryOnly?: boolean;
+  menuItems?: boolean;
+};
+
+function ReaderToolbarActions(props: ToolbarProps) {
+  const {
+    lang,
+    t,
+    data,
+    session,
+    summary,
+    read,
+    cleanText,
+    copied,
+    copyAll,
+    openAiStudy,
+    toggleStudied,
+    studiedQuery,
+    setShowSummary,
+    compact,
+    primaryOnly,
+    menuItems,
+  } = props;
+
+  const playing = read.status === "playing";
+  const paused = read.status === "paused";
+  const loading = read.status === "loading";
+  const active = playing || paused || loading;
+  const readLabel =
+    lang === "he"
+      ? loading
+        ? "טוען…"
+        : playing
+          ? "השהה"
+          : paused
+            ? "המשך"
+            : "הקרא בקול"
+      : loading
+        ? "Loading…"
+        : playing
+          ? "Pause"
+          : paused
+            ? "Resume"
+            : "Read aloud";
+  const ReadIcon = loading ? Loader2 : playing ? Pause : Play;
+
+  const onSummary = () => {
+    setShowSummary(true);
+    if (!summary.data && !summary.isPending) summary.mutate();
+  };
+
+  const onRead = () => {
+    if (!cleanText) return;
+    if (playing) return read.pause();
+    if (paused) return read.resume();
+    read.speak(cleanText, (data?.language as "he" | "en") ?? lang);
+  };
+
+  if (menuItems) {
+    return (
+      <>
+        <DropdownMenuItem onClick={onSummary} disabled={summary.isPending || !data}>
+          {t.readerSummary}
+        </DropdownMenuItem>
+        {session && data && (
+          <DropdownMenuItem onClick={() => openAiStudy.mutate()} disabled={openAiStudy.isPending}>
+            {lang === "he" ? "לימוד עם AI" : "Study with AI"}
+          </DropdownMenuItem>
+        )}
+        {session && data && (
+          <DropdownMenuItem asChild>
+            <Link to="/chavruta" search={{ source: data.id } as never}>
+              {lang === "he" ? "חברותא למקור" : "Chavruta for source"}
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={onRead} disabled={!data || loading}>
+          {readLabel}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={copyAll}>{copied ? t.readerCopied : t.readerCopy}</DropdownMenuItem>
+        {session && (
+          <DropdownMenuItem onClick={() => toggleStudied.mutate()} disabled={toggleStudied.isPending}>
+            {studiedQuery.data?.studied
+              ? lang === "he"
+                ? "נלמד"
+                : "Studied"
+              : lang === "he"
+                ? "סמן כנלמד"
+                : "Mark studied"}
+          </DropdownMenuItem>
+        )}
+      </>
+    );
+  }
+
+  const btnClass = compact
+    ? "inline-flex h-10 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium"
+    : "inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-medium";
+
+  const items = [];
+
+  if (!primaryOnly) {
+    items.push(
+      <button
+        key="summary"
+        type="button"
+        onClick={onSummary}
+        disabled={summary.isPending || !data}
+        className={`${btnClass} border border-[var(--indigo-deep)]/40 text-[var(--indigo-deep)] bg-[color:var(--indigo-soft,transparent)] hover:bg-[var(--indigo-deep)] hover:text-white disabled:opacity-60`}
+        title={t.readerSummary}
+        aria-label={t.readerSummary}
+      >
+        {summary.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        {!compact && <span>{summary.isPending ? t.readerSummarizing : t.readerSummary}</span>}
+      </button>,
+    );
+  }
+
+  if (session && data) {
+    items.push(
+      <button
+        key="ai"
+        type="button"
+        onClick={() => openAiStudy.mutate()}
+        disabled={openAiStudy.isPending}
+        className={`${btnClass} border border-primary bg-primary font-semibold text-primary-foreground hover:opacity-95 disabled:opacity-60`}
+      >
+        {openAiStudy.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        {!compact && <span>{lang === "he" ? "לימוד עם AI" : "Study with AI"}</span>}
+      </button>,
+    );
+  } else if (data && primaryOnly) {
+    items.push(
+      <Link
+        key="ai-auth"
+        to="/auth"
+        className={`${btnClass} border border-primary bg-primary font-semibold text-primary-foreground`}
+      >
+        <Sparkles className="h-4 w-4" />
+      </Link>,
+    );
+  }
+
+  if (!primaryOnly) {
+    if (session && data) {
+      items.push(
+        <Link
+          key="chavruta"
+          to="/chavruta"
+          search={{ source: data.id } as never}
+          className={`${btnClass} border border-primary/35 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground`}
+        >
+          <Users className="h-4 w-4" />
+          {!compact && <span>{lang === "he" ? "חברותא" : "Chavruta"}</span>}
+        </Link>,
+      );
+    }
+
+    items.push(
+      <div key="read" className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onRead}
+          disabled={!data || loading}
+          className={`${btnClass} ${
+            active
+              ? "border border-[var(--saffron)] bg-[var(--saffron)] text-white"
+              : "border border-[var(--saffron)] bg-[color:var(--saffron-soft)] text-[var(--indigo-deep)] hover:bg-[var(--saffron)] hover:text-white"
+          } disabled:opacity-60`}
+          title={readLabel}
+          aria-label={readLabel}
+        >
+          <ReadIcon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          {!compact && <span>{readLabel}</span>}
+        </button>
+        {active && (
+          <button
+            type="button"
+            onClick={() => read.stop()}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-secondary"
+            aria-label={lang === "he" ? "עצור" : "Stop"}
+          >
+            <Square className="h-4 w-4" />
+          </button>
+        )}
+      </div>,
+      <button
+        key="copy"
+        type="button"
+        onClick={copyAll}
+        className={`${btnClass} border border-border hover:bg-secondary`}
+      >
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        {!compact && <span>{copied ? t.readerCopied : t.readerCopy}</span>}
+      </button>,
+    );
+
+    if (session) {
+      items.push(
+        <button
+          key="studied"
+          type="button"
+          onClick={() => toggleStudied.mutate()}
+          disabled={toggleStudied.isPending || studiedQuery.isLoading}
+          className={`${btnClass} ${
+            studiedQuery.data?.studied
+              ? "border border-[var(--sage)] bg-[var(--sage)] text-white"
+              : "border border-[var(--saffron)] bg-[color:var(--saffron-soft)] text-[var(--indigo-deep)]"
+          } disabled:opacity-60`}
+          aria-pressed={!!studiedQuery.data?.studied}
+        >
+          {toggleStudied.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : studiedQuery.data?.studied ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <BookCheck className="h-4 w-4" />
+          )}
+          {!compact && (
+            <span>
+              {studiedQuery.data?.studied
+                ? lang === "he"
+                  ? "נלמד"
+                  : "Studied"
+                : lang === "he"
+                  ? "סמן כנלמד"
+                  : "Mark studied"}
+            </span>
+          )}
+        </button>,
+      );
+    }
+  }
+
+  return <>{items}</>;
 }

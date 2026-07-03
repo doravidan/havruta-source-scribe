@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { BookOpen, CalendarClock, Flame, MessageCircle, Search, Users } from "lucide-react";
 import { TopBar } from "@/components/top-bar";
 import { DailyStudyPanel } from "@/components/daily-study";
+import { AppFooter, PageLoader } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { getStudySummary } from "@/lib/study-progress.functions";
@@ -86,13 +87,20 @@ function BeitMidrashPage() {
     },
   });
 
-  if (loading) return <div className="min-h-screen" />;
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <TopBar />
+        <PageLoader />
+      </div>
+    );
+  }
 
   if (!session) {
     return (
       <div className="min-h-screen" dir={dir}>
         <TopBar />
-        <main className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <main id="main-content" className="mx-auto max-w-3xl px-4 py-16 text-center">
           <div className="scholar-card p-8">
             <BookOpen className="mx-auto mb-4 h-10 w-10 text-primary" />
             <h2 className="gold-text text-3xl">
@@ -123,7 +131,7 @@ function BeitMidrashPage() {
   return (
     <div className="min-h-screen" dir={dir}>
       <TopBar />
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
         <header className="mb-8">
           <div className="eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/45 px-3 py-2">
             <BookOpen className="h-3.5 w-3.5 text-primary" />
@@ -209,7 +217,17 @@ function BeitMidrashPage() {
                       className="block rounded-xl border border-border/70 bg-background/30 p-3 hover:border-primary/40"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground">{m.status}</span>
+                        <span className="text-sm font-medium text-foreground">
+                          {m.status === "accepted"
+                            ? lang === "he"
+                              ? "אושר"
+                              : "Accepted"
+                            : m.status === "chatting"
+                              ? lang === "he"
+                                ? "בשיחה"
+                                : "Chatting"
+                              : m.status}
+                        </span>
                         <MessageCircle className="h-4 w-4 text-primary" />
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
@@ -265,6 +283,7 @@ function BeitMidrashPage() {
             </section>
           </aside>
         </div>
+        <AppFooter />
       </main>
     </div>
   );

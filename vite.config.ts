@@ -4,7 +4,7 @@
 //     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config/dist/index.js";
 import { loadEnv } from "vite";
 import path from "node:path";
 
@@ -26,15 +26,15 @@ export default defineConfig({
       },
     },
     server: {
-      // When the dev server is served through the Lovable preview iframe
-      // (https://*.lovableproject.com), Vite's HMR client defaults to
-      // ws://localhost:8080 and fails to connect. Route HMR over the same
-      // origin the browser used, on the standard HTTPS port, so it works
-      // both locally and inside the sandboxed iframe.
-      hmr: {
-        clientPort: 443,
-        protocol: "wss",
-      },
+      // Local dev uses default HMR; Lovable iframe preview overrides via env if needed.
+      ...(process.env.LOVABLE_PREVIEW_HOST
+        ? {
+            hmr: {
+              clientPort: 443,
+              protocol: "wss",
+            },
+          }
+        : {}),
     },
   },
 });

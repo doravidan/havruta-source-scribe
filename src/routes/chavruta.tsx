@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { TopBar } from "@/components/top-bar";
+import { PageLoader } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -269,6 +270,16 @@ const LEVEL_ORDER: Record<Profile["learning_level"], number> = {
 };
 function levelDistance(a: Profile["learning_level"], b: Profile["learning_level"]): number {
   return Math.abs(LEVEL_ORDER[a] - LEVEL_ORDER[b]);
+}
+
+function matchStatusLabel(status: string, lang: "he" | "en") {
+  const map: Record<string, { he: string; en: string }> = {
+    chatting: { he: "בשיחה", en: "Chatting" },
+    accepted: { he: "אושר", en: "Accepted" },
+    declined: { he: "נדחה", en: "Declined" },
+    cancelled: { he: "בוטל", en: "Cancelled" },
+  };
+  return map[status]?.[lang] ?? status;
 }
 
 function ChavrutaPage() {
@@ -602,12 +613,19 @@ function ChavrutaPage() {
     },
   });
 
-  if (loading) return <div className="min-h-screen" />;
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <TopBar />
+        <PageLoader />
+      </div>
+    );
+  }
   if (!user) {
     return (
       <div className="min-h-screen">
         <TopBar />
-        <main className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <main id="main-content" className="mx-auto max-w-3xl px-4 py-16 text-center">
           <div className="scholar-card p-8">
             <Users className="mx-auto h-10 w-10 text-primary mb-4" />
             <h1 className="text-3xl gold-text">
@@ -658,7 +676,7 @@ function ChavrutaPage() {
   return (
     <div className="min-h-screen" dir={dir}>
       <TopBar />
-      <main className="mx-auto max-w-7xl px-4 sm:px-8 py-10">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 sm:px-8 py-10">
         <header className="mb-8 grid lg:grid-cols-[1fr_auto] gap-5 items-end">
           <div>
             <div className="eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/45 px-3 py-2">
@@ -1116,8 +1134,8 @@ function ChavrutaPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="rounded-full border border-border/70 px-2 py-1">
-                              {m.status}
+                            <span className="rounded-full border border-border/70 px-2 py-1 capitalize">
+                              {matchStatusLabel(m.status, lang)}
                             </span>
                             <span className="text-muted-foreground">
                               {myAccepted ? "✓" : "○"} {lang === "he" ? "אני" : "me"} ·{" "}
