@@ -25,7 +25,7 @@ export const hnswBuildStatus = createServerFn({ method: "GET" })
       index_exists: boolean;
       index_size: string | null;
       job_scheduled: boolean;
-      last_run: unknown;
-      active_builds: unknown[];
+      last_run: Record<string, unknown> | null;
+      active_builds: Record<string, unknown>[];
     };
   });
