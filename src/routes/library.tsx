@@ -9,6 +9,7 @@ import { useLang } from "@/lib/lang-context";
 import { browseLibrary } from "@/lib/library-browse.functions";
 import { useSourceSequenceNav } from "@/hooks/use-source-sequence-nav";
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -16,6 +17,7 @@ import {
   Home,
   Library as LibraryIcon,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/library")({
@@ -73,10 +75,15 @@ function LibraryPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const fn = useServerFn(browseLibrary);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["library-browse", path],
     queryFn: () => fn({ data: { path } }),
+    retry: 1,
   });
+
+  const errMsg = error instanceof Error ? error.message : error ? String(error) : "";
+  const isTimeout = /timeout|canceling statement|57014|took too long/i.test(errMsg);
+
 
   const isRtl = dir === "rtl";
   const Chevron = isRtl ? ChevronLeft : ChevronRight;
@@ -151,7 +158,47 @@ function LibraryPage() {
             </div>
           )}
 
-          {!isLoading && data && data.children.length === 0 && data.leaves.length === 0 && (
+          {error && (
+            <div className="py-12 flex flex-col items-center text-center gap-4">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl border border-destructive/40 bg-destructive/10 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div className="max-w-md space-y-1.5">
+                <p className="font-medium">
+                  {isTimeout
+                    ? lang === "he"
+                      ? "הספרייה לוקחת יותר מדי זמן להיטען"
+                      : "The library is taking too long to load"
+                    : lang === "he"
+                      ? "לא הצלחנו לטעון את הספרייה"
+                      : "We couldn't load the library"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isTimeout
+                    ? lang === "he"
+                      ? "השרת עמוס כרגע. אפשר לנסות שוב בעוד רגע."
+                      : "The server is busy right now. Please try again in a moment."
+                    : lang === "he"
+                      ? "אירעה שגיאה בעת טעינת המקורות."
+                      : "Something went wrong while fetching sources."}
+                </p>
+              </div>
+              <button
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border/80 bg-card/50 hover:bg-secondary/40 hover:border-primary/40 transition-colors text-sm font-medium disabled:opacity-60"
+              >
+                {isFetching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {lang === "he" ? "נסה שוב" : "Try again"}
+              </button>
+            </div>
+          )}
+
+          {!error && !isLoading && data && data.children.length === 0 && data.leaves.length === 0 && (
             <p className="text-sm text-muted-foreground py-12 text-center">
               {lang === "he" ? "אין מקורות בקטגוריה זו עדיין." : "No sources in this section yet."}
             </p>
