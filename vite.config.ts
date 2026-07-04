@@ -13,11 +13,17 @@ import path from "node:path";
 const serverEnv = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
-const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+const LOVABLE_CLOUD_SUPABASE_URL = "https://mfqpoclgxuxbnnexzxoq.supabase.co";
+const LOVABLE_CLOUD_SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mcXBvY2xneHV4Ym5uZXh6eG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMjA2MzQsImV4cCI6MjA5NzY5NjYzNH0.Bx4MocloiuYkdKRn6XPz5AO50dUkFesULRRQpWMBC1c";
+
+const supabaseUrl =
+  process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? LOVABLE_CLOUD_SUPABASE_URL;
 const supabasePublishableKey =
   process.env.SUPABASE_PUBLISHABLE_KEY ??
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.VITE_SUPABASE_ANON_KEY;
+  process.env.VITE_SUPABASE_ANON_KEY ??
+  LOVABLE_CLOUD_SUPABASE_PUBLISHABLE_KEY;
 
 if (!process.env.SUPABASE_URL && supabaseUrl) {
   process.env.SUPABASE_URL = supabaseUrl;
@@ -33,6 +39,9 @@ export default defineConfig({
   },
   vite: {
     define: {
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
+      "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(supabasePublishableKey),
       ...(supabaseUrl ? { "process.env.SUPABASE_URL": JSON.stringify(supabaseUrl) } : {}),
       ...(supabasePublishableKey
         ? { "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey) }
