@@ -13,11 +13,31 @@ import path from "node:path";
 const serverEnv = loadEnv(process.env.NODE_ENV || "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
+const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+const supabasePublishableKey =
+  process.env.SUPABASE_PUBLISHABLE_KEY ??
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!process.env.SUPABASE_URL && supabaseUrl) {
+  process.env.SUPABASE_URL = supabaseUrl;
+}
+
+if (!process.env.SUPABASE_PUBLISHABLE_KEY && supabasePublishableKey) {
+  process.env.SUPABASE_PUBLISHABLE_KEY = supabasePublishableKey;
+}
+
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
   vite: {
+    define: {
+      ...(supabaseUrl ? { "process.env.SUPABASE_URL": JSON.stringify(supabaseUrl) } : {}),
+      ...(supabasePublishableKey
+        ? { "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey) }
+        : {}),
+    },
     resolve: {
       alias: {
         "entities/lib/decode.js": path.resolve(__dirname, "node_modules/entities/lib/decode.js"),
